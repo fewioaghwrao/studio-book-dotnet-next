@@ -1,0 +1,98 @@
+# =========================
+# Common
+# =========================
+
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+*.temp
+
+# Environment files
+.env
+.env.*
+*.env
+
+# Secret / certificate files
+*.pem
+*.key
+*.pfx
+*.p12
+
+# =========================
+# Frontend - Next.js
+# =========================
+
+Frontend/node_modules/
+Frontend/.next/
+Frontend/out/
+Frontend/build/
+Frontend/coverage/
+Frontend/.vercel/
+Frontend/.turbo/
+
+Frontend/npm-debug.log*
+Frontend/yarn-debug.log*
+Frontend/yarn-error.log*
+Frontend/.pnpm-debug.log*
+
+Frontend/*.tsbuildinfo
+Frontend/next-env.d.ts
+
+# Optional package manager files
+Frontend/.pnp
+Frontend/.pnp.*
+Frontend/.yarn/*
+!Frontend/.yarn/patches
+!Frontend/.yarn/plugins
+!Frontend/.yarn/releases
+!Frontend/.yarn/versions
+
+# =========================
+# Backend - ASP.NET Core / .NET
+# =========================
+
+Backend/**/bin/
+Backend/**/obj/
+
+Backend/.vs/
+Backend/.vscode/
+Backend/**/.vs/
+Backend/**/.vscode/
+
+Backend/**/*.user
+Backend/**/*.suo
+Backend/**/*.rsuser
+Backend/**/*.userosscache
+Backend/**/*.sln.docstates
+
+# Rider / JetBrains
+Backend/.idea/
+Backend/**/*.DotSettings.user
+
+# Test results
+Backend/TestResults/
+Backend/**/TestResults/
+Backend/**/coverage/
+Backend/**/coverage.cobertura.xml
+
+# Publish output
+Backend/**/publish/
+
+# Local DB files
+Backend/**/*.db
+Backend/**/*.sqlite
+Backend/**/*.sqlite3
+Backend/**/*.mdf
+Backend/**/*.ldf
+
+# =========================
+# Visual Studio / OS
+# =========================
+
+.vs/
+*.user
+*.suo
+*.rsuser
+*.userosscache
+*.sln.docstates
