@@ -436,7 +436,7 @@ export default function SignupPage() {
                   すでにアカウントをお持ちの方
                 </p>
                 <Link
-                  href="/login"
+                  href="/auth/login"
                   className="mt-3 inline-flex rounded-xl border border-stone-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-sky-300 hover:text-sky-700"
                 >
                   ログインはこちら
