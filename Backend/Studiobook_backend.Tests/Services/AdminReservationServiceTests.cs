@@ -51,7 +51,7 @@ public class AdminReservationServiceTests
             Id = 1,
             UserId = host.Id,
             User = host,
-            Name = "青山フォトスタジオ",
+            Name = "B Studio",
             ImageName = "room01.jpg",
             Description = "テスト用スタジオ",
             Price = 3000,
@@ -67,7 +67,7 @@ public class AdminReservationServiceTests
             Id = 2,
             UserId = host.Id,
             User = host,
-            Name = "池袋ダンスルーム",
+            Name = "A Studio",
             ImageName = "room02.jpg",
             Description = "テスト用ルーム",
             Price = 2500,
@@ -140,10 +140,10 @@ public class AdminReservationServiceTests
         Assert.Equal(2, result.Items.Count);
 
         Assert.Equal(2, result.Items[0].ReservationId);
-        Assert.Equal("池袋ダンスルーム", result.Items[0].RoomName);
+        Assert.Equal("A Studio", result.Items[0].RoomName);
 
         Assert.Equal(1, result.Items[1].ReservationId);
-        Assert.Equal("青山フォトスタジオ", result.Items[1].RoomName);
+        Assert.Equal("B Studio", result.Items[1].RoomName);
     }
 
     [Fact]
@@ -157,7 +157,7 @@ public class AdminReservationServiceTests
 
         // Act
         var result = await service.GetListAsync(
-            keyword: "青山",
+            keyword: "B",
             status: null,
             reservationId: null,
             roomId: null,
@@ -169,7 +169,7 @@ public class AdminReservationServiceTests
         // Assert
         Assert.Single(result.Items);
         Assert.Equal(1, result.Items[0].ReservationId);
-        Assert.Equal("青山フォトスタジオ", result.Items[0].RoomName);
+        Assert.Equal("B Studio", result.Items[0].RoomName);
     }
 
     [Fact]
@@ -339,7 +339,7 @@ public class AdminReservationServiceTests
 
         // Assert
         Assert.Equal(2, result.RoomOptions.Count);
-        Assert.Equal("青山フォトスタジオ", result.RoomOptions[0].Name);
-        Assert.Equal("池袋ダンスルーム", result.RoomOptions[1].Name);
+        Assert.Equal("A Studio", result.RoomOptions[0].Name);
+        Assert.Equal("B Studio", result.RoomOptions[1].Name);
     }
 }
