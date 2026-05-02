@@ -181,6 +181,7 @@ builder.Services.AddScoped<AdminAiSearchLogService>();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddHealthChecks();
 
 var stripeSecretKey = builder.Configuration["Stripe:SecretKey"];
 
@@ -203,7 +204,9 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
+var enableSwagger = builder.Configuration.GetValue<bool>("ENABLE_SWAGGER");
+
+if (app.Environment.IsDevelopment() || enableSwagger)
 {
     app.UseSwagger();
     app.UseSwaggerUI();
@@ -216,11 +219,51 @@ app.UseAuthentication();
 app.UseRateLimiter();
 app.UseAuthorization();
 
+app.MapHealthChecks("/health");
+
+app.MapGet("/", () => Results.Text(
+@"Studio Book API
+
+- Swagger UI: /swagger
+- Health: /health
+", "text/plain"));
+
 app.MapControllers();
 
-if (app.Environment.IsDevelopment())
+var enableMigration = builder.Configuration.GetValue<bool>("ENABLE_DB_MIGRATION");
+var enableSeed = builder.Configuration.GetValue<bool>("ENABLE_DB_SEED");
+
+if (enableMigration || enableSeed)
 {
-    await DemoDataSeeder.SeedAsync(app.Services);
+    using var scope = app.Services.CreateScope();
+
+    var logger = scope.ServiceProvider
+        .GetRequiredService<ILoggerFactory>()
+        .CreateLogger("StartupDbInit");
+
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+    try
+    {
+        if (enableMigration)
+        {
+            logger.LogInformation("Database migration started.");
+            await db.Database.MigrateAsync();
+            logger.LogInformation("Database migration completed.");
+        }
+
+        if (enableSeed)
+        {
+            logger.LogInformation("Database seed started.");
+            await DemoDataSeeder.SeedAsync(app.Services);
+            logger.LogInformation("Database seed completed.");
+        }
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Database initialization failed during startup.");
+        throw;
+    }
 }
 
 app.Run();
