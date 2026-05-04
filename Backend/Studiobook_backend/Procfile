@@ -1,1 +1,1 @@
-web: ./Studiobook_backend --urls http://*:$PORT
+web: dotnet Studiobook_backend.dll --urls http://*:$PORT
