@@ -22,7 +22,10 @@ beforeEach(() => {
   global.fetch = mockFetch as jest.Mock;
 
   jest.useFakeTimers();
-  jest.setSystemTime(new Date("2026-05-04T09:00:00+09:00"));
+
+  // 2026-05-04 09:00 を「実行環境のローカル時刻」として固定する
+  // new Date("2026-05-04T09:00:00+09:00") だと CI(UTC) で判定がズレる
+  jest.setSystemTime(new Date(2026, 4, 4, 9, 0, 0));
 });
 
 afterEach(() => {
