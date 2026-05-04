@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 
 type TopRoomItem = {
   id: number;
@@ -56,6 +57,8 @@ export default function StudioBookTopPage() {
     return process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://localhost:7226";
   }, []);
 
+  const router = useRouter();
+
   const [keyword, setKeyword] = useState("");
   const [popularRooms, setPopularRooms] = useState<TopRoomItem[]>([]);
   const [newRooms, setNewRooms] = useState<TopRoomItem[]>([]);
@@ -109,12 +112,12 @@ export default function StudioBookTopPage() {
 
     const trimmedKeyword = keyword.trim();
 
-    if (!trimmedKeyword) {
-      window.location.href = "/rooms";
-      return;
-    }
+if (!trimmedKeyword) {
+  router.push("/rooms");
+  return;
+}
 
-    window.location.href = `/rooms?keyword=${encodeURIComponent(trimmedKeyword)}`;
+router.push(`/rooms?keyword=${encodeURIComponent(trimmedKeyword)}`);
   };
 
   return (

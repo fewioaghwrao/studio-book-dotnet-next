@@ -226,7 +226,7 @@ export default function AdminSettingsPage() {
             </div>
           )}
 
-          <form className="space-y-5" onSubmit={handleSubmit}>
+          <form className="space-y-5" onSubmit={handleSubmit} noValidate>
             <PercentInput
               label="税率"
               value={form.taxRatePercent}

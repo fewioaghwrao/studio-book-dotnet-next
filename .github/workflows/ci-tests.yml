@@ -1,4 +1,4 @@
-name: Backend Tests
+name: Backend and Frontend Tests
 
 on:
   push:
@@ -35,9 +35,33 @@ jobs:
       - name: Test
         run: dotnet test Studiobook_backend.sln --configuration Release --no-build --logger "trx;LogFileName=backend-test-results.trx"
 
-      - name: Upload test results
+      - name: Upload backend test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: backend-test-results
           path: Backend/**/TestResults/*.trx
+
+  frontend-tests:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: Frontend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: Frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run frontend tests
+        run: npm test -- --runInBand

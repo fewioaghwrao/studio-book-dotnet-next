@@ -424,7 +424,7 @@ useEffect(() => {
             休館日を追加
           </h2>
 
-          <form onSubmit={handleCreate} className="mt-4">
+          <form onSubmit={handleCreate} className="mt-4" noValidate>
             <div className="grid gap-4 md:grid-cols-3">
               <div>
                 <label className="mb-1 block text-sm font-medium text-slate-600">

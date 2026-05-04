@@ -224,7 +224,7 @@ export default function HostEditPage() {
           </div>
         )}
 
-        <form className="space-y-5" onSubmit={handleSubmit}>
+        <form className="space-y-5" onSubmit={handleSubmit} noValidate>
           <TextInput
             label="氏名"
             required

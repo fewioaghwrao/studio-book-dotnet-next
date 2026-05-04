@@ -225,59 +225,65 @@ export default function UserEditPage() {
         )}
 
         <form className="space-y-5" onSubmit={handleSubmit}>
-          <TextInput
-            label="氏名"
-            required
-            value={form.name}
-            onChange={(value) => updateField("name", value)}
-            placeholder="侍 太郎"
-            autoComplete="name"
-          />
+<TextInput
+  id="name"
+  label="氏名"
+  required
+  value={form.name}
+  onChange={(value) => updateField("name", value)}
+  placeholder="侍 太郎"
+  autoComplete="name"
+/>
 
-          <TextInput
-            label="フリガナ"
-            required
-            value={form.kana}
-            onChange={(value) => updateField("kana", value)}
-            placeholder="サムライ タロウ"
-          />
+<TextInput
+  id="kana"
+  label="フリガナ"
+  required
+  value={form.kana}
+  onChange={(value) => updateField("kana", value)}
+  placeholder="サムライ タロウ"
+/>
 
-          <TextInput
-            label="郵便番号"
-            required
-            value={form.postalCode}
-            onChange={(value) => updateField("postalCode", value)}
-            placeholder="101-0022"
-            autoComplete="postal-code"
-          />
+<TextInput
+  id="postalCode"
+  label="郵便番号"
+  required
+  value={form.postalCode}
+  onChange={(value) => updateField("postalCode", value)}
+  placeholder="101-0022"
+  autoComplete="postal-code"
+/>
 
-          <TextInput
-            label="住所"
-            required
-            value={form.address}
-            onChange={(value) => updateField("address", value)}
-            placeholder="東京都千代田区神田練塀町300番地"
-            autoComplete="street-address"
-          />
+<TextInput
+  id="address"
+  label="住所"
+  required
+  value={form.address}
+  onChange={(value) => updateField("address", value)}
+  placeholder="東京都千代田区神田練塀町300番地"
+  autoComplete="street-address"
+/>
 
-          <TextInput
-            label="電話番号"
-            required
-            value={form.phoneNumber}
-            onChange={(value) => updateField("phoneNumber", value)}
-            placeholder="090-1234-5678"
-            autoComplete="tel-national"
-          />
+<TextInput
+  id="phoneNumber"
+  label="電話番号"
+  required
+  value={form.phoneNumber}
+  onChange={(value) => updateField("phoneNumber", value)}
+  placeholder="090-1234-5678"
+  autoComplete="tel-national"
+/>
 
-          <TextInput
-            label="メールアドレス"
-            required
-            type="email"
-            value={form.email}
-            onChange={(value) => updateField("email", value)}
-            placeholder="taro.samurai@example.com"
-            autoComplete="email"
-          />
+<TextInput
+  id="email"
+  label="メールアドレス"
+  required
+  type="email"
+  value={form.email}
+  onChange={(value) => updateField("email", value)}
+  placeholder="taro.samurai@example.com"
+  autoComplete="email"
+/>
 
           <div className="flex flex-col-reverse gap-3 pt-4 sm:flex-row sm:justify-center">
             <Link
@@ -302,6 +308,7 @@ export default function UserEditPage() {
 }
 
 function TextInput({
+  id,
   label,
   value,
   onChange,
@@ -310,6 +317,7 @@ function TextInput({
   required = false,
   autoComplete,
 }: {
+  id: string;
   label: string;
   value: string;
   onChange: (value: string) => void;
@@ -320,7 +328,7 @@ function TextInput({
 }) {
   return (
     <div className="grid gap-2 md:grid-cols-[160px_1fr] md:items-center">
-      <label className="text-sm font-semibold text-slate-700">
+      <label htmlFor={id} className="text-sm font-semibold text-slate-700">
         <span>{label}</span>
         {required && (
           <span className="ml-2 rounded-full bg-rose-100 px-2 py-0.5 text-xs font-medium text-rose-700">
@@ -330,6 +338,7 @@ function TextInput({
       </label>
 
       <input
+        id={id}
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
