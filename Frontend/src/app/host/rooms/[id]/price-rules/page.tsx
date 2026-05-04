@@ -380,6 +380,7 @@ export default function HostPriceRulesPage() {
 
           <form
             onSubmit={handleSubmit}
+            noValidate
             className="rounded-3xl border border-stone-200 bg-stone-50 p-4 sm:p-6"
           >
             <div className="mb-5">

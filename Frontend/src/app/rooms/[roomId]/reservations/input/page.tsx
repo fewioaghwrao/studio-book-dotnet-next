@@ -334,39 +334,43 @@ export default function ReservationInputPage() {
               </div>
 
               <div className="grid gap-5 md:grid-cols-2">
-                <InputField
-                  label="開始日"
-                  type="date"
-                  value={startDate}
-                  onChange={setStartDate}
-                  min={getTodayString()}
-                />
+<InputField
+  id="startDate"
+  label="開始日"
+  type="date"
+  value={startDate}
+  onChange={setStartDate}
+  min={getTodayString()}
+/>
 
-                <InputField
-                  label="開始時刻"
-                  type="time"
-                  value={startTime}
-                  onChange={setStartTime}
-                  step="1800"
-                />
+<InputField
+  id="startTime"
+  label="開始時刻"
+  type="time"
+  value={startTime}
+  onChange={setStartTime}
+  step="1800"
+/>
               </div>
 
               <div className="grid gap-5 md:grid-cols-2">
-                <InputField
-                  label="終了日"
-                  type="date"
-                  value={endDate}
-                  onChange={setEndDate}
-                  min={startDate || getTodayString()}
-                />
+<InputField
+  id="endDate"
+  label="終了日"
+  type="date"
+  value={endDate}
+  onChange={setEndDate}
+  min={startDate || getTodayString()}
+/>
 
-                <InputField
-                  label="終了時刻"
-                  type="time"
-                  value={endTime}
-                  onChange={setEndTime}
-                  step="1800"
-                />
+<InputField
+  id="endTime"
+  label="終了時刻"
+  type="time"
+  value={endTime}
+  onChange={setEndTime}
+  step="1800"
+/>
               </div>
 
               <div className="flex flex-col-reverse gap-3 pt-4 sm:flex-row sm:justify-center">
@@ -424,6 +428,7 @@ export default function ReservationInputPage() {
 }
 
 function InputField({
+  id,
   label,
   type,
   value,
@@ -431,6 +436,7 @@ function InputField({
   step,
   min,
 }: {
+  id: string;
   label: string;
   type: "date" | "time";
   value: string;
@@ -440,10 +446,14 @@ function InputField({
 }) {
   return (
     <div>
-      <label className="mb-2 block text-sm font-medium text-slate-700">
+      <label
+        htmlFor={id}
+        className="mb-2 block text-sm font-medium text-slate-700"
+      >
         {label}
       </label>
       <input
+        id={id}
         type={type}
         value={value}
         step={step}
