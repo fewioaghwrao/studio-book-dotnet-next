@@ -23,6 +23,10 @@
     <PackageReference Include="QuestPDF" Version="2026.2.4" />
     <PackageReference Include="Stripe.net" Version="51.1.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+	<Content Include="Fonts\*.ttf">
+		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		  <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>

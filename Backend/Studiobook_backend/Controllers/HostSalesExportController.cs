@@ -122,7 +122,7 @@ namespace Studiobook_backend.Controllers
                 {
                     page.Size(PageSizes.A4);
                     page.Margin(36);
-                    page.DefaultTextStyle(x => x.FontSize(10));
+                    page.DefaultTextStyle(x => x.FontFamily("NotoSansJP").FontSize(10));
 
                     page.Header().Column(column =>
                     {

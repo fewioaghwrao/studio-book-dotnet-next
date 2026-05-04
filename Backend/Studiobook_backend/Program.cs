@@ -16,10 +16,35 @@ using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
 using System.Security.Claims;
 using System.Text.Json;
+using QuestPDF.Drawing;
 
 var builder = WebApplication.CreateBuilder(args);
 
 QuestPDF.Settings.License = LicenseType.Community;
+
+var regularFontPath = Path.Combine(
+    AppContext.BaseDirectory,
+    "Fonts",
+    "NotoSansJP-Regular.ttf"
+);
+
+if (System.IO.File.Exists(regularFontPath))
+{
+    using var regularFontStream = System.IO.File.OpenRead(regularFontPath);
+    FontManager.RegisterFontWithCustomName("NotoSansJP", regularFontStream);
+}
+
+var boldFontPath = Path.Combine(
+    AppContext.BaseDirectory,
+    "Fonts",
+    "NotoSansJP-Bold.ttf"
+);
+
+if (System.IO.File.Exists(boldFontPath))
+{
+    using var boldFontStream = System.IO.File.OpenRead(boldFontPath);
+    FontManager.RegisterFontWithCustomName("NotoSansJP", boldFontStream);
+}
 
 // DbContext(MySQL)
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
