@@ -7,6 +7,11 @@ namespace Studiobook_backend.Tests.Services;
 
 public class RoomDetailServiceTests
 {
+    private static readonly TimeSpan JstOffset = TimeSpan.FromHours(9);
+
+    private static DateTimeOffset ToJst(DateTime dt)
+        => new DateTimeOffset(dt.Year, dt.Month, dt.Day, dt.Hour, dt.Minute, dt.Second, JstOffset);
+
     [Fact]
     public async Task GetDetailAsync_ReturnsRoomDetail_WhenRoomExists()
     {
@@ -306,23 +311,23 @@ public class RoomDetailServiceTests
         Assert.Contains(result.CalendarEvents, x =>
             x.Id == $"open-{targetDate:yyyyMMdd}" &&
             x.Title == "営業時間" &&
-            x.Start == targetDate.AddHours(9) &&
-            x.End == targetDate.AddHours(18) &&
+            x.Start == ToJst(targetDate.AddHours(9)) &&
+            x.End == ToJst(targetDate.AddHours(18)) &&
             x.Type == "open" &&
             x.AllDay == false);
 
         Assert.Contains(result.CalendarEvents, x =>
             x.Id == "closure-1" &&
             x.Title == "臨時休館" &&
-            x.Start == targetDate.AddHours(13) &&
-            x.End == targetDate.AddHours(14) &&
+            x.Start == ToJst(targetDate.AddHours(13)) &&
+            x.End == ToJst(targetDate.AddHours(14)) &&
             x.Type == "closure");
 
         Assert.Contains(result.CalendarEvents, x =>
             x.Id == "reservation-1" &&
             x.Title == "予約済み" &&
-            x.Start == targetDate.AddHours(10) &&
-            x.End == targetDate.AddHours(12) &&
+            x.Start == ToJst(targetDate.AddHours(10)) &&
+            x.End == ToJst(targetDate.AddHours(12)) &&
             x.Type == "reservation");
 
         Assert.DoesNotContain(result.CalendarEvents, x => x.Id == "reservation-2");
@@ -359,8 +364,8 @@ public class RoomDetailServiceTests
         Assert.Contains(result.CalendarEvents, x =>
             x.Id == $"holiday-{targetDate:yyyyMMdd}" &&
             x.Title == "休業" &&
-            x.Start == targetDate &&
-            x.End == targetDate.AddDays(1) &&
+            x.Start == ToJst(targetDate) &&
+            x.End == ToJst(targetDate.AddDays(1)) &&
             x.AllDay &&
             x.Type == "closure");
     }
