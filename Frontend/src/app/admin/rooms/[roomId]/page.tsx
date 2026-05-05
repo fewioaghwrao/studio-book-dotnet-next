@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
+import { apiFetch } from "@/lib/apiFetch";
 
 type AdminRoomDetail = {
   id: number;

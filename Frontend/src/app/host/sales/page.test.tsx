@@ -238,42 +238,104 @@ describe("HostSalesPage", () => {
     );
   });
 
-  test("CSVダウンロードURLが正しい", async () => {
-    setupSuccessInitialRender();
+test("CSVダウンロード時、正しいURLでAPIを呼び出す", async () => {
+  const user = userEvent.setup();
 
-    await waitForSalesLoaded();
+  setupSuccessInitialRender();
 
-    expect(
-      screen.getByRole("link", { name: "CSVダウンロード" })
-    ).toHaveAttribute(
-      "href",
-      "https://localhost:7226/api/host/sales.csv?onlyWithItems=true"
-    );
+  await waitForSalesLoaded();
+
+  mockFetch.mockResolvedValueOnce({
+    ok: true,
+    status: 200,
+    blob: async () => new Blob(["csv"], { type: "text/csv" }),
   });
 
-  test("検索条件変更後、CSVダウンロードURLも変わる", async () => {
-    const user = userEvent.setup();
-
-    setupSuccessInitialRender();
-
-    await waitForSalesLoaded();
-
-    await user.selectOptions(screen.getByDisplayValue("全体"), "101");
-
-    const checkbox = screen.getByRole("checkbox", {
-      name: "明細がある予約のみ",
-    });
-
-    await user.click(checkbox);
-
-    expect(
-      screen.getByRole("link", { name: "CSVダウンロード" })
-    ).toHaveAttribute(
-      "href",
-      "https://localhost:7226/api/host/sales.csv?roomId=101&onlyWithItems=false"
-    );
+  Object.defineProperty(URL, "createObjectURL", {
+    writable: true,
+    value: jest.fn(() => "blob:mock-url"),
   });
 
+  Object.defineProperty(URL, "revokeObjectURL", {
+    writable: true,
+    value: jest.fn(),
+  });
+
+  await user.click(screen.getByRole("button", { name: "CSVダウンロード" }));
+
+  expect(mockFetch).toHaveBeenLastCalledWith(
+    "https://localhost:7226/api/host/sales.csv?onlyWithItems=true",
+    expect.objectContaining({
+      method: "GET",
+    })
+  );
+});
+
+test("検索条件変更後、CSVダウンロードURLも変わる", async () => {
+  const user = userEvent.setup();
+
+  setupSuccessInitialRender();
+
+  await waitForSalesLoaded();
+
+  await user.selectOptions(screen.getByDisplayValue("全体"), "101");
+
+  const checkbox = screen.getByRole("checkbox", {
+    name: "明細がある予約のみ",
+  });
+
+  await user.click(checkbox);
+
+  mockFetch.mockResolvedValueOnce({
+    ok: true,
+    status: 200,
+    blob: async () => new Blob(["csv"], { type: "text/csv" }),
+  });
+
+  const createObjectURLMock = jest.fn(() => "blob:mock-url");
+  const revokeObjectURLMock = jest.fn();
+
+  Object.defineProperty(URL, "createObjectURL", {
+    writable: true,
+    value: createObjectURLMock,
+  });
+
+  Object.defineProperty(URL, "revokeObjectURL", {
+    writable: true,
+    value: revokeObjectURLMock,
+  });
+
+  const clickMock = jest.fn();
+
+  jest.spyOn(document, "createElement").mockImplementation((tagName: string) => {
+    const element = document.createElementNS(
+      "http://www.w3.org/1999/xhtml",
+      tagName
+    ) as HTMLElement;
+
+    if (tagName === "a") {
+      Object.defineProperty(element, "click", {
+        writable: true,
+        value: clickMock,
+      });
+    }
+
+    return element;
+  });
+
+  await user.click(screen.getByRole("button", { name: "CSVダウンロード" }));
+
+  expect(mockFetch).toHaveBeenLastCalledWith(
+    "https://localhost:7226/api/host/sales.csv?roomId=101&onlyWithItems=false",
+    expect.objectContaining({
+      method: "GET",
+    })
+  );
+
+  expect(createObjectURLMock).toHaveBeenCalled();
+  expect(clickMock).toHaveBeenCalled();
+  expect(revokeObjectURLMock).toHaveBeenCalledWith("blob:mock-url");
+});
   test("ページングボタンを押すと指定ページへ遷移する", async () => {
     const user = userEvent.setup();
 

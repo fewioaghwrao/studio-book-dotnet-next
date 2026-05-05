@@ -1,4 +1,5 @@
 import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import HostSalesDetailPage from "./page";
 
 const mockFetch = jest.fn();
@@ -135,23 +136,77 @@ describe("HostSalesDetailPage", () => {
     expect(screen.getAllByText("600円").length).toBeGreaterThan(0);
   });
 
-  test("CSVとPDFリンクのURLが正しい", async () => {
-    setupSuccessInitialRender();
+test("CSVとPDFダウンロード時、正しいURLでAPIを呼び出す", async () => {
+  const user = userEvent.setup();
 
-    await waitForLoaded();
+  setupSuccessInitialRender();
 
-    expect(screen.getByRole("link", { name: "明細CSV" })).toHaveAttribute(
-      "href",
-      "https://localhost:7226/api/host/sales/1/items.csv"
-    );
+  await waitForLoaded();
 
-    expect(
-      screen.getByRole("link", { name: "明細請求書PDF" })
-    ).toHaveAttribute(
-      "href",
-      "https://localhost:7226/api/host/sales/1/invoice.pdf"
-    );
+  const createObjectURLMock = jest.fn(() => "blob:mock-url");
+  const revokeObjectURLMock = jest.fn();
+  const clickMock = jest.fn();
+
+  Object.defineProperty(URL, "createObjectURL", {
+    writable: true,
+    value: createObjectURLMock,
   });
+
+  Object.defineProperty(URL, "revokeObjectURL", {
+    writable: true,
+    value: revokeObjectURLMock,
+  });
+
+  jest.spyOn(document, "createElement").mockImplementation((tagName: string) => {
+    const element = document.createElementNS(
+      "http://www.w3.org/1999/xhtml",
+      tagName
+    ) as HTMLElement;
+
+    if (tagName === "a") {
+      Object.defineProperty(element, "click", {
+        writable: true,
+        value: clickMock,
+      });
+    }
+
+    return element;
+  });
+
+  mockFetch.mockResolvedValueOnce({
+    ok: true,
+    status: 200,
+    blob: async () => new Blob(["csv"], { type: "text/csv" }),
+  });
+
+  await user.click(screen.getByRole("button", { name: "明細CSV" }));
+
+  expect(mockFetch).toHaveBeenLastCalledWith(
+    "https://localhost:7226/api/host/sales/1/items.csv",
+    expect.objectContaining({
+      method: "GET",
+    })
+  );
+
+  mockFetch.mockResolvedValueOnce({
+    ok: true,
+    status: 200,
+    blob: async () => new Blob(["pdf"], { type: "application/pdf" }),
+  });
+
+  await user.click(screen.getByRole("button", { name: "明細請求書PDF" }));
+
+  expect(mockFetch).toHaveBeenLastCalledWith(
+    "https://localhost:7226/api/host/sales/1/invoice.pdf",
+    expect.objectContaining({
+      method: "GET",
+    })
+  );
+
+  expect(createObjectURLMock).toHaveBeenCalled();
+  expect(clickMock).toHaveBeenCalled();
+  expect(revokeObjectURLMock).toHaveBeenCalledWith("blob:mock-url");
+});
 
   test("明細が0件の場合、空メッセージを表示する", async () => {
     mockFetch.mockResolvedValueOnce({
