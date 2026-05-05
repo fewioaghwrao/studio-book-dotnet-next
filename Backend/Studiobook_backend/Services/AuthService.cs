@@ -206,7 +206,7 @@ namespace Studiobook_backend.Services
                 return "/host";
             }
 
-            return "/user";
+            return "/";
         }
 
         public async Task<MeResponseDto?> UpdateCurrentUserAsync(

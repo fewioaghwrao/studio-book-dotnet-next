@@ -6,9 +6,9 @@
 
         public string Title { get; set; } = string.Empty;
 
-        public DateTime Start { get; set; }
+        public DateTimeOffset Start { get; set; }
 
-        public DateTime End { get; set; }
+        public DateTimeOffset End { get; set; }
 
         public bool AllDay { get; set; }
 

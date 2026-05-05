@@ -7,6 +7,8 @@ namespace Studiobook_backend.Services
 {
     public class RoomDetailService
     {
+        private static readonly TimeSpan JstOffset = TimeSpan.FromHours(9);
+
         private readonly AppDbContext _context;
 
         public RoomDetailService(AppDbContext context)
@@ -149,8 +151,8 @@ namespace Studiobook_backend.Services
                     {
                         Id = $"holiday-{date:yyyyMMdd}",
                         Title = "休業",
-                        Start = date,
-                        End = date.AddDays(1),
+                        Start = ToJstDateTimeOffset(date),
+                        End = ToJstDateTimeOffset(date.AddDays(1)),
                         AllDay = true,
                         Type = "closure"
                     });
@@ -160,12 +162,15 @@ namespace Studiobook_backend.Services
 
                 if (businessHour.StartTime.HasValue && businessHour.EndTime.HasValue)
                 {
+                    var openStart = date.Add(businessHour.StartTime.Value.ToTimeSpan());
+                    var openEnd = date.Add(businessHour.EndTime.Value.ToTimeSpan());
+
                     events.Add(new RoomCalendarEventDto
                     {
                         Id = $"open-{date:yyyyMMdd}",
                         Title = "営業時間",
-                        Start = date.Add(businessHour.StartTime.Value.ToTimeSpan()),
-                        End = date.Add(businessHour.EndTime.Value.ToTimeSpan()),
+                        Start = ToJstDateTimeOffset(openStart),
+                        End = ToJstDateTimeOffset(openEnd),
                         AllDay = false,
                         Type = "open"
                     });
@@ -190,8 +195,8 @@ namespace Studiobook_backend.Services
                     Title = string.IsNullOrWhiteSpace(closure.Reason)
                         ? "休館"
                         : closure.Reason,
-                    Start = closure.StartAt,
-                    End = closure.EndAt,
+                    Start = ToJstDateTimeOffset(closure.StartAt),
+                    End = ToJstDateTimeOffset(closure.EndAt),
                     AllDay = false,
                     Type = "closure"
                 });
@@ -214,8 +219,8 @@ namespace Studiobook_backend.Services
                 {
                     Id = $"reservation-{reservation.Id}",
                     Title = "予約済み",
-                    Start = reservation.StartAt,
-                    End = reservation.EndAt,
+                    Start = ToJstDateTimeOffset(reservation.StartAt),
+                    End = ToJstDateTimeOffset(reservation.EndAt),
                     AllDay = false,
                     Type = "reservation"
                 });
@@ -256,6 +261,18 @@ namespace Studiobook_backend.Services
                 DayOfWeek.Sunday => 7,
                 _ => 0
             };
+        }
+
+        private static DateTimeOffset ToJstDateTimeOffset(DateTime value)
+        {
+            return new DateTimeOffset(
+                value.Year,
+                value.Month,
+                value.Day,
+                value.Hour,
+                value.Minute,
+                value.Second,
+                JstOffset);
         }
     }
 }
