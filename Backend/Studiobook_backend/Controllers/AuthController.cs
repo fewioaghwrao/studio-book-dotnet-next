@@ -85,6 +85,7 @@ namespace Studiobook_backend.Controllers
                 //     Path = "/"
                 // });
 
+                loginResult.Token = token;
                 loginResult.ExpiresAt = expiresAtUtc;
 
                 await _auditLogService.WriteAsync(
