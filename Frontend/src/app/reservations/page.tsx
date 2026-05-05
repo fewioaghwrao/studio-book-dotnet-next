@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { apiFetch } from "@/lib/apiFetch";
 
 type CurrentUserResponse = {
   isAuthenticated: boolean;
@@ -122,10 +123,8 @@ function ReservationsContent() {
     setErrorMessage("");
 
     try {
-      const meResponse = await fetch(`${apiBaseUrl}/api/auth/me`, {
-        method: "GET",
-        credentials: "include",
-        cache: "no-store",
+      const meResponse = await apiFetch(`${apiBaseUrl}/api/auth/me`, {
+        method: "GET",        cache: "no-store",
       });
 
       if (meResponse.status === 401) {
@@ -155,12 +154,10 @@ function ReservationsContent() {
         pageSize: "10",
       });
 
-      const response = await fetch(
+      const response = await apiFetch(
         `${apiBaseUrl}/api/reservations?${query.toString()}`,
         {
-          method: "GET",
-          credentials: "include",
-          cache: "no-store",
+          method: "GET",          cache: "no-store",
         }
       );
 

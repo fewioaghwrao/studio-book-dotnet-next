@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { apiFetch } from "@/lib/apiFetch";
 
 type CurrentUserResponse = {
   isAuthenticated: boolean;
@@ -32,10 +33,8 @@ export default function UserPage() {
 
     const fetchUser = async () => {
       try {
-        const response = await fetch(`${apiBaseUrl}/api/auth/me`, {
-          method: "GET",
-          credentials: "include",
-          cache: "no-store",
+        const response = await apiFetch(`${apiBaseUrl}/api/auth/me`, {
+          method: "GET",          cache: "no-store",
         });
 
         if (response.status === 401) {

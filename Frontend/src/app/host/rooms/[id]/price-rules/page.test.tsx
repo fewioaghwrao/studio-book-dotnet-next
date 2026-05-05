@@ -344,9 +344,7 @@ describe("HostPriceRulesPage", () => {
 
     expect(mockFetch.mock.calls[1][1]).toEqual(
       expect.objectContaining({
-        method: "POST",
-        credentials: "include",
-        headers: {
+        method: "POST",        headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -410,9 +408,7 @@ describe("HostPriceRulesPage", () => {
 
     expect(mockFetch.mock.calls[1][1]).toEqual(
       expect.objectContaining({
-        method: "POST",
-        credentials: "include",
-        headers: {
+        method: "POST",        headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -550,9 +546,7 @@ describe("HostPriceRulesPage", () => {
 
     expect(mockFetch.mock.calls[1][1]).toEqual(
       expect.objectContaining({
-        method: "DELETE",
-        credentials: "include",
-      })
+        method: "DELETE",      })
     );
 
     expect(screen.getByText("料金ルールを削除しました。")).toBeInTheDocument();
@@ -627,9 +621,7 @@ describe("HostPriceRulesPage", () => {
     expect(mockFetch).toHaveBeenCalledWith(
       "https://localhost:7226/api/host/rooms/1/price-rules",
       expect.objectContaining({
-        method: "GET",
-        credentials: "include",
-        cache: "no-store",
+        method: "GET",        cache: "no-store",
       })
     );
   });

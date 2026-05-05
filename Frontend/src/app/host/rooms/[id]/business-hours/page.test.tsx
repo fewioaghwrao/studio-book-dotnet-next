@@ -332,9 +332,7 @@ describe("HostBusinessHoursPage", () => {
     expect(mockFetch).toHaveBeenLastCalledWith(
       "https://localhost:7226/api/host/rooms/1/business-hours",
       expect.objectContaining({
-        method: "PUT",
-        credentials: "include",
-        headers: {
+        method: "PUT",        headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -504,9 +502,7 @@ describe("HostBusinessHoursPage", () => {
     expect(mockFetch).toHaveBeenCalledWith(
       "https://localhost:7226/api/host/rooms/1/business-hours",
       expect.objectContaining({
-        method: "GET",
-        credentials: "include",
-        cache: "no-store",
+        method: "GET",        cache: "no-store",
       })
     );
   });

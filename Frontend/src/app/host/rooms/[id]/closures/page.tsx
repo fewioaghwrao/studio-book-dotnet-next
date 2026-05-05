@@ -9,6 +9,7 @@ import type { EventClickArg } from "@fullcalendar/core";
 import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
+import { apiFetch } from "@/lib/apiFetch";
 
 type Closure = {
   id: number;
@@ -60,12 +61,10 @@ export default function HostRoomClosuresPage() {
     setErrorMessage("");
 
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         `${apiBaseUrl}/api/host/rooms/${roomId}/closures`,
         {
-          method: "GET",
-          credentials: "include",
-          cache: "no-store",
+          method: "GET",          cache: "no-store",
         }
       );
 
@@ -97,11 +96,10 @@ export default function HostRoomClosuresPage() {
     setIsCalendarLoading(true);
 
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         `${apiBaseUrl}/api/host/rooms/${roomId}/closures/events`,
         {
           method: "GET",
-          credentials: "include",
           cache: "no-store",
         }
       );
@@ -179,12 +177,10 @@ useEffect(() => {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         `${apiBaseUrl}/api/host/rooms/${roomId}/closures`,
         {
-          method: "POST",
-          credentials: "include",
-          headers: {
+          method: "POST",          headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify(request),
@@ -230,12 +226,10 @@ useEffect(() => {
     setSuccessMessage("");
 
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         `${apiBaseUrl}/api/host/rooms/${roomId}/closures/${closureId}`,
         {
-          method: "DELETE",
-          credentials: "include",
-        }
+          method: "DELETE",        }
       );
 
       if (response.status === 401) {

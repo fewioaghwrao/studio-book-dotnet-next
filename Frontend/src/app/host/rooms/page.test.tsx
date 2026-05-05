@@ -373,9 +373,7 @@ describe("HostRoomsPage", () => {
 
     expect(mockFetch.mock.calls[0][1]).toEqual(
       expect.objectContaining({
-        method: "GET",
-        credentials: "include",
-        cache: "no-store",
+        method: "GET",        cache: "no-store",
       })
     );
   });

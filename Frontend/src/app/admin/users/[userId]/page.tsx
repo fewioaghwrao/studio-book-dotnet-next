@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
+import { apiFetch } from "@/lib/apiFetch";
 
 type AdminUserDetail = {
   id: number;
@@ -54,12 +55,10 @@ export default function AdminUserDetailPage() {
       setErrorMessage("");
 
       try {
-        const response = await fetch(
+        const response = await apiFetch(
           `${apiBaseUrl}/api/admin/users/${params.userId}`,
           {
-            method: "GET",
-            credentials: "include",
-            cache: "no-store",
+            method: "GET",            cache: "no-store",
           }
         );
 

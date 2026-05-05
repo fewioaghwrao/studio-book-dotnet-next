@@ -196,9 +196,7 @@ describe("AdminStatusPage", () => {
     expect(mockFetch).toHaveBeenLastCalledWith(
       expect.stringContaining("/api/admin/status?roomId=1&year="),
       expect.objectContaining({
-        method: "GET",
-        credentials: "include",
-        cache: "no-store",
+        method: "GET",        cache: "no-store",
       })
     );
 

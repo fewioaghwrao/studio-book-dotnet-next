@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { apiFetch } from "@/lib/apiFetch";
 import {
   Bar,
   BarChart,
@@ -104,12 +105,10 @@ const fetchStatus = async (
     params.set("year", String(year));
     params.set("month", String(month));
 
-    const response = await fetch(
+    const response = await apiFetch(
       `${apiBaseUrl}/api/host/status?${params.toString()}`,
       {
-        method: "GET",
-        credentials: "include",
-        cache: "no-store",
+        method: "GET",        cache: "no-store",
       }
     );
 

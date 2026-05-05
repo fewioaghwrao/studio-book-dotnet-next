@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { apiFetch } from "@/lib/apiFetch";
 
 type HostRoom = {
   id: number;
@@ -61,10 +62,8 @@ export default function HostRoomsPage() {
           params.set("keyword", currentKeyword.trim());
         }
 
-        const response = await fetch(`${apiBaseUrl}/api/host/rooms?${params.toString()}`, {
-          method: "GET",
-          credentials: "include",
-          cache: "no-store",
+        const response = await apiFetch(`${apiBaseUrl}/api/host/rooms?${params.toString()}`, {
+          method: "GET",          cache: "no-store",
         });
 
         if (response.status === 401) {
@@ -119,9 +118,8 @@ useEffect(() => {
 
   const fetchCurrentUser = async () => {
     try {
-      const response = await fetch(`${apiBaseUrl}/api/auth/me`, {
+      const response = await apiFetch(`${apiBaseUrl}/api/auth/me`, {
         method: "GET",
-        credentials: "include",
         cache: "no-store",
       });
 

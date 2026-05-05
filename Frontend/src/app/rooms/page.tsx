@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { apiFetch } from "@/lib/apiFetch";
 
 type RoomListItem = {
   id: number;
@@ -150,7 +151,7 @@ export default function RoomsPage() {
       params.set("page", String(currentPage > 0 ? currentPage : 1));
       params.set("pageSize", "10");
 
-      const response = await fetch(
+      const response = await apiFetch(
         `${apiBaseUrl}/api/rooms?${params.toString()}`,
         {
           method: "GET",

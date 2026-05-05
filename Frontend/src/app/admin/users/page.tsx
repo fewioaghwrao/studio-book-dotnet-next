@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { apiFetch } from "@/lib/apiFetch";
 
 type AdminUserListItem = {
   id: number;
@@ -54,15 +55,14 @@ export default function AdminUsersPage() {
         params.set("keyword", nextKeyword.trim());
       }
 
-      const response = await fetch(
-        `${apiBaseUrl}/api/admin/users?${params.toString()}`,
-        {
-          method: "GET",
-          credentials: "include",
-          cache: "no-store",
-        }
-      );
-
+// 修正後
+const response = await apiFetch(
+  `${apiBaseUrl}/api/admin/users?${params.toString()}`,
+  {
+    method: "GET",
+    cache: "no-store",
+  }
+);
       if (response.status === 401) {
         window.location.href = "/auth/login";
         return;

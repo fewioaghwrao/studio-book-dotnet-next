@@ -73,11 +73,10 @@ export default function StudioBookTopPage() {
       setErrorMessage("");
 
       try {
-        const response = await fetch(`${apiBaseUrl}/api/home`, {
-          method: "GET",
-          cache: "no-store",
-        });
-
+const response = await fetch(`${apiBaseUrl}/api/home`, {
+  method: "GET",
+  cache: "no-store",
+});
         if (!response.ok) {
           setErrorMessage("トップページ情報の取得に失敗しました。");
           return;

@@ -212,9 +212,7 @@ describe("AdminRoomsPage", () => {
         "/api/admin/rooms?page=1&pageSize=10&keyword=%E6%B1%A0%E8%A2%8B"
       ),
       expect.objectContaining({
-        method: "GET",
-        credentials: "include",
-        cache: "no-store",
+        method: "GET",        cache: "no-store",
       })
     );
 
@@ -345,9 +343,7 @@ describe("AdminRoomsPage", () => {
     expect(mockFetch).toHaveBeenLastCalledWith(
       expect.stringContaining("/api/admin/rooms?page=1&pageSize=10"),
       expect.objectContaining({
-        method: "GET",
-        credentials: "include",
-        cache: "no-store",
+        method: "GET",        cache: "no-store",
       })
     );
   });
@@ -414,9 +410,7 @@ describe("AdminRoomsPage", () => {
     expect(mockFetch).toHaveBeenLastCalledWith(
       expect.stringContaining("/api/admin/rooms?page=2&pageSize=10"),
       expect.objectContaining({
-        method: "GET",
-        credentials: "include",
-        cache: "no-store",
+        method: "GET",        cache: "no-store",
       })
     );
 

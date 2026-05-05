@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { apiFetch } from "@/lib/apiFetch";
 
 type AdminSettingsResponse = {
   taxRatePercent: number;
@@ -37,10 +38,8 @@ export default function AdminSettingsPage() {
       setErrorMessage("");
 
       try {
-        const response = await fetch(`${apiBaseUrl}/api/admin/settings`, {
-          method: "GET",
-          credentials: "include",
-          cache: "no-store",
+        const response = await apiFetch(`${apiBaseUrl}/api/admin/settings`, {
+          method: "GET",          cache: "no-store",
         });
 
         if (response.status === 401) {
@@ -128,13 +127,11 @@ export default function AdminSettingsPage() {
     try {
       setIsSaving(true);
 
-      const response = await fetch(`${apiBaseUrl}/api/admin/settings`, {
+      const response = await apiFetch(`${apiBaseUrl}/api/admin/settings`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({
+        },        body: JSON.stringify({
           taxRatePercent: Number(form.taxRatePercent),
           adminFeeRatePercent: Number(form.adminFeeRatePercent),
         }),

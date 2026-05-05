@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { apiFetch } from "@/lib/apiFetch";
 
 type HostReservationRow = {
   reservationId: number;
@@ -136,11 +137,10 @@ export default function HostReservationsPage() {
       params.set("page", String(currentPage > 0 ? currentPage : 1));
       params.set("pageSize", "10");
 
-      const response = await fetch(
+      const response = await apiFetch(
         `${apiBaseUrl}/api/host/reservations?${params.toString()}`,
         {
           method: "GET",
-          credentials: "include",
           cache: "no-store",
         }
       );
@@ -226,11 +226,10 @@ export default function HostReservationsPage() {
     setSuccessMessage("");
 
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         `${apiBaseUrl}/api/host/reservations/${id}/approve`,
         {
           method: "POST",
-          credentials: "include",
         }
       );
 
@@ -264,11 +263,10 @@ export default function HostReservationsPage() {
     setSuccessMessage("");
 
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         `${apiBaseUrl}/api/host/reservations/${id}/cancel`,
         {
           method: "POST",
-          credentials: "include",
         }
       );
 

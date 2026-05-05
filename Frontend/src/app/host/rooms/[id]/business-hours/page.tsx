@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { apiFetch } from "@/lib/apiFetch";
 
 type BusinessHourRow = {
   dayOfWeek: number;
@@ -82,11 +83,10 @@ export default function HostBusinessHoursPage() {
       setSuccessMessage("");
 
       try {
-        const response = await fetch(
+        const response = await apiFetch(
           `${apiBaseUrl}/api/host/rooms/${params.id}/business-hours`,
           {
             method: "GET",
-            credentials: "include",
             cache: "no-store",
           }
         );
@@ -209,12 +209,10 @@ export default function HostBusinessHoursPage() {
     setSuccessMessage("");
 
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         `${apiBaseUrl}/api/host/rooms/${params.id}/business-hours`,
         {
-          method: "PUT",
-          credentials: "include",
-          headers: {
+          method: "PUT",          headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({

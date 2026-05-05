@@ -426,9 +426,7 @@ test("通信エラー時、通信エラーメッセージを表示する", async
 
     expect(mockFetch.mock.calls[2][1]).toEqual(
       expect.objectContaining({
-        method: "POST",
-        credentials: "include",
-        headers: {
+        method: "POST",        headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -580,9 +578,7 @@ test("通信エラー時、通信エラーメッセージを表示する", async
 
     expect(mockFetch.mock.calls[2][1]).toEqual(
       expect.objectContaining({
-        method: "DELETE",
-        credentials: "include",
-      })
+        method: "DELETE",      })
     );
 
     expect(screen.getByText("休館日を削除しました。")).toBeInTheDocument();

@@ -8,6 +8,7 @@ import jaLocale from "@fullcalendar/core/locales/ja";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
+import { apiFetch } from "@/lib/apiFetch";
 
 type HostRoomDetail = {
   id: number;
@@ -287,24 +288,20 @@ export default function HostRoomDetailPage() {
           priceRulesResponse,
           eventsResponse,
         ] = await Promise.all([
-          fetch(`${apiBaseUrl}/api/host/rooms/${params.id}`, {
+          apiFetch(`${apiBaseUrl}/api/host/rooms/${params.id}`, {
             method: "GET",
-            credentials: "include",
             cache: "no-store",
           }),
-          fetch(`${apiBaseUrl}/api/host/rooms/${params.id}/business-hours`, {
+          apiFetch(`${apiBaseUrl}/api/host/rooms/${params.id}/business-hours`, {
             method: "GET",
-            credentials: "include",
             cache: "no-store",
           }),
-          fetch(`${apiBaseUrl}/api/host/rooms/${params.id}/price-rules`, {
+          apiFetch(`${apiBaseUrl}/api/host/rooms/${params.id}/price-rules`, {
             method: "GET",
-            credentials: "include",
             cache: "no-store",
           }),
-          fetch(`${apiBaseUrl}/api/host/rooms/${params.id}/closures/events`, {
+          apiFetch(`${apiBaseUrl}/api/host/rooms/${params.id}/closures/events`, {
             method: "GET",
-            credentials: "include",
             cache: "no-store",
           }),
         ]);

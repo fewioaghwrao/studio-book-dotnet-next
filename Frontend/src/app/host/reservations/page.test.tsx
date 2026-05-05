@@ -388,9 +388,7 @@ describe("HostReservationsPage", () => {
 
     expect(mockFetch.mock.calls[1][1]).toEqual(
       expect.objectContaining({
-        method: "POST",
-        credentials: "include",
-      })
+        method: "POST",      })
     );
 
     expect(screen.getByText("予約を承認しました。")).toBeInTheDocument();
@@ -513,9 +511,7 @@ describe("HostReservationsPage", () => {
 
     expect(mockFetch.mock.calls[1][1]).toEqual(
       expect.objectContaining({
-        method: "POST",
-        credentials: "include",
-      })
+        method: "POST",      })
     );
 
     expect(screen.getByText("予約をキャンセルしました。")).toBeInTheDocument();

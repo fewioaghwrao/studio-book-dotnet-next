@@ -366,9 +366,7 @@ describe("HostReviewsPage", () => {
 
     expect(mockFetch.mock.calls[1][1]).toEqual(
       expect.objectContaining({
-        method: "POST",
-        credentials: "include",
-        headers: {
+        method: "POST",        headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -472,9 +470,7 @@ describe("HostReviewsPage", () => {
 
     expect(mockFetch.mock.calls[1][1]).toEqual(
       expect.objectContaining({
-        method: "POST",
-        credentials: "include",
-        headers: {
+        method: "POST",        headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -566,9 +562,7 @@ describe("HostReviewsPage", () => {
 
     expect(mockFetch.mock.calls[1][1]).toEqual(
       expect.objectContaining({
-        method: "POST",
-        credentials: "include",
-        headers: {
+        method: "POST",        headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({

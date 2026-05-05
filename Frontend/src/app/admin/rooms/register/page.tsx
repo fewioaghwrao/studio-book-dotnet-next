@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { apiFetch } from "@/lib/apiFetch";
 
 type HostOption = {
   id: number;
@@ -56,10 +57,8 @@ export default function AdminRoomRegisterPage() {
       setErrorMessage("");
 
       try {
-        const response = await fetch(`${apiBaseUrl}/api/admin/rooms/host-options`, {
-          method: "GET",
-          credentials: "include",
-          cache: "no-store",
+        const response = await apiFetch(`${apiBaseUrl}/api/admin/rooms/host-options`, {
+          method: "GET",          cache: "no-store",
         });
 
         if (response.status === 401) {
@@ -134,13 +133,11 @@ export default function AdminRoomRegisterPage() {
     try {
       setIsSaving(true);
 
-      const response = await fetch(`${apiBaseUrl}/api/admin/rooms`, {
+      const response = await apiFetch(`${apiBaseUrl}/api/admin/rooms`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({
+        },        body: JSON.stringify({
           userId: Number(form.userId),
           name: form.name,
           imageName: form.imageName,

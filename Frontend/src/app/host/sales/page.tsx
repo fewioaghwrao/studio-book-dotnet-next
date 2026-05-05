@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { apiFetch } from "@/lib/apiFetch";
 
 type HostSalesRow = {
   reservationId: number;
@@ -84,25 +85,12 @@ export default function HostSalesPage() {
 
   const buildQueryString = (page: number) => {
     const params = new URLSearchParams();
-
     if (roomId) params.set("roomId", roomId);
-
     params.set("onlyWithItems", String(onlyWithItems));
     params.set("page", String(page));
     params.set("pageSize", "10");
-
     return params.toString();
   };
-
-  const buildCsvUrl = () => {
-  const params = new URLSearchParams();
-
-  if (roomId) params.set("roomId", roomId);
-
-  params.set("onlyWithItems", String(onlyWithItems));
-
-  return `${apiBaseUrl}/api/host/sales.csv?${params.toString()}`;
-};
 
   const fetchSales = async () => {
     setIsLoading(true);
@@ -110,18 +98,15 @@ export default function HostSalesPage() {
 
     try {
       const params = new URLSearchParams();
-
       if (currentRoomId) params.set("roomId", currentRoomId);
-
       params.set("onlyWithItems", currentOnlyWithItems);
       params.set("page", String(currentPage > 0 ? currentPage : 1));
       params.set("pageSize", "10");
 
-      const response = await fetch(
+      const response = await apiFetch(
         `${apiBaseUrl}/api/host/sales?${params.toString()}`,
         {
           method: "GET",
-          credentials: "include",
           cache: "no-store",
         }
       );
@@ -142,7 +127,6 @@ export default function HostSalesPage() {
       }
 
       const data = (await response.json()) as HostSalesListResponse;
-
       setRows(data.items ?? []);
       setRoomOptions(data.roomOptions ?? []);
       setPageInfo({
@@ -155,6 +139,39 @@ export default function HostSalesPage() {
       setErrorMessage("通信エラーが発生しました。時間をおいて再度お試しください。");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleCsvDownload = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (roomId) params.set("roomId", roomId);
+      params.set("onlyWithItems", String(onlyWithItems));
+
+      const response = await apiFetch(
+        `${apiBaseUrl}/api/host/sales.csv?${params.toString()}`,
+        { method: "GET" }
+      );
+
+      if (response.status === 401) {
+        window.location.href = "/auth/login";
+        return;
+      }
+
+      if (!response.ok) {
+        setErrorMessage("CSVのダウンロードに失敗しました。");
+        return;
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "sales.csv";
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      setErrorMessage("通信エラーが発生しました。時間をおいて再度お試しください。");
     }
   };
 
@@ -242,23 +259,24 @@ export default function HostSalesPage() {
                 </label>
               </div>
 
-<div className="flex items-end">
-  <button
-    type="submit"
-    className="w-full rounded-xl bg-sky-700 px-6 py-3 text-sm font-medium text-white shadow-sm transition hover:opacity-90"
-  >
-    選択適用
-  </button>
-</div>
+              <div className="flex items-end">
+                <button
+                  type="submit"
+                  className="w-full rounded-xl bg-sky-700 px-6 py-3 text-sm font-medium text-white shadow-sm transition hover:opacity-90"
+                >
+                  選択適用
+                </button>
+              </div>
 
-<div className="flex items-end">
-  <a
-    href={buildCsvUrl()}
-    className="w-full rounded-xl border border-sky-200 bg-white px-6 py-3 text-center text-sm font-medium text-sky-700 transition hover:bg-sky-50"
-  >
-    CSVダウンロード
-  </a>
-</div>
+              <div className="flex items-end">
+                <button
+                  type="button"
+                  onClick={handleCsvDownload}
+                  className="w-full rounded-xl border border-sky-200 bg-white px-6 py-3 text-center text-sm font-medium text-sky-700 transition hover:bg-sky-50"
+                >
+                  CSVダウンロード
+                </button>
+              </div>
             </div>
           </form>
 
@@ -301,36 +319,22 @@ export default function HostSalesPage() {
 
                     <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
                       <div>
-                        <dt className="text-xs font-medium text-slate-400">
-                          開始
-                        </dt>
-                        <dd className="mt-1 text-slate-700">
-                          {formatDateTime(row.startAt)}
-                        </dd>
+                        <dt className="text-xs font-medium text-slate-400">開始</dt>
+                        <dd className="mt-1 text-slate-700">{formatDateTime(row.startAt)}</dd>
                       </div>
                       <div>
-                        <dt className="text-xs font-medium text-slate-400">
-                          終了
-                        </dt>
-                        <dd className="mt-1 text-slate-700">
-                          {formatDateTime(row.endAt)}
-                        </dd>
+                        <dt className="text-xs font-medium text-slate-400">終了</dt>
+                        <dd className="mt-1 text-slate-700">{formatDateTime(row.endAt)}</dd>
                       </div>
                       <div>
-                        <dt className="text-xs font-medium text-slate-400">
-                          料金
-                        </dt>
+                        <dt className="text-xs font-medium text-slate-400">料金</dt>
                         <dd className="mt-1 font-semibold text-slate-800">
                           {row.amount.toLocaleString()}円
                         </dd>
                       </div>
                       <div>
-                        <dt className="text-xs font-medium text-slate-400">
-                          状態
-                        </dt>
-                        <dd className="mt-1 text-slate-700">
-                          {formatStatus(row.status)}
-                        </dd>
+                        <dt className="text-xs font-medium text-slate-400">状態</dt>
+                        <dd className="mt-1 text-slate-700">{formatStatus(row.status)}</dd>
                       </div>
                     </dl>
 
@@ -357,16 +361,13 @@ export default function HostSalesPage() {
                       <th className="px-4 py-2 text-right">操作</th>
                     </tr>
                   </thead>
-
                   <tbody>
                     {rows.map((row) => (
                       <tr key={row.reservationId} className="bg-stone-50">
                         <td className="rounded-l-2xl px-4 py-4 text-sm text-slate-700">
                           {row.roomName}
                         </td>
-                        <td className="px-4 py-4 text-sm text-slate-700">
-                          {row.guestName}
-                        </td>
+                        <td className="px-4 py-4 text-sm text-slate-700">{row.guestName}</td>
                         <td className="px-4 py-4 text-sm text-slate-700">
                           {formatDateTime(row.startAt)}
                         </td>
@@ -407,7 +408,6 @@ export default function HostSalesPage() {
                   {Array.from({ length: pageInfo.totalPages }, (_, index) => {
                     const page = index + 1;
                     const isActive = page === pageInfo.page;
-
                     return (
                       <button
                         key={page}

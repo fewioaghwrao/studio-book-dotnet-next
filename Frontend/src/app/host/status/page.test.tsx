@@ -359,9 +359,7 @@ test("API成功時、統計情報を表示する", async () => {
     expect(mockFetch).toHaveBeenCalledWith(
       "https://localhost:7226/api/host/status?year=2026&month=5",
       expect.objectContaining({
-        method: "GET",
-        credentials: "include",
-        cache: "no-store",
+        method: "GET",        cache: "no-store",
       })
     );
   });

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
+import { apiFetch } from "@/lib/apiFetch";
 
 type HostOption = {
   id: number;
@@ -74,15 +75,11 @@ export default function AdminRoomEditPage() {
 
       try {
         const [roomResponse, hostsResponse] = await Promise.all([
-          fetch(`${apiBaseUrl}/api/admin/rooms/${params.roomId}`, {
-            method: "GET",
-            credentials: "include",
-            cache: "no-store",
+          apiFetch(`${apiBaseUrl}/api/admin/rooms/${params.roomId}`, {
+            method: "GET",            cache: "no-store",
           }),
-          fetch(`${apiBaseUrl}/api/admin/rooms/host-options`, {
-            method: "GET",
-            credentials: "include",
-            cache: "no-store",
+          apiFetch(`${apiBaseUrl}/api/admin/rooms/host-options`, {
+            method: "GET",            cache: "no-store",
           }),
         ]);
 
@@ -175,13 +172,11 @@ export default function AdminRoomEditPage() {
     try {
       setIsSaving(true);
 
-      const response = await fetch(`${apiBaseUrl}/api/admin/rooms/${params.roomId}`, {
+      const response = await apiFetch(`${apiBaseUrl}/api/admin/rooms/${params.roomId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({
+        },        body: JSON.stringify({
           userId: Number(form.userId),
           name: form.name,
           imageName: form.imageName,

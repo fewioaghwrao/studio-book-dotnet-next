@@ -364,9 +364,7 @@ describe("ReviewNewPage", () => {
 
     expect(mockFetch.mock.calls[1][1]).toEqual(
       expect.objectContaining({
-        method: "POST",
-        credentials: "include",
-        headers: {
+        method: "POST",        headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -535,9 +533,7 @@ describe("ReviewNewPage", () => {
 
     expect(mockFetch.mock.calls[1][1]).toEqual(
       expect.objectContaining({
-        method: "POST",
-        credentials: "include",
-        headers: {
+        method: "POST",        headers: {
           "Content-Type": "application/json",
         },
         cache: "no-store",
@@ -700,9 +696,7 @@ describe("ReviewNewPage", () => {
     expect(mockFetch).toHaveBeenCalledWith(
       "https://localhost:7226/api/rooms/1/reviews/new?page=1&pageSize=10&reservationId=10",
       expect.objectContaining({
-        method: "GET",
-        credentials: "include",
-        cache: "no-store",
+        method: "GET",        cache: "no-store",
       })
     );
   });

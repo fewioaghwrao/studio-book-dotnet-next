@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { apiFetch } from "@/lib/apiFetch";
 
 type AiSearchLogRow = {
   id: number;
@@ -126,12 +127,10 @@ export default function AdminAiSearchLogsPage() {
       params.set("page", String(currentPage > 0 ? currentPage : 1));
       params.set("pageSize", "10");
 
-      const response = await fetch(
+      const response = await apiFetch(
         `${apiBaseUrl}/api/admin/ai-search-logs?${params.toString()}`,
         {
-          method: "GET",
-          credentials: "include",
-          cache: "no-store",
+          method: "GET",          cache: "no-store",
         }
       );
 

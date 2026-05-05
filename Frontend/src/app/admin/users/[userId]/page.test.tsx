@@ -236,9 +236,7 @@ describe("AdminUserDetailPage", () => {
     expect(mockFetch).toHaveBeenCalledWith(
       "https://localhost:7226/api/admin/users/1",
       expect.objectContaining({
-        method: "GET",
-        credentials: "include",
-        cache: "no-store",
+        method: "GET",        cache: "no-store",
       })
     );
   });

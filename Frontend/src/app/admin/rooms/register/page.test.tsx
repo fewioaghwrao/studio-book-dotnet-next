@@ -272,9 +272,7 @@ describe("AdminRoomRegisterPage", () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({
+        },        body: JSON.stringify({
           userId: 10,
           name: "池袋ダンスルーム",
           imageName: "room01.jpg",

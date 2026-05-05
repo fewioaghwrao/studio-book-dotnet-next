@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { apiFetch } from "@/lib/apiFetch";
 
 type CurrentUserResponse = {
   isAuthenticated: boolean;
@@ -139,12 +140,10 @@ export default function ReservationInputPage() {
 
       try {
         const [meResponse, roomResponse] = await Promise.all([
-          fetch(`${apiBaseUrl}/api/auth/me`, {
-            method: "GET",
-            credentials: "include",
-            cache: "no-store",
+          apiFetch(`${apiBaseUrl}/api/auth/me`, {
+            method: "GET",            cache: "no-store",
           }),
-          fetch(`${apiBaseUrl}/api/rooms/${params.roomId}`, {
+          apiFetch(`${apiBaseUrl}/api/rooms/${params.roomId}`, {
             method: "GET",
             cache: "no-store",
           }),

@@ -308,9 +308,7 @@ describe("SignupPage", () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({
+        },        body: JSON.stringify({
           name: "サンプル 太郎",
           kana: "サンプル タロウ",
           email: "sample@example.com",

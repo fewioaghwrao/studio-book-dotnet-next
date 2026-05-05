@@ -8,6 +8,7 @@ import jaLocale from "@fullcalendar/core/locales/ja";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
+import { apiFetch } from "@/lib/apiFetch";
 
 type RoomBusinessHour = {
   dayOfWeek: number;
@@ -517,11 +518,10 @@ export default function RoomDetailPage() {
 
   const fetchCurrentUser = async () => {
     try {
-      const response = await fetch(`${apiBaseUrl}/api/auth/me`, {
-        method: "GET",
-        credentials: "include",
-        cache: "no-store",
-      });
+const response = await apiFetch(`${apiBaseUrl}/api/auth/me`, {
+  method: "GET",
+  cache: "no-store",
+});
 
       if (!response.ok) {
         if (!ignore) {

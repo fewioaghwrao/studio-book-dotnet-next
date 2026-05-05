@@ -44,12 +44,10 @@ export default function AdminRoomDetailPage() {
       setErrorMessage("");
 
       try {
-        const response = await fetch(
+        const response = await apiFetch(
           `${apiBaseUrl}/api/admin/rooms/${params.roomId}`,
           {
-            method: "GET",
-            credentials: "include",
-            cache: "no-store",
+            method: "GET",            cache: "no-store",
           }
         );
 

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { apiFetch } from "@/lib/apiFetch";
 
 type HostReviewRow = {
   id: number;
@@ -146,11 +147,10 @@ export default function HostReviewsPage() {
       params.set("page", String(currentPage > 0 ? currentPage : 1));
       params.set("pageSize", "10");
 
-      const response = await fetch(
+      const response = await apiFetch(
         `${apiBaseUrl}/api/host/reviews?${params.toString()}`,
         {
-          method: "GET",
-          credentials: "include",
+          method: "GET",          
           cache: "no-store",
         }
       );
@@ -223,12 +223,10 @@ export default function HostReviewsPage() {
     setSuccessMessage("");
 
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         `${apiBaseUrl}/api/host/reviews/${reviewId}/reply`,
         {
-          method: "POST",
-          credentials: "include",
-          headers: {
+          method: "POST",          headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
@@ -270,12 +268,10 @@ export default function HostReviewsPage() {
     setSuccessMessage("");
 
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         `${apiBaseUrl}/api/host/reviews/${review.id}/visibility`,
         {
-          method: "POST",
-          credentials: "include",
-          headers: {
+          method: "POST",          headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FormEvent, Suspense, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { apiFetch } from "@/lib/apiFetch";
 
 type RoomReviewPageResponse = {
   roomId: number;
@@ -104,12 +105,10 @@ function ReviewNewContent() {
         query.set("reservationId", reservationId);
       }
 
-      const response = await fetch(
+      const response = await apiFetch(
         `${apiBaseUrl}/api/rooms/${params.roomId}/reviews/new?${query.toString()}`,
         {
-          method: "GET",
-          credentials: "include",
-          cache: "no-store",
+          method: "GET",          cache: "no-store",
         }
       );
 
@@ -169,10 +168,8 @@ function ReviewNewContent() {
     setIsAssisting(true);
 
     try {
-      const response = await fetch(`${apiBaseUrl}/api/ai/review-assist`, {
-        method: "POST",
-        credentials: "include",
-        headers: {
+      const response = await apiFetch(`${apiBaseUrl}/api/ai/review-assist`, {
+        method: "POST",        headers: {
           "Content-Type": "application/json",
         },
         cache: "no-store",
@@ -241,12 +238,10 @@ function ReviewNewContent() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         `${apiBaseUrl}/api/rooms/${params.roomId}/reviews`,
         {
-          method: "POST",
-          credentials: "include",
-          headers: {
+          method: "POST",          headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({

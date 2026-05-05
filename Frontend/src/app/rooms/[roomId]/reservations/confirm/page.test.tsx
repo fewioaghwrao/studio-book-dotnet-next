@@ -412,9 +412,7 @@ test("決済するボタン押下で決済中表示になる", async () => {
 
     expect(mockFetch.mock.calls[0][1]).toEqual(
       expect.objectContaining({
-        method: "GET",
-        credentials: "include",
-        cache: "no-store",
+        method: "GET",        cache: "no-store",
       })
     );
 
@@ -424,9 +422,7 @@ test("決済するボタン押下で決済中表示になる", async () => {
 
     expect(mockFetch.mock.calls[1][1]).toEqual(
       expect.objectContaining({
-        method: "POST",
-        credentials: "include",
-        headers: {
+        method: "POST",        headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({

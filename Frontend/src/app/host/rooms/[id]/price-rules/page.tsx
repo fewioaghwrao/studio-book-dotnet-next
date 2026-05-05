@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
+import { apiFetch } from "@/lib/apiFetch";
 
 type PriceRule = {
   id: number;
@@ -103,11 +104,10 @@ export default function HostPriceRulesPage() {
     setErrorMessage("");
 
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         `${apiBaseUrl}/api/host/rooms/${params.id}/price-rules`,
         {
           method: "GET",
-          credentials: "include",
           cache: "no-store",
         }
       );
@@ -241,12 +241,10 @@ export default function HostPriceRulesPage() {
     setSuccessMessage("");
 
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         `${apiBaseUrl}/api/host/rooms/${params.id}/price-rules`,
         {
-          method: "POST",
-          credentials: "include",
-          headers: {
+          method: "POST",          headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
@@ -292,12 +290,10 @@ export default function HostPriceRulesPage() {
     setSuccessMessage("");
 
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         `${apiBaseUrl}/api/host/rooms/${params.id}/price-rules/${ruleId}`,
         {
-          method: "DELETE",
-          credentials: "include",
-        }
+          method: "DELETE",        }
       );
 
       if (response.status === 401) {

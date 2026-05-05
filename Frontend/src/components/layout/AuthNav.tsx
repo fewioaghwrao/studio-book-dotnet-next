@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { apiFetch } from "@/lib/apiFetch";
 
 type CurrentUserResponse = {
   isAuthenticated: boolean;
@@ -46,11 +47,24 @@ export default function AuthNav() {
 
     const fetchCurrentUser = async () => {
       try {
-        const response = await fetch(`${apiBaseUrl}/api/auth/me`, {
-          method: "GET",
-          credentials: "include",
-          cache: "no-store",
-        });
+const token = localStorage.getItem("token");
+
+if (!token) {
+  if (!ignore) {
+    setIsAuthenticated(false);
+    setUserName("");
+    setRole(null);
+  }
+  return;
+}
+
+const response = await apiFetch(`${apiBaseUrl}/api/auth/me`, {
+  method: "GET",
+  headers: {
+    Authorization: `Bearer ${token}`,
+  },
+  cache: "no-store",
+});
 
         if (!response.ok) {
           if (!ignore) {
@@ -108,22 +122,31 @@ export default function AuthNav() {
     };
   }, []);
 
-  const handleLogout = async () => {
-    try {
-      await fetch(`${apiBaseUrl}/api/auth/logout`, {
-        method: "POST",
-        credentials: "include",
-      });
-    } catch {
-      // 失敗時も表示だけはリセットしてトップへ戻す
-    } finally {
-      setIsAuthenticated(false);
-      setUserName("");
-      setRole(null);
-      setIsMenuOpen(false);
-      window.location.href = "/";
-    }
-  };
+const handleLogout = async () => {
+  const token = localStorage.getItem("token");
+
+  try {
+    await apiFetch(`${apiBaseUrl}/api/auth/logout`, {
+      method: "POST",
+      headers: token
+        ? {
+            Authorization: `Bearer ${token}`,
+          }
+        : {},
+    });
+  } catch {
+    // 失敗時も表示だけはリセットしてトップへ戻す
+  } finally {
+    localStorage.removeItem("token");
+
+    setIsAuthenticated(false);
+    setUserName("");
+    setRole(null);
+    setIsMenuOpen(false);
+
+    window.location.href = "/";
+  }
+};
 
   if (isLoading) {
     return (

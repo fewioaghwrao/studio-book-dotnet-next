@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { apiFetch } from "@/lib/apiFetch";
 
 type AdminRoomListItem = {
   id: number;
@@ -46,12 +47,10 @@ export default function AdminRoomsPage() {
         params.set("keyword", nextKeyword.trim());
       }
 
-      const response = await fetch(
+      const response = await apiFetch(
         `${apiBaseUrl}/api/admin/rooms?${params.toString()}`,
         {
-          method: "GET",
-          credentials: "include",
-          cache: "no-store",
+          method: "GET",          cache: "no-store",
         }
       );
 

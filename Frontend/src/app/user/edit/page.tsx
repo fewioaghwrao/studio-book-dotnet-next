@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { apiFetch } from "@/lib/apiFetch";
 
 type CurrentUserResponse = {
   isAuthenticated: boolean;
@@ -52,10 +53,8 @@ export default function UserEditPage() {
 
     const fetchUser = async () => {
       try {
-        const response = await fetch(`${apiBaseUrl}/api/auth/me`, {
-          method: "GET",
-          credentials: "include",
-          cache: "no-store",
+        const response = await apiFetch(`${apiBaseUrl}/api/auth/me`, {
+          method: "GET",          cache: "no-store",
         });
 
         if (response.status === 401) {
@@ -135,13 +134,11 @@ export default function UserEditPage() {
     try {
       setIsSaving(true);
 
-      const response = await fetch(`${apiBaseUrl}/api/auth/me`, {
+      const response = await apiFetch(`${apiBaseUrl}/api/auth/me`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify(form),
+        },        body: JSON.stringify(form),
       });
 
       if (response.status === 401) {

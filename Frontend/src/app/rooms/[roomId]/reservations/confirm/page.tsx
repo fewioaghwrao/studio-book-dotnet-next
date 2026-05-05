@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { apiFetch } from "@/lib/apiFetch";
 
 type CurrentUserResponse = {
   isAuthenticated: boolean;
@@ -140,10 +141,8 @@ export default function ReservationConfirmPage() {
       }
 
       try {
-        const meResponse = await fetch(`${apiBaseUrl}/api/auth/me`, {
-          method: "GET",
-          credentials: "include",
-          cache: "no-store",
+        const meResponse = await apiFetch(`${apiBaseUrl}/api/auth/me`, {
+          method: "GET",          cache: "no-store",
         });
 
         if (meResponse.status === 401) {
@@ -169,10 +168,8 @@ export default function ReservationConfirmPage() {
           return;
         }
 
-        const response = await fetch(`${apiBaseUrl}/api/reservations/confirm`, {
-          method: "POST",
-          credentials: "include",
-          headers: {
+        const response = await apiFetch(`${apiBaseUrl}/api/reservations/confirm`, {
+          method: "POST",          headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({

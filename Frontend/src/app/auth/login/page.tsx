@@ -5,6 +5,8 @@ import { FormEvent, useMemo, useState } from "react";
 
 type LoginResponse = {
   message?: string;
+  token?: string;
+  redirectTo?: string;
 };
 
 export default function LoginPage() {
@@ -37,17 +39,16 @@ export default function LoginPage() {
     try {
       setIsLoading(true);
 
-      const response = await fetch(`${apiBaseUrl}/api/auth/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          email,
-          password,
-        }),
-      });
+const response = await fetch(`${apiBaseUrl}/api/auth/login`, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    email,
+    password,
+  }),
+});
 
       if (!response.ok) {
         let message = "メールアドレスまたはパスワードが正しくありません。";
@@ -65,10 +66,18 @@ export default function LoginPage() {
         return;
       }
 
-      const data = (await response.json().catch(() => ({}))) as LoginResponse;
-      setSuccessMessage(data?.message ?? "ログインに成功しました。");
+const data = (await response.json().catch(() => ({}))) as LoginResponse;
 
-      window.location.href = "/";
+if (!data.token) {
+  setErrorMessage("ログイン情報の取得に失敗しました。");
+  return;
+}
+
+localStorage.setItem("token", data.token);
+
+setSuccessMessage(data?.message ?? "ログインに成功しました。");
+
+window.location.href = data.redirectTo ?? "/";
     } catch (error) {
       console.error(error);
       setErrorMessage("通信エラーが発生しました。時間をおいて再度お試しください。");

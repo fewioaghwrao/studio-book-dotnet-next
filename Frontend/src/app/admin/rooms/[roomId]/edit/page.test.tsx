@@ -360,9 +360,7 @@ test("戻るリンクの遷移先がスタジオ基本情報画面である", as
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({
+        },        body: JSON.stringify({
           userId: 10,
           name: "池袋ダンスルーム 改修後",
           imageName: "room01.jpg",

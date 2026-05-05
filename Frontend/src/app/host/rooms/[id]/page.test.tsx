@@ -487,9 +487,7 @@ describe("HostRoomDetailPage", () => {
     for (const call of mockFetch.mock.calls) {
       expect(call[1]).toEqual(
         expect.objectContaining({
-          method: "GET",
-          credentials: "include",
-          cache: "no-store",
+          method: "GET",          cache: "no-store",
         })
       );
     }

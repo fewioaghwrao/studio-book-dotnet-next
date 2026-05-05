@@ -362,9 +362,7 @@ describe("HostSalesPage", () => {
     expect(mockFetch).toHaveBeenCalledWith(
       "https://localhost:7226/api/host/sales?onlyWithItems=true&page=1&pageSize=10",
       expect.objectContaining({
-        method: "GET",
-        credentials: "include",
-        cache: "no-store",
+        method: "GET",        cache: "no-store",
       })
     );
   });
@@ -389,9 +387,7 @@ describe("HostSalesPage", () => {
     expect(mockFetch).toHaveBeenCalledWith(
       "https://localhost:7226/api/host/sales?roomId=101&onlyWithItems=false&page=2&pageSize=10",
       expect.objectContaining({
-        method: "GET",
-        credentials: "include",
-        cache: "no-store",
+        method: "GET",        cache: "no-store",
       })
     );
   });

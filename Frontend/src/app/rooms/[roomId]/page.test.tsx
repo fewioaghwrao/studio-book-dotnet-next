@@ -681,9 +681,7 @@ expect(screen.getByText("ホスト 太郎")).toBeInTheDocument();
     expect(mockFetch).toHaveBeenCalledWith(
       "https://localhost:7226/api/auth/me",
       expect.objectContaining({
-        method: "GET",
-        credentials: "include",
-        cache: "no-store",
+        method: "GET",        cache: "no-store",
       })
     );
 
