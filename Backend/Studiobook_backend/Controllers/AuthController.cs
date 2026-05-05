@@ -75,14 +75,15 @@ namespace Studiobook_backend.Controllers
 
                 var token = _jwtTokenService.GenerateToken(user, roles, out var expiresAtUtc);
 
-                Response.Cookies.Append(AuthCookieName, token, new CookieOptions
-                {
-                    HttpOnly = true,
-                    Secure = true,
-                    SameSite = SameSiteMode.None,
-                    Expires = expiresAtUtc,
-                    Path = "/"
-                });
+                // Bearer方式にするため、Cookieには保存しない
+                // Response.Cookies.Append(AuthCookieName, token, new CookieOptions
+                // {
+                //     HttpOnly = true,
+                //     Secure = true,
+                //     SameSite = SameSiteMode.None,
+                //     Expires = expiresAtUtc,
+                //     Path = "/"
+                // });
 
                 loginResult.ExpiresAt = expiresAtUtc;
 
