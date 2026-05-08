@@ -8,6 +8,7 @@ jest.mock("recharts", () => ({
   ResponsiveContainer: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="responsive-container">{children}</div>
   ),
+
   BarChart: ({
     children,
     data,
@@ -25,6 +26,25 @@ jest.mock("recharts", () => ({
       {children}
     </div>
   ),
+
+  ComposedChart: ({
+    children,
+    data,
+  }: {
+    children: React.ReactNode;
+    data?: Array<{ label: string; booked: number; paid: number }>;
+  }) => (
+    <div data-testid="composed-chart">
+      <div>chart rows: {data?.length ?? 0}</div>
+      {data?.map((row) => (
+        <div key={row.label}>
+          {row.label} / booked: {row.booked} / paid: {row.paid}
+        </div>
+      ))}
+      {children}
+    </div>
+  ),
+
   CartesianGrid: () => <div data-testid="cartesian-grid" />,
   Legend: () => <div data-testid="legend" />,
   XAxis: () => <div data-testid="x-axis" />,
@@ -127,7 +147,7 @@ test("API成功時、統計情報を表示する", async () => {
   ).toBeInTheDocument();
 
   expect(screen.getByTestId("responsive-container")).toBeInTheDocument();
-  expect(screen.getByTestId("bar-chart")).toBeInTheDocument();
+expect(screen.getByTestId("composed-chart")).toBeInTheDocument();
   expect(screen.getByText("chart rows: 3")).toBeInTheDocument();
 
   expect(

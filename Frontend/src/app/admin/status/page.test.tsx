@@ -8,9 +8,15 @@ jest.mock("recharts", () => ({
   ResponsiveContainer: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="responsive-container">{children}</div>
   ),
+
   BarChart: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="bar-chart">{children}</div>
   ),
+
+  ComposedChart: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="bar-chart">{children}</div>
+  ),
+
   CartesianGrid: () => <div data-testid="cartesian-grid" />,
   Legend: () => <div data-testid="legend" />,
   Tooltip: () => <div data-testid="tooltip" />,
