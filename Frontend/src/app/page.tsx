@@ -121,22 +121,22 @@ router.push(`/rooms?keyword=${encodeURIComponent(trimmedKeyword)}`);
 
   return (
     <main>
-      <section className="relative h-[440px] overflow-hidden">
+      <section className="relative min-h-[560px] overflow-hidden md:h-[440px] md:min-h-0">
         <img
           src="/images/main1.jpg"
           alt="Studio Book メインビジュアル"
-          className="h-full w-full object-cover"
+          className="absolute inset-0 h-full w-full object-cover"
         />
         <div className="absolute inset-0 bg-slate-900/45" />
 
-        <div className="absolute inset-0 flex items-center">
-          <div className="mx-auto max-w-6xl px-4 text-white">
+<div className="absolute inset-0 flex items-start pt-8 md:items-center md:pt-0">
+  <div className="mx-auto w-full max-w-6xl px-4 text-white">
             <div className="max-w-2xl">
               <p className="text-sm font-medium tracking-[0.3em] text-white/80">
                 STUDIO BOOK
               </p>
 
-              <h1 className="mt-4 text-4xl font-semibold leading-tight md:text-5xl">
+              <h1 className="mt-4 text-[26px] font-semibold leading-tight sm:text-3xl md:text-5xl">
                 架空のスタジオ予約サイトを、
                 <br />
                 実務想定で使いやすく。
@@ -151,19 +151,19 @@ router.push(`/rooms?keyword=${encodeURIComponent(trimmedKeyword)}`);
                 ※掲載しているスタジオ名・住所・レビュー等は架空のデモデータです。写真はAI生成画像を使用しています。
               </div>
 
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Link
-                  href="/rooms"
-                  className="rounded-xl bg-sky-700 px-5 py-3 text-sm font-medium text-white hover:opacity-90"
-                >
-                  スタジオ一覧を見る
-                </Link>
-                <Link
-                  href="/signup"
-                  className="rounded-xl border border-white/40 px-5 py-3 text-sm font-medium text-white hover:bg-white/10"
-                >
-                  会員登録
-                </Link>
+<div className="mt-6 flex flex-col gap-3 sm:flex-row md:mt-8">
+<Link
+  href="/rooms"
+  className="rounded-xl bg-sky-700 px-5 py-3 text-center text-sm font-medium text-white hover:opacity-90"
+>
+  スタジオ一覧を見る
+</Link>
+<Link
+  href="/signup"
+  className="rounded-xl border border-white/40 px-5 py-3 text-center text-sm font-medium text-white hover:bg-white/10"
+>
+  会員登録
+</Link>
               </div>
             </div>
           </div>

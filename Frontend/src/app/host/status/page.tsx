@@ -5,8 +5,8 @@ import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "@/lib/apiFetch";
 import {
   Bar,
-  BarChart,
   CartesianGrid,
+  ComposedChart,
   Legend,
   Line,
   ResponsiveContainer,
@@ -266,24 +266,41 @@ const handleMoveMonth = (diff: number) => {
                 </div>
 
                 <div className="h-[320px] rounded-3xl border border-stone-200 bg-white p-4 shadow-sm">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={chartRows}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="label" />
-                      <YAxis tickFormatter={(value) => `${Number(value) / 10000}万`} />
-                      <Tooltip
-                        formatter={(value) => formatYen(Number(value))}
-                      />
-                      <Legend />
-                      <Bar dataKey="booked" name="見込み売上" />
-                      <Line
-                        type="monotone"
-                        dataKey="paid"
-                        name="確定売上"
-                        strokeWidth={2}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
+<ResponsiveContainer width="100%" height="100%">
+  <ComposedChart
+    data={chartRows}
+    margin={{ top: 12, right: 12, left: 0, bottom: 20 }}
+  >
+    <CartesianGrid strokeDasharray="3 3" />
+
+    <XAxis
+      dataKey="label"
+      interval={0}
+      tick={{ fontSize: 10 }}
+      tickMargin={10}
+      angle={-20}
+      textAnchor="end"
+      height={50}
+    />
+
+    <YAxis
+      tick={{ fontSize: 11 }}
+      tickFormatter={(value) => `${Number(value) / 10000}万`}
+    />
+
+    <Tooltip formatter={(value) => formatYen(Number(value))} />
+    <Legend wrapperStyle={{ fontSize: 12 }} />
+
+    <Bar dataKey="booked" name="見込み売上" />
+
+    <Line
+      type="monotone"
+      dataKey="paid"
+      name="確定売上"
+      strokeWidth={2}
+    />
+  </ComposedChart>
+</ResponsiveContainer>
                 </div>
               </section>
 

@@ -36,3 +36,22 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* FullCalendar タイトル調整 */
+.fc .fc-toolbar-title {
+  font-size: 1.25rem;
+  line-height: 1.4;
+}
+
+/* スマホ縦画面ではさらに小さくする */
+@media (max-width: 640px) {
+  .fc .fc-toolbar-title {
+    font-size: 1rem;
+    line-height: 1.4;
+  }
+
+  .fc .fc-toolbar {
+    gap: 0.5rem;
+    align-items: center;
+  }
+}
