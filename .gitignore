@@ -96,3 +96,6 @@ Backend/**/*.ldf
 *.rsuser
 *.userosscache
 *.sln.docstates
+
+# Local publish output
+publish-test/
