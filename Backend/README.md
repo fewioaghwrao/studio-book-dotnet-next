@@ -13,7 +13,7 @@ ASP.NET Core Web API・Entity Framework Core・MySQL を使用し、認証・ス
 主な役割は以下のとおりです。
 
 - 会員登録 / ログイン / メール認証
-- JWT Cookie 認証・ロール別認可
+- JWT Bearer 認証（JWTをHttpOnly Cookieに保存）・ロール別認可
 - スタジオ検索 / 詳細取得
 - 予約確認 / 料金計算
 - Stripe Checkout セッション作成
@@ -38,8 +38,7 @@ ASP.NET Core Web API・Entity Framework Core・MySQL を使用し、認証・ス
 | Entity Framework Core | ORM / DB アクセス |
 | MySQL | データベース |
 | Pomelo.EntityFrameworkCore.MySql | EF Core MySQL Provider |
-| JWT Bearer Authentication | 認証 |
-| Cookie Authentication | JWT Cookie 管理 |
+| JWT Bearer Authentication + HttpOnly Cookie | Cookieに保存したJWTによる認証 |
 | ASP.NET Core Authorization | ロール別認可 |
 | ASP.NET Core RateLimiter | AI 検索などのレート制限 |
 | Stripe API | 決済連携 |
@@ -50,7 +49,7 @@ ASP.NET Core Web API・Entity Framework Core・MySQL を使用し、認証・ス
 | Moq | モック作成 |
 | EF Core InMemory | テスト用 DB |
 | Swagger | API 仕様確認 |
-| Docker Compose | ローカル MySQL 環境 |
+| Docker Compose | ローカルのASP.NET Core API・MySQL実行環境 |
 | Heroku | API デプロイ |
 | JawsDB MySQL | 本番想定 DB |
 
@@ -59,31 +58,31 @@ ASP.NET Core Web API・Entity Framework Core・MySQL を使用し、認証・ス
 ## ディレクトリ構成
 
 ```text
-Backend
+studio-book-dotnet-next
+├─ .dockerignore
 ├─ docker-compose.yml
-├─ README.md
-├─ Studiobook_backend.sln
 │
-├─ Studiobook_backend
-│  ├─ Controllers
-│  ├─ Data
-│  ├─ Dtos
-│  ├─ Entities
-│  ├─ Migrations
-│  ├─ Seeders
-│  ├─ Services
-│  ├─ Settings
-│  ├─ Fonts
-│  ├─ Program.cs
-│  ├─ appsettings.json
-│  ├─ Procfile
-│  └─ Studiobook_backend.csproj
-│
-└─ Studiobook_backend.Tests
-   ├─ Controllers
-   ├─ Services
-   ├─ Helpers
-   └─ Studiobook_backend.Tests.csproj
+├─ Backend
+│  ├─ README.md
+│  ├─ Studiobook_backend.sln
+│  │
+│  ├─ Studiobook_backend
+│  │  ├─ Controllers
+│  │  ├─ Data
+│  │  ├─ Dtos
+│  │  ├─ Entities
+│  │  ├─ Migrations
+│  │  ├─ Seeders
+│  │  ├─ Services
+│  │  ├─ Settings
+│  │  ├─ Fonts
+│  │  ├─ Dockerfile
+│  │  ├─ Program.cs
+│  │  ├─ appsettings.json
+│  │  ├─ Procfile
+│  │  └─ Studiobook_backend.csproj
+│  │
+│  └─ Studiobook_backend.Tests
 ```
 
 ---
@@ -407,14 +406,61 @@ PDF 生成には **QuestPDF** を使用します。
 
 ### 起動手順
 
-**1. MySQL 起動**
+リポジトリのルートディレクトリで、MySQLとASP.NET Core APIを起動します。
 
 ```bash
-cd Backend
+docker compose build
 docker compose up -d
 ```
 
-**2. Backend 起動**
+起動状態を確認します。
+
+```bash
+docker compose ps
+```
+
+正常時は、次の2コンテナが起動します。
+
+```text
+studio-book-mysql   Up (healthy)
+studio-book-api     Up
+```
+
+| 対象           | URL                           |
+| ------------ | ----------------------------- |
+| Backend API  | http://localhost:5000         |
+| Health Check | http://localhost:5000/health  |
+| Swagger UI   | http://localhost:5000/swagger |
+| MySQL        | localhost:3306                |
+
+APIログを確認する場合：
+
+```bash
+docker compose logs -f api
+```
+
+停止する場合：
+
+```bash
+docker compose down
+```
+
+APIコンテナの起動時に、設定に応じてEF Core Migrationとデモデータ投入を実行します。
+
+* `ENABLE_DB_MIGRATION=true`：Migrationを適用
+* `ENABLE_DB_SEED=true`：デモデータを投入
+
+そのため、通常のDocker起動では手動の `dotnet ef database update` は不要です。
+
+### Backendをローカルで直接起動する場合
+
+MySQLコンテナだけを起動します。
+
+```bash
+docker compose up -d mysql
+```
+
+続いてバックエンドを起動します。
 
 ```bash
 cd Backend/Studiobook_backend
@@ -423,17 +469,7 @@ dotnet ef database update
 dotnet run
 ```
 
-API は以下で起動します。
-
-```
-https://localhost:7226
-```
-
-Swagger を有効化している場合：
-
-```
-https://localhost:7226/swagger
-```
+APIのURLは `Properties/launchSettings.json` の設定に従います。
 
 ---
 

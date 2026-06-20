@@ -81,22 +81,59 @@ Studio Book は、以下のような分離構成です。
 
 ---
 
+## ローカルDocker構成
+
+ローカル開発環境では、ASP.NET Core Web APIとMySQLをDocker Composeで起動します。
+Next.jsフロントエンドは、ホストOS上で起動します。
+
+```text
+[Next.js Frontend]
+http://localhost:3000
+        |
+        | HTTP / JSON
+        v
+[studio-book-api]
+ASP.NET Core Web API
+Docker / localhost:5000
+        |
+        | Server=mysql;Port=3306
+        v
+[studio-book-mysql]
+MySQL 8.4 / Docker
+```
+
+| サービス        | コンテナ名               | 公開先                     |
+| ----------- | ------------------- | ----------------------- |
+| Backend API | `studio-book-api`   | `http://localhost:5000` |
+| MySQL       | `studio-book-mysql` | `localhost:3306`        |
+
+APIコンテナからMySQLへ接続する際は、`localhost` ではなくDocker Composeのサービス名 `mysql` を使用します。
+
+MySQLのヘルスチェック完了後にAPIを起動し、API起動時には設定に応じてEF Core Migrationとデモデータ投入を実行します。
+
+---
+
 ## アプリケーション構成
 
 本アプリは、フロントエンドとバックエンドを明確に分離しています。
 
-```
+```text
 studio-book-dotnet-next
+├─ .dockerignore
+├─ docker-compose.yml
+│
 ├─ Backend
 │  ├─ Studiobook_backend
 │  │  ├─ Controllers
 │  │  ├─ Data
 │  │  ├─ Dtos
 │  │  ├─ Entities
+│  │  ├─ Fonts
 │  │  ├─ Migrations
 │  │  ├─ Seeders
 │  │  ├─ Services
 │  │  ├─ Settings
+│  │  ├─ Dockerfile
 │  │  └─ Program.cs
 │  │
 │  └─ Studiobook_backend.Tests
@@ -145,7 +182,7 @@ MySQL
 ### 主なバックエンド機能
 
 - 認証 / 会員登録 / メール認証
-- JWT Cookie 認証
+- JWT Bearer 認証（JWTをHttpOnly Cookieに保存）
 - ロール別認可
 - スタジオ検索
 - 予約確認
