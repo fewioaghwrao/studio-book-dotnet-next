@@ -11,34 +11,34 @@ public class ReservationCompleteServiceTests
     [Fact]
     public async Task CompleteFromStripeAsync_CreatesPaidReservationAndChargeItems_WhenMetadataIsValid()
     {
-        // Arrange
         await using var context = TestDbContextFactory.Create();
 
         await SeedBaseDataAsync(context);
+
+        var startAt = GetNextDayOfWeek(DayOfWeek.Monday, 10);
+        var endAt = startAt.AddHours(2);
 
         var service = CreateService(context);
 
         var metadata = CreateValidMetadata(
             amount: "7200",
-            startAt: "2026-06-01T10:00",
-            endAt: "2026-06-01T12:00");
+            startAt: FormatMetadataDateTime(startAt),
+            endAt: FormatMetadataDateTime(endAt));
 
-        // Act
         await service.CompleteFromStripeAsync(
             metadata,
             paymentIntentId: "pi_test_001",
             checkoutSessionId: "cs_test_001",
             paidAmount: 7200);
 
-        // Assert
         var reservation = await context.Reservations
             .Include(x => x.ChargeItems)
             .SingleAsync();
 
         Assert.Equal(1, reservation.RoomId);
         Assert.Equal(20, reservation.UserId);
-        Assert.Equal(new DateTime(2026, 6, 1, 10, 0, 0), reservation.StartAt);
-        Assert.Equal(new DateTime(2026, 6, 1, 12, 0, 0), reservation.EndAt);
+        Assert.Equal(startAt, reservation.StartAt);
+        Assert.Equal(endAt, reservation.EndAt);
         Assert.Equal(7200, reservation.Amount);
         Assert.Equal("paid", reservation.Status);
 
@@ -49,8 +49,8 @@ public class ReservationCompleteServiceTests
             x.Description == "通常料金" &&
             x.SliceAmount == 6000 &&
             x.UnitRatePerHour == 3000 &&
-            x.SliceStart == new DateTime(2026, 6, 1, 10, 0, 0) &&
-            x.SliceEnd == new DateTime(2026, 6, 1, 12, 0, 0));
+            x.SliceStart == startAt &&
+            x.SliceEnd == endAt);
 
         Assert.Contains(reservation.ChargeItems, x =>
             x.Kind == "tax" &&
@@ -66,17 +66,19 @@ public class ReservationCompleteServiceTests
     [Fact]
     public async Task CompleteFromStripeAsync_DoesNotCreateDuplicateReservation_WhenSameReservationAlreadyExists()
     {
-        // Arrange
         await using var context = TestDbContextFactory.Create();
 
         await SeedBaseDataAsync(context);
+
+        var startAt = GetNextDayOfWeek(DayOfWeek.Monday, 10);
+        var endAt = startAt.AddHours(2);
 
         var service = CreateService(context);
 
         var metadata = CreateValidMetadata(
             amount: "7200",
-            startAt: "2026-06-01T10:00",
-            endAt: "2026-06-01T12:00");
+            startAt: FormatMetadataDateTime(startAt),
+            endAt: FormatMetadataDateTime(endAt));
 
         await service.CompleteFromStripeAsync(
             metadata,
@@ -84,14 +86,12 @@ public class ReservationCompleteServiceTests
             checkoutSessionId: "cs_test_001",
             paidAmount: 7200);
 
-        // Act
         await service.CompleteFromStripeAsync(
             metadata,
             paymentIntentId: "pi_test_001",
             checkoutSessionId: "cs_test_001",
             paidAmount: 7200);
 
-        // Assert
         Assert.Equal(1, await context.Reservations.CountAsync());
         Assert.Equal(3, await context.ReservationChargeItems.CountAsync());
     }
@@ -99,19 +99,20 @@ public class ReservationCompleteServiceTests
     [Fact]
     public async Task CompleteFromStripeAsync_ThrowsInvalidOperationException_WhenPaidAmountDoesNotMatchMetadataAmount()
     {
-        // Arrange
         await using var context = TestDbContextFactory.Create();
 
         await SeedBaseDataAsync(context);
+
+        var startAt = GetNextDayOfWeek(DayOfWeek.Monday, 10);
+        var endAt = startAt.AddHours(2);
 
         var service = CreateService(context);
 
         var metadata = CreateValidMetadata(
             amount: "7200",
-            startAt: "2026-06-01T10:00",
-            endAt: "2026-06-01T12:00");
+            startAt: FormatMetadataDateTime(startAt),
+            endAt: FormatMetadataDateTime(endAt));
 
-        // Act & Assert
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
             service.CompleteFromStripeAsync(
                 metadata,
@@ -126,21 +127,22 @@ public class ReservationCompleteServiceTests
     [Fact]
     public async Task CompleteFromStripeAsync_ThrowsInvalidOperationException_WhenMetadataRequiredKeyIsMissing()
     {
-        // Arrange
         await using var context = TestDbContextFactory.Create();
 
         await SeedBaseDataAsync(context);
+
+        var startAt = GetNextDayOfWeek(DayOfWeek.Monday, 10);
+        var endAt = startAt.AddHours(2);
 
         var service = CreateService(context);
 
         var metadata = CreateValidMetadata(
             amount: "7200",
-            startAt: "2026-06-01T10:00",
-            endAt: "2026-06-01T12:00");
+            startAt: FormatMetadataDateTime(startAt),
+            endAt: FormatMetadataDateTime(endAt));
 
         metadata.Remove("roomId");
 
-        // Act & Assert
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
             service.CompleteFromStripeAsync(
                 metadata,
@@ -155,21 +157,22 @@ public class ReservationCompleteServiceTests
     [Fact]
     public async Task CompleteFromStripeAsync_ThrowsInvalidOperationException_WhenMetadataIntValueIsInvalid()
     {
-        // Arrange
         await using var context = TestDbContextFactory.Create();
 
         await SeedBaseDataAsync(context);
+
+        var startAt = GetNextDayOfWeek(DayOfWeek.Monday, 10);
+        var endAt = startAt.AddHours(2);
 
         var service = CreateService(context);
 
         var metadata = CreateValidMetadata(
             amount: "7200",
-            startAt: "2026-06-01T10:00",
-            endAt: "2026-06-01T12:00");
+            startAt: FormatMetadataDateTime(startAt),
+            endAt: FormatMetadataDateTime(endAt));
 
         metadata["roomId"] = "not-number";
 
-        // Act & Assert
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
             service.CompleteFromStripeAsync(
                 metadata,
@@ -177,26 +180,29 @@ public class ReservationCompleteServiceTests
                 checkoutSessionId: "cs_test_001",
                 paidAmount: 7200));
 
-        Assert.Equal("Stripe metadata の roomId が数値ではありません。value=not-number", ex.Message);
+        Assert.Equal(
+            "Stripe metadata の roomId が数値ではありません。value=not-number",
+            ex.Message);
+
         Assert.Empty(context.Reservations);
     }
 
     [Fact]
     public async Task CompleteFromStripeAsync_ThrowsInvalidOperationException_WhenMetadataDateTimeValueIsInvalid()
     {
-        // Arrange
         await using var context = TestDbContextFactory.Create();
 
         await SeedBaseDataAsync(context);
+
+        var validEndAt = GetNextDayOfWeek(DayOfWeek.Monday, 12);
 
         var service = CreateService(context);
 
         var metadata = CreateValidMetadata(
             amount: "7200",
             startAt: "invalid-date",
-            endAt: "2026-06-01T12:00");
+            endAt: FormatMetadataDateTime(validEndAt));
 
-        // Act & Assert
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
             service.CompleteFromStripeAsync(
                 metadata,
@@ -204,28 +210,30 @@ public class ReservationCompleteServiceTests
                 checkoutSessionId: "cs_test_001",
                 paidAmount: 7200));
 
-        Assert.Equal("Stripe metadata の startAt が日時ではありません。value=invalid-date", ex.Message);
+        Assert.Equal(
+            "Stripe metadata の startAt が日時ではありません。value=invalid-date",
+            ex.Message);
+
         Assert.Empty(context.Reservations);
     }
 
     [Fact]
     public async Task CompleteFromStripeAsync_ThrowsInvalidOperationException_WhenRecalculatedAmountDoesNotMatchMetadataAmount()
     {
-        // Arrange
         await using var context = TestDbContextFactory.Create();
 
         await SeedBaseDataAsync(context);
+
+        var startAt = GetNextDayOfWeek(DayOfWeek.Monday, 10);
+        var endAt = startAt.AddHours(2);
 
         var service = CreateService(context);
 
         var metadata = CreateValidMetadata(
             amount: "9999",
-            startAt: "2026-06-01T10:00",
-            endAt: "2026-06-01T12:00");
+            startAt: FormatMetadataDateTime(startAt),
+            endAt: FormatMetadataDateTime(endAt));
 
-        // paidAmount を null にして、先に paidAmount 不一致で落ちないようにする。
-        // その後、ReservationConfirmService の再計算金額 7200 と metadata amount 9999 の不一致で落ちる。
-        // Act & Assert
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
             service.CompleteFromStripeAsync(
                 metadata,
@@ -240,18 +248,20 @@ public class ReservationCompleteServiceTests
     [Fact]
     public async Task CompleteFromStripeAsync_AllowsExistingCanceledReservationAndCreatesNewReservation()
     {
-        // Arrange
         await using var context = TestDbContextFactory.Create();
 
         await SeedBaseDataAsync(context);
+
+        var startAt = GetNextDayOfWeek(DayOfWeek.Monday, 10);
+        var endAt = startAt.AddHours(2);
 
         context.Reservations.Add(new Reservation
         {
             Id = 1,
             RoomId = 1,
             UserId = 20,
-            StartAt = new DateTime(2026, 6, 1, 10, 0, 0),
-            EndAt = new DateTime(2026, 6, 1, 12, 0, 0),
+            StartAt = startAt,
+            EndAt = endAt,
             Amount = 7200,
             Status = "canceled",
             CreatedAtUtc = DateTime.UtcNow,
@@ -264,17 +274,15 @@ public class ReservationCompleteServiceTests
 
         var metadata = CreateValidMetadata(
             amount: "7200",
-            startAt: "2026-06-01T10:00",
-            endAt: "2026-06-01T12:00");
+            startAt: FormatMetadataDateTime(startAt),
+            endAt: FormatMetadataDateTime(endAt));
 
-        // Act
         await service.CompleteFromStripeAsync(
             metadata,
             paymentIntentId: "pi_test_001",
             checkoutSessionId: "cs_test_001",
             paidAmount: 7200);
 
-        // Assert
         var reservations = await context.Reservations
             .OrderBy(x => x.Id)
             .ToListAsync();
@@ -282,6 +290,30 @@ public class ReservationCompleteServiceTests
         Assert.Equal(2, reservations.Count);
         Assert.Equal("canceled", reservations[0].Status);
         Assert.Equal("paid", reservations[1].Status);
+        Assert.Equal(startAt, reservations[1].StartAt);
+        Assert.Equal(endAt, reservations[1].EndAt);
+    }
+
+    private static DateTime GetNextDayOfWeek(
+        DayOfWeek targetDay,
+        int hour,
+        int minute = 0)
+    {
+        var date = DateTime.Today.AddDays(1);
+
+        while (date.DayOfWeek != targetDay)
+        {
+            date = date.AddDays(1);
+        }
+
+        return DateTime.SpecifyKind(
+            date.AddHours(hour).AddMinutes(minute),
+            DateTimeKind.Unspecified);
+    }
+
+    private static string FormatMetadataDateTime(DateTime value)
+    {
+        return value.ToString("yyyy-MM-ddTHH:mm:ss");
     }
 
     private static ReservationCompleteService CreateService(AppDbContext context)
@@ -336,11 +368,10 @@ public class ReservationCompleteServiceTests
             name: "新宿スタジオ",
             price: 3000);
 
-        // 2026/06/01 は月曜日
         await SeedBusinessHourAsync(
             context,
             roomId: 1,
-            dayOfWeek: 1,
+            dayOfWeek: (int)DayOfWeek.Monday,
             startTime: new TimeOnly(9, 0),
             endTime: new TimeOnly(20, 0),
             isHoliday: false);

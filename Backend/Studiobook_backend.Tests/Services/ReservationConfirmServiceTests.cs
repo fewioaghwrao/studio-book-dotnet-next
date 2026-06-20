@@ -12,51 +12,33 @@ public class ReservationConfirmServiceTests
     [Fact]
     public async Task BuildConfirmAsync_ReturnsConfirm_WhenReservationIsValid()
     {
-        // Arrange
         await using var context = TestDbContextFactory.Create();
 
-        await SeedAdminSettingsAsync(
-            context,
-            taxRate: "0.10",
-            adminFeeRate: "0.10");
-
-        await SeedHostUserAsync(context, userId: 10, name: "ホストA");
-        await SeedGuestUserAsync(context, userId: 20, name: "ゲストA");
-
-        await SeedRoomAsync(
-            context,
-            roomId: 1,
-            hostUserId: 10,
-            name: "新宿スタジオ",
-            price: 3000);
-
+        await SeedAdminSettingsAsync(context, "0.10", "0.10");
+        await SeedHostUserAsync(context, 10, "ホストA");
+        await SeedGuestUserAsync(context, 20, "ゲストA");
+        await SeedRoomAsync(context, 1, 10, "新宿スタジオ", 3000);
         await SeedBusinessHourAsync(
-            context,
-            roomId: 1,
-            dayOfWeek: 1,
-            startTime: new TimeOnly(9, 0),
-            endTime: new TimeOnly(20, 0),
-            isHoliday: false);
+            context, 1, (int)DayOfWeek.Monday,
+            new TimeOnly(9, 0), new TimeOnly(20, 0), false);
+
+        var startAt = GetNextDayOfWeek(DayOfWeek.Monday, 10);
+        var endAt = startAt.AddHours(2);
 
         var service = CreateService(context);
-
         var request = new ReservationConfirmRequest
         {
             RoomId = 1,
-            StartAt = new DateTime(2026, 6, 1, 10, 0, 0),
-            EndAt = new DateTime(2026, 6, 1, 12, 0, 0)
+            StartAt = startAt,
+            EndAt = endAt
         };
 
-        // Act
-        var result = await service.BuildConfirmAsync(
-            userId: 20,
-            request: request);
+        var result = await service.BuildConfirmAsync(20, request);
 
-        // Assert
         Assert.Equal(1, result.RoomId);
         Assert.Equal("新宿スタジオ", result.RoomName);
-        Assert.Equal(new DateTime(2026, 6, 1, 10, 0, 0), result.StartAt);
-        Assert.Equal(new DateTime(2026, 6, 1, 12, 0, 0), result.EndAt);
+        Assert.Equal(startAt, result.StartAt);
+        Assert.Equal(endAt, result.EndAt);
 
         Assert.Equal(3000, result.HourlyPrice);
         Assert.Equal(2m, result.Hours);
@@ -71,64 +53,40 @@ public class ReservationConfirmServiceTests
         var item = Assert.Single(result.Items);
         Assert.Equal("通常料金", item.Label);
         Assert.Equal(6000, item.Amount);
-        Assert.Equal(new DateTime(2026, 6, 1, 10, 0, 0), item.SliceStart);
-        Assert.Equal(new DateTime(2026, 6, 1, 12, 0, 0), item.SliceEnd);
+        Assert.Equal(startAt, item.SliceStart);
+        Assert.Equal(endAt, item.SliceEnd);
         Assert.Equal(3000, item.UnitRatePerHour);
     }
 
     [Fact]
     public async Task BuildConfirmAsync_AppliesMultiplierPriceRuleAndTaxFee()
     {
-        // Arrange
         await using var context = TestDbContextFactory.Create();
 
-        await SeedAdminSettingsAsync(
-            context,
-            taxRate: "0.10",
-            adminFeeRate: "0.10");
-
-        await SeedHostUserAsync(context, userId: 10, name: "ホストA");
-        await SeedGuestUserAsync(context, userId: 20, name: "ゲストA");
-
-        await SeedRoomAsync(
-            context,
-            roomId: 1,
-            hostUserId: 10,
-            name: "新宿スタジオ",
-            price: 3000);
-
+        await SeedAdminSettingsAsync(context, "0.10", "0.10");
+        await SeedHostUserAsync(context, 10, "ホストA");
+        await SeedGuestUserAsync(context, 20, "ゲストA");
+        await SeedRoomAsync(context, 1, 10, "新宿スタジオ", 3000);
         await SeedBusinessHourAsync(
-            context,
-            roomId: 1,
-            dayOfWeek: 1,
-            startTime: new TimeOnly(9, 0),
-            endTime: new TimeOnly(21, 0),
-            isHoliday: false);
-
+            context, 1, (int)DayOfWeek.Monday,
+            new TimeOnly(9, 0), new TimeOnly(21, 0), false);
         await SeedPriceRuleAsync(
-            context,
-            roomId: 1,
-            ruleId: 1,
-            weekday: 1,
-            startHour: new TimeOnly(18, 0),
-            endHour: new TimeOnly(21, 0),
-            multiplier: 1.5m);
+            context, 1, 1, (int)DayOfWeek.Monday,
+            new TimeOnly(18, 0), new TimeOnly(21, 0), 1.5m);
+
+        var startAt = GetNextDayOfWeek(DayOfWeek.Monday, 17);
+        var endAt = startAt.AddHours(2);
 
         var service = CreateService(context);
-
         var request = new ReservationConfirmRequest
         {
             RoomId = 1,
-            StartAt = new DateTime(2026, 6, 1, 17, 0, 0),
-            EndAt = new DateTime(2026, 6, 1, 19, 0, 0)
+            StartAt = startAt,
+            EndAt = endAt
         };
 
-        // Act
-        var result = await service.BuildConfirmAsync(
-            userId: 20,
-            request: request);
+        var result = await service.BuildConfirmAsync(20, request);
 
-        // Assert
         Assert.Equal(7500, result.Subtotal);
         Assert.Equal(750, result.Tax);
         Assert.Equal(750, result.PlatformFee);
@@ -139,59 +97,42 @@ public class ReservationConfirmServiceTests
         Assert.Equal("通常料金", result.Items[0].Label);
         Assert.Equal(3000, result.Items[0].Amount);
         Assert.Equal(3000, result.Items[0].UnitRatePerHour);
-        Assert.Equal(new DateTime(2026, 6, 1, 17, 0, 0), result.Items[0].SliceStart);
-        Assert.Equal(new DateTime(2026, 6, 1, 18, 0, 0), result.Items[0].SliceEnd);
+        Assert.Equal(startAt, result.Items[0].SliceStart);
+        Assert.Equal(startAt.AddHours(1), result.Items[0].SliceEnd);
 
         Assert.Equal("料金ルール適用", result.Items[1].Label);
         Assert.Equal(4500, result.Items[1].Amount);
         Assert.Equal(4500, result.Items[1].UnitRatePerHour);
-        Assert.Equal(new DateTime(2026, 6, 1, 18, 0, 0), result.Items[1].SliceStart);
-        Assert.Equal(new DateTime(2026, 6, 1, 19, 0, 0), result.Items[1].SliceEnd);
+        Assert.Equal(startAt.AddHours(1), result.Items[1].SliceStart);
+        Assert.Equal(endAt, result.Items[1].SliceEnd);
     }
 
     [Fact]
     public async Task BuildConfirmAsync_UsesDefaultAdminSettings_WhenSettingsDoNotExist()
     {
-        // Arrange
         await using var context = TestDbContextFactory.Create();
 
-        await SeedHostUserAsync(context, userId: 10, name: "ホストA");
-        await SeedGuestUserAsync(context, userId: 20, name: "ゲストA");
-
-        await SeedRoomAsync(
-            context,
-            roomId: 1,
-            hostUserId: 10,
-            name: "新宿スタジオ",
-            price: 3000);
-
+        await SeedHostUserAsync(context, 10, "ホストA");
+        await SeedGuestUserAsync(context, 20, "ゲストA");
+        await SeedRoomAsync(context, 1, 10, "新宿スタジオ", 3000);
         await SeedBusinessHourAsync(
-            context,
-            roomId: 1,
-            dayOfWeek: 1,
-            startTime: new TimeOnly(9, 0),
-            endTime: new TimeOnly(20, 0),
-            isHoliday: false);
+            context, 1, (int)DayOfWeek.Monday,
+            new TimeOnly(9, 0), new TimeOnly(20, 0), false);
+
+        var startAt = GetNextDayOfWeek(DayOfWeek.Monday, 10);
+        var endAt = startAt.AddHours(2);
 
         var service = CreateService(context);
-
         var request = new ReservationConfirmRequest
         {
             RoomId = 1,
-            StartAt = new DateTime(2026, 6, 1, 10, 0, 0),
-            EndAt = new DateTime(2026, 6, 1, 12, 0, 0)
+            StartAt = startAt,
+            EndAt = endAt
         };
 
-        // Act
-        var result = await service.BuildConfirmAsync(
-            userId: 20,
-            request: request);
+        var result = await service.BuildConfirmAsync(20, request);
 
-        // Assert
         Assert.Equal(6000, result.Subtotal);
-
-        // AdminSettingsService のデフォルト値
-        // tax_rate = 0.10, admin_fee_rate = 0.15
         Assert.Equal(10m, result.TaxRatePercent);
         Assert.Equal(600, result.Tax);
         Assert.Equal(15m, result.PlatformFeeRatePercent);
@@ -202,23 +143,21 @@ public class ReservationConfirmServiceTests
     [Fact]
     public async Task BuildConfirmAsync_ThrowsKeyNotFoundException_WhenRoomDoesNotExist()
     {
-        // Arrange
         await using var context = TestDbContextFactory.Create();
 
-        var service = CreateService(context);
+        var startAt = GetNextDayOfWeek(DayOfWeek.Monday, 10);
+        var endAt = startAt.AddHours(2);
 
+        var service = CreateService(context);
         var request = new ReservationConfirmRequest
         {
             RoomId = 999,
-            StartAt = new DateTime(2026, 6, 1, 10, 0, 0),
-            EndAt = new DateTime(2026, 6, 1, 12, 0, 0)
+            StartAt = startAt,
+            EndAt = endAt
         };
 
-        // Act & Assert
         var ex = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-            service.BuildConfirmAsync(
-                userId: 20,
-                request: request));
+            service.BuildConfirmAsync(20, request));
 
         Assert.Equal("スタジオが見つかりません。", ex.Message);
     }
@@ -226,23 +165,20 @@ public class ReservationConfirmServiceTests
     [Fact]
     public async Task BuildConfirmAsync_ThrowsInvalidOperationException_WhenStartAtIsAfterEndAt()
     {
-        // Arrange
         await using var context = TestDbContextFactory.Create();
 
-        var service = CreateService(context);
+        var baseAt = GetNextDayOfWeek(DayOfWeek.Monday, 10);
 
+        var service = CreateService(context);
         var request = new ReservationConfirmRequest
         {
             RoomId = 1,
-            StartAt = new DateTime(2026, 6, 1, 12, 0, 0),
-            EndAt = new DateTime(2026, 6, 1, 10, 0, 0)
+            StartAt = baseAt.AddHours(2),
+            EndAt = baseAt
         };
 
-        // Act & Assert
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            service.BuildConfirmAsync(
-                userId: 20,
-                request: request));
+            service.BuildConfirmAsync(20, request));
 
         Assert.Equal("終了日時は開始日時より後にしてください。", ex.Message);
     }
@@ -250,23 +186,20 @@ public class ReservationConfirmServiceTests
     [Fact]
     public async Task BuildConfirmAsync_ThrowsInvalidOperationException_WhenStartAtEqualsEndAt()
     {
-        // Arrange
         await using var context = TestDbContextFactory.Create();
 
-        var service = CreateService(context);
+        var startAt = GetNextDayOfWeek(DayOfWeek.Monday, 10);
 
+        var service = CreateService(context);
         var request = new ReservationConfirmRequest
         {
             RoomId = 1,
-            StartAt = new DateTime(2026, 6, 1, 10, 0, 0),
-            EndAt = new DateTime(2026, 6, 1, 10, 0, 0)
+            StartAt = startAt,
+            EndAt = startAt
         };
 
-        // Act & Assert
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            service.BuildConfirmAsync(
-                userId: 20,
-                request: request));
+            service.BuildConfirmAsync(20, request));
 
         Assert.Equal("終了日時は開始日時より後にしてください。", ex.Message);
     }
@@ -274,31 +207,24 @@ public class ReservationConfirmServiceTests
     [Fact]
     public async Task BuildConfirmAsync_ThrowsInvalidOperationException_WhenReservationCrossesDay()
     {
-        // Arrange
         await using var context = TestDbContextFactory.Create();
 
-        await SeedHostUserAsync(context, userId: 10, name: "ホストA");
-        await SeedRoomAsync(
-            context,
-            roomId: 1,
-            hostUserId: 10,
-            name: "新宿スタジオ",
-            price: 3000);
+        await SeedHostUserAsync(context, 10, "ホストA");
+        await SeedRoomAsync(context, 1, 10, "新宿スタジオ", 3000);
+
+        var startAt = GetNextDayOfWeek(DayOfWeek.Monday, 23);
+        var endAt = startAt.Date.AddDays(1).AddHours(1);
 
         var service = CreateService(context);
-
         var request = new ReservationConfirmRequest
         {
             RoomId = 1,
-            StartAt = new DateTime(2026, 6, 1, 23, 0, 0),
-            EndAt = new DateTime(2026, 6, 2, 1, 0, 0)
+            StartAt = startAt,
+            EndAt = endAt
         };
 
-        // Act & Assert
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            service.BuildConfirmAsync(
-                userId: 20,
-                request: request));
+            service.BuildConfirmAsync(20, request));
 
         Assert.Equal("日をまたぐ予約はできません。1日ごとに予約してください。", ex.Message);
     }
@@ -306,39 +232,27 @@ public class ReservationConfirmServiceTests
     [Fact]
     public async Task BuildConfirmAsync_ThrowsInvalidOperationException_WhenDateIsHoliday()
     {
-        // Arrange
         await using var context = TestDbContextFactory.Create();
 
-        await SeedHostUserAsync(context, userId: 10, name: "ホストA");
-        await SeedRoomAsync(
-            context,
-            roomId: 1,
-            hostUserId: 10,
-            name: "新宿スタジオ",
-            price: 3000);
-
+        await SeedHostUserAsync(context, 10, "ホストA");
+        await SeedRoomAsync(context, 1, 10, "新宿スタジオ", 3000);
         await SeedBusinessHourAsync(
-            context,
-            roomId: 1,
-            dayOfWeek: 1,
-            startTime: new TimeOnly(9, 0),
-            endTime: new TimeOnly(20, 0),
-            isHoliday: true);
+            context, 1, (int)DayOfWeek.Monday,
+            new TimeOnly(9, 0), new TimeOnly(20, 0), true);
+
+        var startAt = GetNextDayOfWeek(DayOfWeek.Monday, 10);
+        var endAt = startAt.AddHours(2);
 
         var service = CreateService(context);
-
         var request = new ReservationConfirmRequest
         {
             RoomId = 1,
-            StartAt = new DateTime(2026, 6, 1, 10, 0, 0),
-            EndAt = new DateTime(2026, 6, 1, 12, 0, 0)
+            StartAt = startAt,
+            EndAt = endAt
         };
 
-        // Act & Assert
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            service.BuildConfirmAsync(
-                userId: 20,
-                request: request));
+            service.BuildConfirmAsync(20, request));
 
         Assert.Equal("指定日は営業時間外です。", ex.Message);
     }
@@ -346,31 +260,24 @@ public class ReservationConfirmServiceTests
     [Fact]
     public async Task BuildConfirmAsync_ThrowsInvalidOperationException_WhenBusinessHourDoesNotExist()
     {
-        // Arrange
         await using var context = TestDbContextFactory.Create();
 
-        await SeedHostUserAsync(context, userId: 10, name: "ホストA");
-        await SeedRoomAsync(
-            context,
-            roomId: 1,
-            hostUserId: 10,
-            name: "新宿スタジオ",
-            price: 3000);
+        await SeedHostUserAsync(context, 10, "ホストA");
+        await SeedRoomAsync(context, 1, 10, "新宿スタジオ", 3000);
+
+        var startAt = GetNextDayOfWeek(DayOfWeek.Monday, 10);
+        var endAt = startAt.AddHours(2);
 
         var service = CreateService(context);
-
         var request = new ReservationConfirmRequest
         {
             RoomId = 1,
-            StartAt = new DateTime(2026, 6, 1, 10, 0, 0),
-            EndAt = new DateTime(2026, 6, 1, 12, 0, 0)
+            StartAt = startAt,
+            EndAt = endAt
         };
 
-        // Act & Assert
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            service.BuildConfirmAsync(
-                userId: 20,
-                request: request));
+            service.BuildConfirmAsync(20, request));
 
         Assert.Equal("指定日は営業時間外です。", ex.Message);
     }
@@ -378,39 +285,27 @@ public class ReservationConfirmServiceTests
     [Fact]
     public async Task BuildConfirmAsync_ThrowsInvalidOperationException_WhenBusinessHourTimeIsNull()
     {
-        // Arrange
         await using var context = TestDbContextFactory.Create();
 
-        await SeedHostUserAsync(context, userId: 10, name: "ホストA");
-        await SeedRoomAsync(
-            context,
-            roomId: 1,
-            hostUserId: 10,
-            name: "新宿スタジオ",
-            price: 3000);
-
+        await SeedHostUserAsync(context, 10, "ホストA");
+        await SeedRoomAsync(context, 1, 10, "新宿スタジオ", 3000);
         await SeedBusinessHourAsync(
-            context,
-            roomId: 1,
-            dayOfWeek: 1,
-            startTime: null,
-            endTime: null,
-            isHoliday: false);
+            context, 1, (int)DayOfWeek.Monday,
+            null, null, false);
+
+        var startAt = GetNextDayOfWeek(DayOfWeek.Monday, 10);
+        var endAt = startAt.AddHours(2);
 
         var service = CreateService(context);
-
         var request = new ReservationConfirmRequest
         {
             RoomId = 1,
-            StartAt = new DateTime(2026, 6, 1, 10, 0, 0),
-            EndAt = new DateTime(2026, 6, 1, 12, 0, 0)
+            StartAt = startAt,
+            EndAt = endAt
         };
 
-        // Act & Assert
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            service.BuildConfirmAsync(
-                userId: 20,
-                request: request));
+            service.BuildConfirmAsync(20, request));
 
         Assert.Equal("指定日の営業時間が設定されていません。", ex.Message);
     }
@@ -418,39 +313,27 @@ public class ReservationConfirmServiceTests
     [Fact]
     public async Task BuildConfirmAsync_ThrowsInvalidOperationException_WhenTimeIsOutsideBusinessHour()
     {
-        // Arrange
         await using var context = TestDbContextFactory.Create();
 
-        await SeedHostUserAsync(context, userId: 10, name: "ホストA");
-        await SeedRoomAsync(
-            context,
-            roomId: 1,
-            hostUserId: 10,
-            name: "新宿スタジオ",
-            price: 3000);
-
+        await SeedHostUserAsync(context, 10, "ホストA");
+        await SeedRoomAsync(context, 1, 10, "新宿スタジオ", 3000);
         await SeedBusinessHourAsync(
-            context,
-            roomId: 1,
-            dayOfWeek: 1,
-            startTime: new TimeOnly(9, 0),
-            endTime: new TimeOnly(18, 0),
-            isHoliday: false);
+            context, 1, (int)DayOfWeek.Monday,
+            new TimeOnly(9, 0), new TimeOnly(18, 0), false);
+
+        var startAt = GetNextDayOfWeek(DayOfWeek.Monday, 8);
+        var endAt = startAt.AddHours(2);
 
         var service = CreateService(context);
-
         var request = new ReservationConfirmRequest
         {
             RoomId = 1,
-            StartAt = new DateTime(2026, 6, 1, 8, 0, 0),
-            EndAt = new DateTime(2026, 6, 1, 10, 0, 0)
+            StartAt = startAt,
+            EndAt = endAt
         };
 
-        // Act & Assert
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            service.BuildConfirmAsync(
-                userId: 20,
-                request: request));
+            service.BuildConfirmAsync(20, request));
 
         Assert.Equal("営業時間外の時間が含まれています。", ex.Message);
     }
@@ -458,46 +341,32 @@ public class ReservationConfirmServiceTests
     [Fact]
     public async Task BuildConfirmAsync_ThrowsInvalidOperationException_WhenOverlapsClosure()
     {
-        // Arrange
         await using var context = TestDbContextFactory.Create();
 
-        await SeedHostUserAsync(context, userId: 10, name: "ホストA");
-        await SeedRoomAsync(
-            context,
-            roomId: 1,
-            hostUserId: 10,
-            name: "新宿スタジオ",
-            price: 3000);
-
+        await SeedHostUserAsync(context, 10, "ホストA");
+        await SeedRoomAsync(context, 1, 10, "新宿スタジオ", 3000);
         await SeedBusinessHourAsync(
-            context,
-            roomId: 1,
-            dayOfWeek: 1,
-            startTime: new TimeOnly(9, 0),
-            endTime: new TimeOnly(20, 0),
-            isHoliday: false);
+            context, 1, (int)DayOfWeek.Monday,
+            new TimeOnly(9, 0), new TimeOnly(20, 0), false);
+
+        var startAt = GetNextDayOfWeek(DayOfWeek.Monday, 10);
+        var endAt = startAt.AddHours(2);
 
         await SeedClosureAsync(
-            context,
-            closureId: 1,
-            roomId: 1,
-            startAt: new DateTime(2026, 6, 1, 11, 0, 0),
-            endAt: new DateTime(2026, 6, 1, 13, 0, 0));
+            context, 1, 1,
+            startAt.AddHours(1),
+            startAt.AddHours(3));
 
         var service = CreateService(context);
-
         var request = new ReservationConfirmRequest
         {
             RoomId = 1,
-            StartAt = new DateTime(2026, 6, 1, 10, 0, 0),
-            EndAt = new DateTime(2026, 6, 1, 12, 0, 0)
+            StartAt = startAt,
+            EndAt = endAt
         };
 
-        // Act & Assert
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            service.BuildConfirmAsync(
-                userId: 20,
-                request: request));
+            service.BuildConfirmAsync(20, request));
 
         Assert.Equal("指定した時間帯は休業期間と重複しています。", ex.Message);
     }
@@ -505,52 +374,35 @@ public class ReservationConfirmServiceTests
     [Fact]
     public async Task BuildConfirmAsync_ThrowsInvalidOperationException_WhenOverlapsExistingReservation()
     {
-        // Arrange
         await using var context = TestDbContextFactory.Create();
 
-        await SeedHostUserAsync(context, userId: 10, name: "ホストA");
-        await SeedGuestUserAsync(context, userId: 20, name: "ゲストA");
-        await SeedGuestUserAsync(context, userId: 21, name: "ゲストB");
-
-        await SeedRoomAsync(
-            context,
-            roomId: 1,
-            hostUserId: 10,
-            name: "新宿スタジオ",
-            price: 3000);
-
+        await SeedHostUserAsync(context, 10, "ホストA");
+        await SeedGuestUserAsync(context, 20, "ゲストA");
+        await SeedGuestUserAsync(context, 21, "ゲストB");
+        await SeedRoomAsync(context, 1, 10, "新宿スタジオ", 3000);
         await SeedBusinessHourAsync(
-            context,
-            roomId: 1,
-            dayOfWeek: 1,
-            startTime: new TimeOnly(9, 0),
-            endTime: new TimeOnly(20, 0),
-            isHoliday: false);
+            context, 1, (int)DayOfWeek.Monday,
+            new TimeOnly(9, 0), new TimeOnly(20, 0), false);
+
+        var startAt = GetNextDayOfWeek(DayOfWeek.Monday, 10);
+        var endAt = startAt.AddHours(2);
 
         await SeedReservationAsync(
-            context,
-            reservationId: 1,
-            roomId: 1,
-            userId: 21,
-            startAt: new DateTime(2026, 6, 1, 11, 0, 0),
-            endAt: new DateTime(2026, 6, 1, 13, 0, 0),
-            status: "paid",
-            amount: 6000);
+            context, 1, 1, 21,
+            startAt.AddHours(1),
+            startAt.AddHours(3),
+            "paid", 6000);
 
         var service = CreateService(context);
-
         var request = new ReservationConfirmRequest
         {
             RoomId = 1,
-            StartAt = new DateTime(2026, 6, 1, 10, 0, 0),
-            EndAt = new DateTime(2026, 6, 1, 12, 0, 0)
+            StartAt = startAt,
+            EndAt = endAt
         };
 
-        // Act & Assert
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            service.BuildConfirmAsync(
-                userId: 20,
-                request: request));
+            service.BuildConfirmAsync(20, request));
 
         Assert.Equal("指定した時間帯は既に予約されています。", ex.Message);
     }
@@ -558,60 +410,53 @@ public class ReservationConfirmServiceTests
     [Fact]
     public async Task BuildConfirmAsync_AllowsOverlapWithCanceledReservation()
     {
-        // Arrange
         await using var context = TestDbContextFactory.Create();
 
-        await SeedAdminSettingsAsync(
-            context,
-            taxRate: "0.10",
-            adminFeeRate: "0.10");
-
-        await SeedHostUserAsync(context, userId: 10, name: "ホストA");
-        await SeedGuestUserAsync(context, userId: 20, name: "ゲストA");
-        await SeedGuestUserAsync(context, userId: 21, name: "ゲストB");
-
-        await SeedRoomAsync(
-            context,
-            roomId: 1,
-            hostUserId: 10,
-            name: "新宿スタジオ",
-            price: 3000);
-
+        await SeedAdminSettingsAsync(context, "0.10", "0.10");
+        await SeedHostUserAsync(context, 10, "ホストA");
+        await SeedGuestUserAsync(context, 20, "ゲストA");
+        await SeedGuestUserAsync(context, 21, "ゲストB");
+        await SeedRoomAsync(context, 1, 10, "新宿スタジオ", 3000);
         await SeedBusinessHourAsync(
-            context,
-            roomId: 1,
-            dayOfWeek: 1,
-            startTime: new TimeOnly(9, 0),
-            endTime: new TimeOnly(20, 0),
-            isHoliday: false);
+            context, 1, (int)DayOfWeek.Monday,
+            new TimeOnly(9, 0), new TimeOnly(20, 0), false);
+
+        var startAt = GetNextDayOfWeek(DayOfWeek.Monday, 10);
+        var endAt = startAt.AddHours(2);
 
         await SeedReservationAsync(
-            context,
-            reservationId: 1,
-            roomId: 1,
-            userId: 21,
-            startAt: new DateTime(2026, 6, 1, 11, 0, 0),
-            endAt: new DateTime(2026, 6, 1, 13, 0, 0),
-            status: "canceled",
-            amount: 6000);
+            context, 1, 1, 21,
+            startAt.AddHours(1),
+            startAt.AddHours(3),
+            "canceled", 6000);
 
         var service = CreateService(context);
-
         var request = new ReservationConfirmRequest
         {
             RoomId = 1,
-            StartAt = new DateTime(2026, 6, 1, 10, 0, 0),
-            EndAt = new DateTime(2026, 6, 1, 12, 0, 0)
+            StartAt = startAt,
+            EndAt = endAt
         };
 
-        // Act
-        var result = await service.BuildConfirmAsync(
-            userId: 20,
-            request: request);
+        var result = await service.BuildConfirmAsync(20, request);
 
-        // Assert
         Assert.Equal(7200, result.Amount);
         Assert.Equal(6000, result.Subtotal);
+    }
+
+    private static DateTime GetNextDayOfWeek(
+        DayOfWeek targetDay,
+        int hour,
+        int minute = 0)
+    {
+        var date = DateTime.UtcNow.Date.AddDays(1);
+
+        while (date.DayOfWeek != targetDay)
+        {
+            date = date.AddDays(1);
+        }
+
+        return date.AddHours(hour).AddMinutes(minute);
     }
 
     private static ReservationConfirmService CreateService(AppDbContext context)
