@@ -291,8 +291,8 @@ AIが生成した文章はそのまま投稿されるのではなく、ユーザ
 | C# | バックエンド実装 |
 | Entity Framework Core | ORM / DBアクセス |
 | MySQL | データベース |
-| JWT Bearer Authentication | 認証 |
-| Cookie Authentication | JWT Cookie 管理 |
+| JWT Bearer Authentication | JWTの検証・認証 |
+| HttpOnly Cookie | JWTアクセストークンの保持 |
 | ASP.NET Core Authorization | ロール別認可 |
 | ASP.NET Core RateLimiter | AI検索などのレート制限 |
 | Stripe API | 決済連携 |
@@ -324,7 +324,7 @@ AIが生成した文章はそのまま投稿されるのではなく、ユーザ
 | Azure Static Web Apps | フロントエンドデプロイ |
 | Heroku | バックエンドデプロイ |
 | JawsDB MySQL | Heroku上のMySQL |
-| Docker Compose | ローカルMySQL環境 |
+| Docker Compose | ローカルのASP.NET Core API・MySQL実行環境 |
 | Swagger | API確認 |
 | Mailtrap | メール送信確認 |
 
@@ -361,6 +361,23 @@ AIが生成した文章はそのまま投稿されるのではなく、ユーザ
    └─ Mailtrap
 ```
 
+### ローカルDocker構成
+
+```text
+[Next.js Frontend]
+Windows上で npm run dev
+        |
+        | http://localhost:5000
+        v
+[studio-book-api]
+ASP.NET Core API / Docker
+        |
+        | Server=mysql;Port=3306
+        v
+[studio-book-mysql]
+MySQL 8.4 / Docker
+```
+
 ### レイヤー構成
 
 ```
@@ -390,8 +407,11 @@ MySQL
 
 ## ディレクトリ構成
 
-```
+```text
 studio-book-dotnet-next
+├─ .dockerignore
+├─ docker-compose.yml
+│
 ├─ .github
 │  └─ workflows
 │     ├─ azure-static-web-apps-*.yml
@@ -403,7 +423,6 @@ studio-book-dotnet-next
 │  └─ images
 │
 ├─ Backend
-│  ├─ docker-compose.yml
 │  ├─ README.md
 │  ├─ Studiobook_backend.sln
 │  ├─ Studiobook_backend
@@ -416,6 +435,7 @@ studio-book-dotnet-next
 │  │  ├─ Services
 │  │  ├─ Settings
 │  │  ├─ Fonts
+│  │  ├─ Dockerfile
 │  │  ├─ Program.cs
 │  │  ├─ appsettings.json
 │  │  └─ Procfile
@@ -438,6 +458,7 @@ studio-book-dotnet-next
       ├─ components
       └─ lib
 ```
+
 
 ---
 
@@ -543,16 +564,68 @@ studio-book-dotnet-next
 - Stripe CLI（Webhook確認時）
 - OpenAI API Key（AI機能確認時）
 
-### Backend 起動手順
+### Backend・MySQL起動手順（Docker Compose）
 
-**1. MySQL起動**
+リポジトリのルートディレクトリで、MySQLとASP.NET Core APIを起動します。
 
 ```bash
-cd Backend
+docker compose build
 docker compose up -d
 ```
 
-**2. Backend起動**
+APIコンテナの起動時に、環境変数の設定に基づいて以下を実行します。
+
+- `ENABLE_DB_MIGRATION=true`：EF Core Migrationを適用
+- `ENABLE_DB_SEED=true`：デモデータを投入
+
+そのため、通常のDocker起動では手動の
+`dotnet ef database update` は不要です。
+
+起動状態を確認します。
+
+```bash
+docker compose ps
+```
+
+正常時は、次の2コンテナが起動します。
+
+```text
+studio-book-mysql   healthy
+studio-book-api     running
+```
+
+各URLは次のとおりです。
+
+| 対象           | URL                           |
+| ------------ | ----------------------------- |
+| Backend API  | http://localhost:5000         |
+| Health Check | http://localhost:5000/health  |
+| Swagger UI   | http://localhost:5000/swagger |
+| MySQL        | localhost:3306                |
+
+APIログを確認する場合は、次を実行します。
+
+```bash
+docker compose logs -f api
+```
+
+停止する場合は、次を実行します。
+
+```bash
+docker compose down
+```
+
+MySQLのデータはDockerの名前付きボリュームに保存されるため、通常の `docker compose down` では削除されません。
+
+データも含めて初期化する場合のみ、次を実行します。
+
+```bash
+docker compose down -v
+```
+
+### Backendをローカルで直接起動する場合
+
+APIをDockerではなくローカルの.NET SDKから起動することもできます。
 
 ```bash
 cd Backend/Studiobook_backend
@@ -561,17 +634,14 @@ dotnet ef database update
 dotnet run
 ```
 
-APIは以下で起動します。
+この場合、MySQLコンテナのみ起動しておく必要があります。
 
-```
-https://localhost:7226
+```bash
+docker compose up -d mysql
 ```
 
-Swaggerを有効化している場合:
+APIのURLは `Backend/Studiobook_backend/Properties/launchSettings.json` の設定に従います。
 
-```
-https://localhost:7226/swagger
-```
 
 ### Frontend 起動手順
 
@@ -631,8 +701,32 @@ dotnet user-secrets set "Stripe:WebhookSecret" "your-stripe-webhook-secret"
 
 `Frontend/.env.local` を作成します。
 
+Docker ComposeでバックエンドAPIを起動する場合:
+
+```env
+NEXT_PUBLIC_API_BASE_URL=http://localhost:5000
+```
+
+バックエンドを `dotnet run` で直接起動する場合は、`launchSettings.json` に記載されたURLを設定します。
+
 ```env
 NEXT_PUBLIC_API_BASE_URL=https://localhost:7226
+```
+
+### Docker Compose
+
+OpenAI APIキー、Stripeキー、本番用JWT署名キーなどは、
+`docker-compose.yml` に直接記載せず、ルートの `.env` または
+OSの環境変数から渡します。
+
+`.env` はGit管理しません。
+
+例:
+
+```env
+OPENAI_API_KEY=your-openai-api-key
+STRIPE_SECRET_KEY=your-stripe-secret-key
+STRIPE_WEBHOOK_SECRET=your-stripe-webhook-secret
 ```
 
 ---
