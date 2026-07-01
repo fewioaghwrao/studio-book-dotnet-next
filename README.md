@@ -18,10 +18,13 @@ Studio Book は、**ASP.NET Core Web API + Next.js** で構築した、スタジ
 
 | 対象 | URL |
 |---|---|
-| フロントエンド | https://gray-bush-08e107700.7.azurestaticapps.net |
+| フロントエンド（Azure） | https://gray-bush-08e107700.7.azurestaticapps.net |
+| フロントエンド（Vercel） | https://studio-book-dotnet-next.vercel.app |
 | バックエンドAPI | https://studio-book-api-60c4e5850000.herokuapp.com |
 | ヘルスチェック | https://studio-book-api-60c4e5850000.herokuapp.com/health |
 | Swagger UI | https://studio-book-api-60c4e5850000.herokuapp.com/swagger |
+
+※ Vercel版は、同一のNext.jsフロントエンドを追加デプロイした公開デモです。バックエンドAPIとDBはAzure版と共通です。
 
 ### デモアカウント
 
