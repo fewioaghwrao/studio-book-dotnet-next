@@ -828,7 +828,7 @@ Swaggerから認証APIを試験する場合の方法を確定する必要があ�
 
 ## 20.3 .NET・EF Coreバージョン
 
-READMEではASP.NET Core 8と記載され、ModelSnapshotではEntity Framework Core 9.0.1が確認されている。
+READMEではASP.NET Core 10と記載され、ModelSnapshotではEntity Framework Core 9.0.1が確認されている。
 
 ターゲットフレームワーク、EF Core、MySQL Providerの正式な組合せを確認する。
 

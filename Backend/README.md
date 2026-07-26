@@ -33,7 +33,7 @@ ASP.NET Core Web API・Entity Framework Core・MySQL を使用し、認証・ス
 
 | 技術 | 用途 |
 |---|---|
-| ASP.NET Core 8 Web API | API サーバー |
+| ASP.NET Core 10 Web API | API サーバー |
 | C# | バックエンド実装 |
 | Entity Framework Core | ORM / DB アクセス |
 | MySQL | データベース |
@@ -49,7 +49,7 @@ ASP.NET Core Web API・Entity Framework Core・MySQL を使用し、認証・ス
 | Moq | モック作成 |
 | EF Core InMemory | テスト用 DB |
 | Swagger | API 仕様確認 |
-| Docker Compose | ローカルのASP.NET Core API・MySQL実行環境 |
+| Docker Compose | .NET 10 API・MySQLのローカル実行環境 |
 | Heroku | API デプロイ |
 | JawsDB MySQL | 本番想定 DB |
 
@@ -64,7 +64,7 @@ studio-book-dotnet-next
 │
 ├─ Backend
 │  ├─ README.md
-│  ├─ Studiobook_backend.sln
+│  ├─ Studiobook_backend.slnx
 │  │
 │  ├─ Studiobook_backend
 │  │  ├─ Controllers
@@ -398,13 +398,16 @@ PDF 生成には **QuestPDF** を使用します。
 
 ### 前提
 
-- .NET 8 SDK
+- .NET 10 SDK
 - Docker Desktop
 - Git
 - Stripe CLI（Webhook 確認時）
 - OpenAI API Key（AI 機能確認時）
 
 ### 起動手順
+
+APIのDockerfileでは、ビルドに `mcr.microsoft.com/dotnet/sdk:10.0`、
+実行に `mcr.microsoft.com/dotnet/aspnet:10.0` を使用します。
 
 リポジトリのルートディレクトリで、MySQLとASP.NET Core APIを起動します。
 
@@ -569,8 +572,12 @@ GitHub Actions により、push / pull request 時に Backend のビルド・テ
 
 **実行内容:**
 
-```
-.NET restore → .NET build → .NET test
+```text
+.NET 10 SDK セットアップ
+  → dotnet restore Backend/Studiobook_backend.slnx
+  → dotnet build Backend/Studiobook_backend.slnx
+  → dotnet test Backend/Studiobook_backend.slnx
+  → .NET 10 Dockerイメージのビルド
 ```
 
 ---
@@ -579,17 +586,26 @@ GitHub Actions により、push / pull request 時に Backend のビルド・テ
 
 Backend は Heroku へのデプロイを想定しています。
 
+モノレポの `Backend` ディレクトリだけをHerokuへ送る場合は、次のようにデプロイします。
+
+```bash
+heroku git:remote -a studio-book-api -r heroku-studio-book-api
+git subtree push --prefix Backend heroku-studio-book-api main
 ```
-git push heroku main
+
+```text
+Backendディレクトリ
         ↓
      Heroku
         ↓
-ASP.NET Core Web API
+ASP.NET Core 10 Web API
         ↓
   JawsDB MySQL
 ```
 
-Heroku では `Procfile` を使用して ASP.NET Core アプリを起動します。
+Herokuのデプロイ方式がBuildpackの場合は、`Studiobook_backend.slnx` と
+`net10.0` のプロジェクトを基にビルドします。Docker Registry方式の場合は、
+Dockerfileの .NET 10 SDK / ASP.NET Core 10 Runtime イメージを使用します。
 
 ---
 

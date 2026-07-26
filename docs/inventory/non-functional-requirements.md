@@ -21,7 +21,9 @@
 | システム名 | Studio Book |
 | システム種別 | スタジオ予約Webアプリケーション |
 | フロントエンド | Next.js |
-| バックエンド | ASP.NET Core Web API |
+| バックエンド | ASP.NET Core 10 Web API |
+| 実行基盤 | .NET 10 |
+| ソリューション形式 | `.slnx` |
 | DB | MySQL |
 | 認証 | JWT Bearer |
 | 外部サービス | Stripe、OpenAI、メール送信サービス |
@@ -480,6 +482,8 @@
 
 ## 16.1 現行実装
 
+- バックエンドは .NET 10 / ASP.NET Core 10 を対象とする。
+- ソリューションは `Backend/Studiobook_backend.slnx` で管理する。
 - Controller、Service、Service Interface、Settings、Seederを分離している。
 - DIコンテナへ各Serviceを登録している。
 - 外部APIクライアントはHttpClient Factoryを使用している。
@@ -552,6 +556,8 @@
 
 ## 19.1 現行実装
 
+- GitHub Actionsは .NET 10 SDKを使用し、`Backend/Studiobook_backend.slnx` をrestore・build・testする。
+- APIのDockerfileは `mcr.microsoft.com/dotnet/sdk:10.0` と `mcr.microsoft.com/dotnet/aspnet:10.0` を使用する。
 - 環境変数でMigration・Seed・Swaggerを切り替え可能。
 - `/health` を提供する。
 - DB初期化失敗時は起動を失敗させる。

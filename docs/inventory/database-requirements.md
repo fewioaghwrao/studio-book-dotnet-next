@@ -13,6 +13,7 @@
 | 項目 | 内容 |
 |---|---|
 | DBMS | MySQL系 |
+| 実行基盤 | .NET 10 / ASP.NET Core 10 |
 | ORM | Entity Framework Core 9.0.1 |
 | Provider特性 | MySQL AUTO_INCREMENT、`tinyint(1)`、`datetime(6)`、`time` |
 | 主キー型 | `int` |

@@ -295,7 +295,7 @@ AIが生成した文章はそのまま投稿されるのではなく、ユーザ
 
 | 技術 | 用途 |
 |---|---|
-| ASP.NET Core 8 Web API | APIサーバー |
+| ASP.NET Core 10 Web API | APIサーバー |
 | C# | バックエンド実装 |
 | Entity Framework Core | ORM / DBアクセス |
 | MySQL | データベース |
@@ -331,7 +331,7 @@ AIが生成した文章はそのまま投稿されるのではなく、ユーザ
 | Azure Static Web Apps | フロントエンドデプロイ |
 | Heroku | バックエンドデプロイ |
 | JawsDB MySQL | Heroku上のMySQL |
-| Docker Compose | ローカルのASP.NET Core API・MySQL実行環境 |
+| Docker Compose | .NET 10 API・MySQLのローカル実行環境 |
 | Swagger | API確認 |
 | Mailtrap | メール送信確認 |
 
@@ -377,7 +377,7 @@ Windows上で npm run dev
         | http://localhost:5000
         v
 [studio-book-api]
-ASP.NET Core API / Docker
+ASP.NET Core 10 API / Docker
         |
         | Server=mysql;Port=3306
         v
@@ -435,7 +435,7 @@ studio-book-dotnet-next
 │
 ├─ Backend
 │  ├─ README.md
-│  ├─ Studiobook_backend.sln
+│  ├─ Studiobook_backend.slnx
 │  ├─ Studiobook_backend
 │  │  ├─ Controllers
 │  │  ├─ Data
@@ -578,7 +578,7 @@ studio-book-dotnet-next
 
 ### 前提
 
-- .NET 8 SDK
+- .NET 10 SDK
 - Node.js / npm
 - Docker Desktop
 - Git
@@ -586,6 +586,9 @@ studio-book-dotnet-next
 - OpenAI API Key（AI機能確認時）
 
 ### Backend・MySQL起動手順（Docker Compose）
+
+APIのDockerfileでは、ビルドに `mcr.microsoft.com/dotnet/sdk:10.0`、
+実行に `mcr.microsoft.com/dotnet/aspnet:10.0` を使用します。
 
 リポジトリのルートディレクトリで、MySQLとASP.NET Core APIを起動します。
 
@@ -917,9 +920,11 @@ GitHub Actions により、push / pull request 時にテストを実行します
 
 **実行内容の例:**
 
-- .NET restore
-- .NET build
-- .NET test
+- .NET 10 SDK のセットアップ
+- `Backend/Studiobook_backend.slnx` の restore
+- `Backend/Studiobook_backend.slnx` の build
+- `Backend/Studiobook_backend.slnx` の test
+- .NET 10 SDK / ASP.NET Core 10 Runtime を使用したDockerビルド
 - Frontend install
 - Frontend test
 - Azure Static Web Apps deploy
@@ -934,7 +939,7 @@ GitHub Actions により、push / pull request 時にテストを実行します
 [Azure Static Web Apps]
         |
         v
-[Heroku ASP.NET Core API]
+[Heroku ASP.NET Core 10 API]
         |
         v
 [JawsDB MySQL]
