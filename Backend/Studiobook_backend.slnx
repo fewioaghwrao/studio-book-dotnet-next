@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Studiobook_backend.Tests/Studiobook_backend.Tests.csproj" />
+  <Project Path="Studiobook_backend/Studiobook_backend.csproj" />
+</Solution>

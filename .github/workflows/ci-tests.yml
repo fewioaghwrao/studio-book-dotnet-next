@@ -27,13 +27,13 @@ jobs:
           dotnet-version: 8.0.x
 
       - name: Restore
-        run: dotnet restore Studiobook_backend.sln
+        run: dotnet restore Studiobook_backend.slnx
 
       - name: Build
-        run: dotnet build Studiobook_backend.sln --configuration Release --no-restore
+        run: dotnet build Studiobook_backend.slnx --configuration Release --no-restore
 
       - name: Test
-        run: dotnet test Studiobook_backend.sln --configuration Release --no-build --logger "trx;LogFileName=backend-test-results.trx"
+        run: dotnet test Studiobook_backend.slnx --configuration Release --no-build --logger "trx;LogFileName=backend-test-results.trx"
 
       - name: Upload backend test results
         if: always()
