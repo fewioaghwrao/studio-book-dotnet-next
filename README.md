@@ -3,7 +3,7 @@
 [![CI Tests](https://github.com/fewioaghwrao/studio-book-dotnet-next/actions/workflows/ci-tests.yml/badge.svg)](https://github.com/fewioaghwrao/studio-book-dotnet-next/actions/workflows/ci-tests.yml)
 [![Azure Static Web Apps](https://github.com/fewioaghwrao/studio-book-dotnet-next/actions/workflows/azure-static-web-apps-gray-bush-08e107700.yml/badge.svg)](https://github.com/fewioaghwrao/studio-book-dotnet-next/actions/workflows/azure-static-web-apps-gray-bush-08e107700.yml)
 
-Studio Book は、**ASP.NET Core Web API + Next.js** で構築した、スタジオ時間貸し予約サービスのフルスタックポートフォリオアプリです。
+Studio Book は、**スタジオの時間貸しを具体例とした「施設・時間枠予約管理」Webアプリ**です。**ASP.NET Core Web API + Next.js** により、施設検索から利用日時の指定、予約・決済、施設提供者による予約運営までを扱うフルスタックポートフォリオとして構築しています。
 
 一般ユーザーはスタジオ検索、AI検索、予約、Stripe決済、レビュー投稿を行えます。  
 スタジオ提供者（ホスト）は、スタジオ情報、営業時間、休館日、料金ルール、予約、売上、レビューを管理できます。  
@@ -11,6 +11,24 @@ Studio Book は、**ASP.NET Core Web API + Next.js** で構築した、スタジ
 
 既存の Java / Spring Boot 版 Studio Book を参考にしつつ、  
 **ASP.NET Core Web API + Next.js App Router** 構成として再設計・再実装したアプリです。
+
+## 業務上の位置付け：施設・時間枠予約管理
+
+本アプリの中心となる業務は、**予約対象となる施設（リソース）と利用者を、利用日時・空き状況・料金・予約状態に紐づけて管理すること**です。現在の実装では予約対象をスタジオとして扱い、以下の業務データを管理します。
+
+| 業務上の概念 | 現行の実装・データ | 役割 |
+|---|---|---|
+| 予約対象施設 | `Rooms` | スタジオの基本情報と利用料金 |
+| 利用可能な日時 | `BusinessHours` / `Closures` | 営業時間・休館日による利用制約 |
+| 利用時間枠 | `Reservations` の `StartAt` / `EndAt` | 予約対象・利用者・予約日時の紐づけ |
+| 料金ルール | `PriceRules` / `ReservationChargeItems` | 時間帯別の料金計算と料金内訳 |
+| 運営業務 | ホスト・管理者向け機能 | 予約、売上、設定、レビュー、監査ログの管理 |
+
+### 他用途への応用について
+
+「施設・時間枠予約管理」という業務の捉え方は、会議室、レンタルスペース、練習室などの利用予約にも応用可能です。**ただし、これは業務モデル・設計思想の転用可能性を示すもので、現行アプリが各業種にそのまま対応しているという意味ではありません。**
+
+現行の画面、API（例：`/api/rooms`）、DB（例：`Rooms`）、検索条件はスタジオを前提としています。他業種への転用には、施設属性、予約条件、料金体系、権限、画面・検索条件などの見直しが必要です。また、予約重複の同時実行制御、予約状態の意味、Webhook冪等性などは既知の改善対象です。
 
 ---
 
@@ -57,10 +75,11 @@ Swagger UIからBearerトークンを設定する場合は、Swaggerの認証設
 
 ## このアプリで示したいこと
 
+- **施設・時間枠予約管理**の業務モデル（利用者・予約対象・利用日時・空き状況・予約状態・料金）の設計
 - ASP.NET Core Web API と Next.js によるフロントエンド / バックエンド分離構成
 - 一般ユーザー / ホスト / 管理者の3ロール設計
 - JWT Bearer 認証とロール別アクセス制御
-- スタジオ検索、予約、決済、レビュー投稿までの一連の業務フロー
+- スタジオを対象とした施設検索、予約、決済、レビュー投稿までの一連の業務フロー
 - 営業時間、休館日、料金ルールを考慮した予約管理
 - Stripe Checkout / Webhook を想定した決済連携
 - OpenAI API を利用した自然文スタジオ検索・レビュー補助
@@ -74,7 +93,7 @@ Swagger UIからBearerトークンを設定する場合は、Swaggerの認証設
 
 ## アプリ概要
 
-Studio Book は、ダンススタジオ・撮影スタジオ・レンタルスペースなどの時間貸し予約を想定したWebアプリです。
+Studio Book は、ダンススタジオ・撮影スタジオ・レンタルスペースなどの**施設を時間枠で予約する業務**を、スタジオ予約サービスとして具体化したWebアプリです。利用者向けの施設検索・予約操作に加え、ホストによる営業時間・休館日・料金・予約・売上の管理、管理者による横断管理までを対象としています。
 
 ### 主な利用者
 
@@ -986,8 +1005,6 @@ GitHub Actions により、push / pull request 時にテストを実行します
 - 実運用には、セキュリティ、決済、個人情報保護、監査ログ、運用監視などの追加検討が必要です。
 
 ---
-
-## 関連ドキュメント
 
 ## 関連ドキュメント
 

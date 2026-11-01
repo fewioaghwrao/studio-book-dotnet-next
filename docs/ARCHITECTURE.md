@@ -1,6 +1,6 @@
 # Architecture - Studio Book .NET + Next.js
 
-Studio Book .NET + Next.js のアーキテクチャ資料です。
+Studio Book .NET + Next.js のアーキテクチャ資料です。本アプリは、**スタジオの時間貸しを具体例とした施設・時間枠予約管理システム**です。
 
 本アプリは、**Next.js フロントエンド** と **ASP.NET Core Web API バックエンド** を分離した構成で実装しています。  
 一般ユーザー、スタジオ提供者、管理者の3ロールを対象に、スタジオ検索、予約、決済、レビュー、売上管理、監査ログ、AI検索などを扱います。
@@ -9,6 +9,7 @@ Studio Book .NET + Next.js のアーキテクチャ資料です。
 
 ## 目次
 
+- [対象業務と適用範囲](#対象業務と適用範囲)
 - [全体構成](#全体構成)
 - [システム構成図](#システム構成図)
 - [アプリケーション構成](#アプリケーション構成)
@@ -22,6 +23,14 @@ Studio Book .NET + Next.js のアーキテクチャ資料です。
 - [ログ設計](#ログ設計)
 - [CI/CD・デプロイ構成](#cicdデプロイ構成)
 - [設計上のポイント](#設計上のポイント)
+
+---
+
+## 対象業務と適用範囲
+
+予約対象施設、利用者、利用日時、空き状況、予約状態、料金を紐づける「施設・時間枠予約管理」を業務モデルとします。現行実装では、`Rooms` をスタジオ情報、`BusinessHours` / `Closures` を利用可能な日時条件、`Reservations` を予約時間枠・状態、`PriceRules` / `ReservationChargeItems` を料金ルール・明細として扱います。
+
+会議室・レンタルスペース等へもこの業務モデルを応用できる余地はありますが、**現行アプリが汎用施設予約機能を備えていることを意味しません**。施設属性・検索・料金・権限などの調整が必要です。アプリケーション名、画面表示、API、DBのスタジオ関連名称は現行仕様として維持します。
 
 ---
 
@@ -153,7 +162,7 @@ studio-book-dotnet-next
 
 ## バックエンド構成
 
-バックエンドは ASP.NET Core Web API で構築しています。
+バックエンドは ASP.NET Core Web API で構築しています。現行ソリューションは**API本体（`Studiobook_backend`）とテスト（`Studiobook_backend.Tests`）の2プロジェクト構成**であり、Controller・Service・DbContext等はAPI本体内で責務分担しています。Api / Application / Domain / Infrastructureへのプロジェクト分割は本資料における実装済み構成ではありません。
 
 ### レイヤー構成
 
