@@ -66,15 +66,26 @@ studio-book-dotnet-next
 │  ├─ README.md
 │  ├─ Studiobook_backend.slnx
 │  │
-│  ├─ Studiobook_backend
-│  │  ├─ Controllers
-│  │  ├─ Data
+│  ├─ Studiobook_backend.Domain          # Domain 層（依存なし）
+│  │  └─ Entities
+│  │
+│  ├─ Studiobook_backend.Application     # Application 層（→ Domain）
+│  │  ├─ Common
 │  │  ├─ Dtos
-│  │  ├─ Entities
+│  │  ├─ Interfaces                      # IAppDbContext / 外部サービスの抽象
+│  │  ├─ Services                        # ユースケース（業務ロジック）
+│  │  ├─ Settings
+│  │  └─ DependencyInjection.cs          # AddApplication()
+│  │
+│  ├─ Studiobook_backend.Infrastructure  # Infrastructure 層（→ Application）
+│  │  ├─ Persistence                     # AppDbContext
 │  │  ├─ Migrations
 │  │  ├─ Seeders
-│  │  ├─ Services
-│  │  ├─ Settings
+│  │  ├─ Services                        # Email / JWT / PasswordHasher / OpenAI / Stripe
+│  │  └─ DependencyInjection.cs          # AddInfrastructure()
+│  │
+│  ├─ Studiobook_backend                 # Api 層（→ Application / Infrastructure）
+│  │  ├─ Controllers
 │  │  ├─ Fonts
 │  │  ├─ Dockerfile
 │  │  ├─ Program.cs
@@ -94,19 +105,29 @@ studio-book-dotnet-next
         │
         │ HTTPS / JSON API
         ▼
-[ASP.NET Core Web API]
+[Api: Studiobook_backend]            Controller / 認証・認可 / CORS / レート制限
         │
         ▼
-   [Controller]
-        │
-        ▼
-    [Service]
-        │
-        ▼
-[AppDbContext / Entity Framework Core]
-        │
-        ▼
-     [MySQL]
+[Application]                        Service（ユースケース）/ DTO / Interface
+        │            ▲
+        ▼            │ implements（IAppDbContext・外部サービスの抽象）
+[Domain]       [Infrastructure]      AppDbContext(EF Core) / Migrations / 外部API連携
+ Entity              │
+                     ▼
+                 [MySQL]
+```
+
+依存の向きは Api → Application → Domain、Infrastructure → Application です。
+DI 登録は `AddApplication()` と `AddInfrastructure(configuration)` に集約しています。
+
+EF Core マイグレーションは Infrastructure プロジェクトにあります。追加する場合は次のように実行します。
+
+```bash
+cd Backend
+dotnet ef migrations add <Name> \
+  --project Studiobook_backend.Infrastructure \
+  --startup-project Studiobook_backend \
+  --output-dir Migrations
 ```
 
 **外部サービス連携:**

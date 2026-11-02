@@ -162,30 +162,46 @@ studio-book-dotnet-next
 
 ## バックエンド構成
 
-バックエンドは ASP.NET Core Web API で構築しています。現行ソリューションは**API本体（`Studiobook_backend`）とテスト（`Studiobook_backend.Tests`）の2プロジェクト構成**であり、Controller・Service・DbContext等はAPI本体内で責務分担しています。Api / Application / Domain / Infrastructureへのプロジェクト分割は本資料における実装済み構成ではありません。
+バックエンドは ASP.NET Core Web API で構築しています。ソリューションは **Domain / Application / Infrastructure / Api（`Studiobook_backend`）の4層＋テスト（`Studiobook_backend.Tests`）の5プロジェクト構成**です。
 
 ### レイヤー構成
 
 ```
-Controller
-  ↓
-Service
-  ↓
-DbContext / Entity
-  ↓
-MySQL
+Studiobook_backend (Api)
+  │  Controller / Program.cs（認証・認可・CORS・レート制限）
+  ├──────────────┐
+  ▼              ▼
+Studiobook_backend.Application   ◀──  Studiobook_backend.Infrastructure
+  │  Service（ユースケース）/ DTO       AppDbContext・Migration・Seeder
+  │  Interface（IAppDbContext 等）      Email / JWT / PasswordHasher
+  ▼                                     OpenAI / Stripe クライアント
+Studiobook_backend.Domain                        │
+     Entity                                      ▼
+                                              MySQL / 外部API
 ```
+
+依存の向きは **Api → Application → Domain** と **Infrastructure → Application**（Infrastructure が Application のインターフェースを実装）です。Application 層は DB や外部 API の具体的な実装を知らず、`IAppDbContext` / `IStripeCheckoutService` / `IOpenAiRoomSearchClient` などの抽象を介して利用します。
+
+| プロジェクト | 依存先 | 主な内容 |
+|---|---|---|
+| `Studiobook_backend.Domain` | なし | Entity |
+| `Studiobook_backend.Application` | Domain | Service（業務ロジック）、DTO、Interface、Settings、`AddApplication()` |
+| `Studiobook_backend.Infrastructure` | Application | `AppDbContext`、Migrations、Seeders、外部サービス実装、`AddInfrastructure()` |
+| `Studiobook_backend`（Api） | Application / Infrastructure | Controller、Program.cs、appsettings、Dockerfile |
+| `Studiobook_backend.Tests` | 全プロジェクト | Controller / Service の単体テスト |
 
 ### 各層の責務
 
 | 層 | 主な責務 |
 |---|---|
-| Controller | APIエンドポイント、認証・認可、HTTPレスポンス変換 |
-| Service | 業務ロジック、予約処理、料金計算、売上集計、AI連携、ログ記録 |
-| DTO | APIの入出力モデル |
-| Entity | DB永続化モデル |
-| DbContext | EF Core によるDB操作 |
-| Migration | DBスキーマ管理 |
+| Api（Controller） | APIエンドポイント、認証・認可、HTTPレスポンス変換 |
+| Application（Service） | 業務ロジック、予約処理、料金計算、売上集計、AI連携、ログ記録 |
+| Application（DTO） | APIの入出力モデル |
+| Application（Interface） | 永続化・外部サービスの抽象 |
+| Domain（Entity） | 業務データ / DB永続化モデル |
+| Infrastructure（DbContext） | EF Core によるDB操作（`IAppDbContext` の実装） |
+| Infrastructure（Migration） | DBスキーマ管理 |
+| Infrastructure（外部サービス） | メール送信、JWT発行、パスワードハッシュ、OpenAI、Stripe |
 | Tests | Controller / Service の単体テスト |
 
 ### 主なバックエンド機能
