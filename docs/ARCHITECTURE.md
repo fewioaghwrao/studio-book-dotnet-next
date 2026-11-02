@@ -186,7 +186,7 @@ Studiobook_backend.Domain                        │
 |---|---|---|
 | `Studiobook_backend.Domain` | なし | Entity |
 | `Studiobook_backend.Application` | Domain | Service（業務ロジック）、DTO、Interface、Settings、`AddApplication()` |
-| `Studiobook_backend.Infrastructure` | Application | `AppDbContext`、Migrations、Seeders、外部サービス実装、`AddInfrastructure()` |
+| `Studiobook_backend.Infrastructure` | Application | `AppDbContext`、Migrations、Seeders、外部サービス実装、CSV / PDF 帳票出力、`AddInfrastructure()` |
 | `Studiobook_backend`（Api） | Application / Infrastructure | Controller、Program.cs、appsettings、Dockerfile |
 | `Studiobook_backend.Tests` | 全プロジェクト | Controller / Service の単体テスト |
 
@@ -202,6 +202,7 @@ Studiobook_backend.Domain                        │
 | Infrastructure（DbContext） | EF Core によるDB操作（`IAppDbContext` の実装） |
 | Infrastructure（Migration） | DBスキーマ管理 |
 | Infrastructure（外部サービス） | メール送信、JWT発行、パスワードハッシュ、OpenAI、Stripe |
+| Infrastructure（帳票） | 売上 CSV・請求書 PDF（QuestPDF）の出力 |
 | Tests | Controller / Service の単体テスト |
 
 ### 主なバックエンド機能

@@ -3,7 +3,7 @@
   <!--
     Infrastructure 層: Application 層のインターフェースの実装を持ちます。
     EF Core(MySQL) の DbContext・マイグレーション・シーダー、メール送信、JWT 発行、
-    パスワードハッシュ、OpenAI / Stripe などの外部サービス連携。
+    パスワードハッシュ、OpenAI / Stripe などの外部サービス連携、CSV / PDF の帳票出力。
   -->
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -20,6 +20,7 @@
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.25" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.1" />
     <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="9.0.0" />
+    <PackageReference Include="QuestPDF" Version="2026.2.4" />
     <PackageReference Include="Stripe.net" Version="51.1.0" />
   </ItemGroup>
 

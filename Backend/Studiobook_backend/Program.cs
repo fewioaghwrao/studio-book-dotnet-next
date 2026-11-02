@@ -7,43 +7,15 @@ using Studiobook_backend.Application.Settings;
 using Studiobook_backend.Infrastructure;
 using Studiobook_backend.Infrastructure.Persistence;
 using Studiobook_backend.Infrastructure.Seeders;
-using QuestPDF.Infrastructure;
 using System.Text;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
 using System.Security.Claims;
 using System.Text.Json;
-using QuestPDF.Drawing;
 
 var builder = WebApplication.CreateBuilder(args);
 
-QuestPDF.Settings.License = LicenseType.Community;
-
-var regularFontPath = Path.Combine(
-    AppContext.BaseDirectory,
-    "Fonts",
-    "NotoSansJP-Regular.ttf"
-);
-
-if (System.IO.File.Exists(regularFontPath))
-{
-    using var regularFontStream = System.IO.File.OpenRead(regularFontPath);
-    FontManager.RegisterFontWithCustomName("NotoSansJP", regularFontStream);
-}
-
-var boldFontPath = Path.Combine(
-    AppContext.BaseDirectory,
-    "Fonts",
-    "NotoSansJP-Bold.ttf"
-);
-
-if (System.IO.File.Exists(boldFontPath))
-{
-    using var boldFontStream = System.IO.File.OpenRead(boldFontPath);
-    FontManager.RegisterFontWithCustomName("NotoSansJP", boldFontStream);
-}
-
-// Application 層（ユースケース）/ Infrastructure 層（DB・外部サービス）の登録
+// Application 層（ユースケース）/ Infrastructure 層（DB・外部サービス・帳票出力、QuestPDF のフォント登録を含む）の登録
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 

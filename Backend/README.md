@@ -82,6 +82,7 @@ studio-book-dotnet-next
 │  │  ├─ Migrations
 │  │  ├─ Seeders
 │  │  ├─ Services                        # Email / JWT / PasswordHasher / OpenAI / Stripe
+│  │  ├─ Reports                         # 売上 CSV / 請求書 PDF（QuestPDF）の出力
 │  │  └─ DependencyInjection.cs          # AddInfrastructure()
 │  │
 │  ├─ Studiobook_backend                 # Api 層（→ Application / Infrastructure）

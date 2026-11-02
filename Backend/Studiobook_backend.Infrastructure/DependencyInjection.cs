@@ -4,6 +4,7 @@ using Studiobook_backend.Application.Interfaces;
 using Studiobook_backend.Application.Settings;
 using Studiobook_backend.Domain.Entities;
 using Studiobook_backend.Infrastructure.Persistence;
+using Studiobook_backend.Infrastructure.Reports;
 using Studiobook_backend.Infrastructure.Services;
 
 namespace Studiobook_backend.Infrastructure;
@@ -45,6 +46,11 @@ public static class DependencyInjection
         // OpenAI
         services.AddHttpClient<IOpenAiRoomSearchClient, OpenAiRoomSearchClient>();
         services.AddHttpClient<IOpenAiReviewAssistClient, OpenAiReviewAssistClient>();
+
+        // 帳票（CSV / PDF）
+        QuestPdfSetup.Configure();
+        services.AddScoped<IHostSalesCsvExporter, HostSalesCsvExporter>();
+        services.AddScoped<IHostSalesInvoicePdfGenerator, HostSalesInvoicePdfGenerator>();
 
         // Stripe
         services.AddScoped<IStripeCheckoutService, StripeCheckoutService>();
