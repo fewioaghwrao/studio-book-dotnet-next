@@ -1,10 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Studiobook_backend.Data;
-using Studiobook_backend.Dtos;
-using Studiobook_backend.Services;
-using Studiobook_backend.Services.Interfaces;
+using Studiobook_backend.Application.Dtos;
+using Studiobook_backend.Application.Services;
+using Studiobook_backend.Application.Interfaces;
 
 namespace Studiobook_backend.Controllers
 {
@@ -17,13 +16,13 @@ namespace Studiobook_backend.Controllers
 
         private readonly IAuthService _authService;
         private readonly IJwtTokenService _jwtTokenService;
-        private readonly AppDbContext _dbContext;
+        private readonly IAppDbContext _dbContext;
         private readonly PasswordResetService _passwordResetService;
 
         public AuthController(
             IAuthService authService,
             IJwtTokenService jwtTokenService,
-            AppDbContext dbContext,
+            IAppDbContext dbContext,
             PasswordResetService passwordResetService,
             AuditLogService auditLogService)
         {

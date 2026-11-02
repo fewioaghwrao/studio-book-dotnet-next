@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Studiobook_backend.Dtos.Ai;
-using Studiobook_backend.Services;
+using Studiobook_backend.Application.Dtos.Ai;
+using Studiobook_backend.Application.Services;
 
 namespace Studiobook_backend.Controllers;
 

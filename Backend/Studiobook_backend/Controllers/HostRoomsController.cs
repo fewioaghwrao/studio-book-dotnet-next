@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Studiobook_backend.Data;
-using Studiobook_backend.Dtos;
+using Studiobook_backend.Application.Interfaces;
+using Studiobook_backend.Application.Dtos;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
@@ -13,9 +13,9 @@ namespace Studiobook_backend.Controllers
     [Authorize(Roles = "Host")]
     public class HostRoomsController : ControllerBase
     {
-        private readonly AppDbContext _dbContext;
+        private readonly IAppDbContext _dbContext;
 
-        public HostRoomsController(AppDbContext dbContext)
+        public HostRoomsController(IAppDbContext dbContext)
         {
             _dbContext = dbContext;
         }

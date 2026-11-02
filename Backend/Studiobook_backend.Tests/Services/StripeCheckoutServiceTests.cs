@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Options;
-using Studiobook_backend.Services;
-using Studiobook_backend.Settings;
+using Studiobook_backend.Application.Services;
+using Studiobook_backend.Infrastructure.Services;
+using Studiobook_backend.Application.Settings;
 
 namespace Studiobook_backend.Tests.Services;
 

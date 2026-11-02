@@ -2,8 +2,8 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Studiobook_backend.Dtos.Admin;
-using Studiobook_backend.Services;
+using Studiobook_backend.Application.Dtos.Admin;
+using Studiobook_backend.Application.Services;
 
 namespace Studiobook_backend.Controllers
 {

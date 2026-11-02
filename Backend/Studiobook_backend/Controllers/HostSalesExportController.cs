@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
-using Studiobook_backend.Data;
+using Studiobook_backend.Application.Interfaces;
 
 namespace Studiobook_backend.Controllers
 {
@@ -15,9 +15,9 @@ namespace Studiobook_backend.Controllers
     [Route("api/host/sales")]
     public class HostSalesExportController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly IAppDbContext _context;
 
-        public HostSalesExportController(AppDbContext context)
+        public HostSalesExportController(IAppDbContext context)
         {
             _context = context;
         }

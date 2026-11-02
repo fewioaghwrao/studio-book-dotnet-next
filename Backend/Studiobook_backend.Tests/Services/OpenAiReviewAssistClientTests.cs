@@ -1,7 +1,8 @@
 ﻿using System.Net;
 using Microsoft.Extensions.Options;
-using Studiobook_backend.Services;
-using Studiobook_backend.Settings;
+using Studiobook_backend.Application.Services;
+using Studiobook_backend.Infrastructure.Services;
+using Studiobook_backend.Application.Settings;
 using System.Text.Json;
 
 namespace Studiobook_backend.Tests.Services;

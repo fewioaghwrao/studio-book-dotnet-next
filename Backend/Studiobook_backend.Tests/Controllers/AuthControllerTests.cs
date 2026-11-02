@@ -2,10 +2,11 @@
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using Studiobook_backend.Controllers;
-using Studiobook_backend.Data;
-using Studiobook_backend.Dtos;
-using Studiobook_backend.Services;
-using Studiobook_backend.Services.Interfaces;
+using Studiobook_backend.Infrastructure.Persistence;
+using Studiobook_backend.Application.Dtos;
+using Studiobook_backend.Application.Services;
+using Studiobook_backend.Infrastructure.Services;
+using Studiobook_backend.Application.Interfaces;
 using Studiobook_backend.Tests.Helpers;
 
 namespace Studiobook_backend.Tests.Controllers;

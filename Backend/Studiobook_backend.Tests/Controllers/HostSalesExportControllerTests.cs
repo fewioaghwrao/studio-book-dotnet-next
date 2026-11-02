@@ -3,8 +3,8 @@ using System.Text;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Studiobook_backend.Controllers;
-using Studiobook_backend.Data;
-using Studiobook_backend.Entities;
+using Studiobook_backend.Infrastructure.Persistence;
+using Studiobook_backend.Domain.Entities;
 using Studiobook_backend.Tests.Helpers;
 using QuestPDF.Infrastructure;
 

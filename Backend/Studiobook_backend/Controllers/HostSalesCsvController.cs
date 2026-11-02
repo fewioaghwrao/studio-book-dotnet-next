@@ -3,7 +3,7 @@ using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Studiobook_backend.Data;
+using Studiobook_backend.Application.Interfaces;
 
 namespace Studiobook_backend.Controllers
 {
@@ -12,9 +12,9 @@ namespace Studiobook_backend.Controllers
     [Route("api/host")]
     public class HostSalesCsvController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly IAppDbContext _context;
 
-        public HostSalesCsvController(AppDbContext context)
+        public HostSalesCsvController(IAppDbContext context)
         {
             _context = context;
         }

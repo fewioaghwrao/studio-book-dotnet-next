@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Studiobook_backend.Dtos.Rooms;
-using Studiobook_backend.Services;
+using Studiobook_backend.Application.Dtos.Rooms;
+using Studiobook_backend.Application.Services;
 
 namespace Studiobook_backend.Controllers
 {

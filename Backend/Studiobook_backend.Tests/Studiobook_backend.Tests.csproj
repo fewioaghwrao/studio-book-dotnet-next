@@ -19,6 +19,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Studiobook_backend.Domain\Studiobook_backend.Domain.csproj" />
+    <ProjectReference Include="..\Studiobook_backend.Application\Studiobook_backend.Application.csproj" />
+    <ProjectReference Include="..\Studiobook_backend.Infrastructure\Studiobook_backend.Infrastructure.csproj" />
     <ProjectReference Include="..\Studiobook_backend\Studiobook_backend.csproj" />
   </ItemGroup>
 
