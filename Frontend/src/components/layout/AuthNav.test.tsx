@@ -280,4 +280,87 @@ describe("AuthNav", () => {
       })
     );
   });
+
+  describe("ログアウト確認ダイアログ", () => {
+    async function openHostMenu() {
+      const user = userEvent.setup();
+
+      localStorage.setItem("token", "test-token");
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          isAuthenticated: true,
+          user: {
+            id: 3,
+            name: "ホストユーザー",
+            email: "host@example.com",
+            roles: ["Host"],
+          },
+        }),
+      });
+
+      render(<AuthNav />);
+
+      await user.click(
+        await screen.findByRole("button", { name: /スタジオ提供者メニュー/ })
+      );
+
+      return user;
+    }
+
+    test("ログアウトを押すと確認ダイアログを表示し、すぐにはログアウトしない", async () => {
+      const user = await openHostMenu();
+
+      await user.click(screen.getByRole("button", { name: "ログアウト" }));
+
+      expect(
+        screen.getByRole("alertdialog", { name: "ログアウトしますか？" })
+      ).toBeInTheDocument();
+      expect(screen.getByText("ホストユーザー さん")).toBeInTheDocument();
+
+      // メニューは閉じ、ログアウトAPIはまだ呼ばない
+      expect(screen.queryByRole("link", { name: "会員情報" })).toBeNull();
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+      expect(localStorage.getItem("token")).toBe("test-token");
+    });
+
+    test("キャンセルするとダイアログを閉じ、ログイン状態のまま", async () => {
+      const user = await openHostMenu();
+
+      await user.click(screen.getByRole("button", { name: "ログアウト" }));
+      await user.click(screen.getByRole("button", { name: "キャンセル" }));
+
+      expect(screen.queryByRole("alertdialog")).toBeNull();
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+      expect(localStorage.getItem("token")).toBe("test-token");
+      expect(
+        screen.getByRole("button", { name: /スタジオ提供者メニュー/ })
+      ).toBeInTheDocument();
+    });
+
+    test("ログアウトするを押すとAPIを呼び、tokenを削除する", async () => {
+      const user = await openHostMenu();
+
+      mockFetch.mockResolvedValueOnce({ ok: true, status: 200 });
+
+      await user.click(screen.getByRole("button", { name: "ログアウト" }));
+      await user.click(screen.getByRole("button", { name: "ログアウトする" }));
+
+      await waitFor(() => {
+        expect(localStorage.getItem("token")).toBeNull();
+      });
+
+      expect(mockFetch).toHaveBeenLastCalledWith(
+        "https://localhost:7226/api/auth/logout",
+        expect.objectContaining({
+          method: "POST",
+          headers: expect.objectContaining({
+            Authorization: "Bearer test-token",
+          }),
+        })
+      );
+    });
+  });
 });

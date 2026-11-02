@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { apiFetch } from "@/lib/apiFetch";
+import LogoutConfirmDialog from "./LogoutConfirmDialog";
 
 type CurrentUserResponse = {
   isAuthenticated: boolean;
@@ -39,6 +40,8 @@ export default function AuthNav() {
   const [userName, setUserName] = useState("");
   const [role, setRole] = useState<RoleKind>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const menuRef = useRef<HTMLDivElement | null>(null);
 
@@ -122,7 +125,20 @@ const response = await apiFetch(`${apiBaseUrl}/api/auth/me`, {
     };
   }, []);
 
+const openLogoutDialog = () => {
+  setIsMenuOpen(false);
+  setIsLogoutDialogOpen(true);
+};
+
+const closeLogoutDialog = () => {
+  if (isLoggingOut) return;
+  setIsLogoutDialogOpen(false);
+};
+
 const handleLogout = async () => {
+  if (isLoggingOut) return;
+  setIsLoggingOut(true);
+
   const token = localStorage.getItem("token");
 
   try {
@@ -349,7 +365,7 @@ const handleLogout = async () => {
 
             <button
               type="button"
-              onClick={handleLogout}
+              onClick={openLogoutDialog}
               className="block w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-stone-50 hover:text-sky-700"
             >
               ログアウト
@@ -357,6 +373,17 @@ const handleLogout = async () => {
           </div>
         </div>
       )}
+
+      <LogoutConfirmDialog
+        open={isLogoutDialogOpen}
+        userName={userName}
+        roleLabel={
+          role === "ADMIN" ? "管理者" : role === "HOST" ? "スタジオ提供者" : undefined
+        }
+        isProcessing={isLoggingOut}
+        onCancel={closeLogoutDialog}
+        onConfirm={handleLogout}
+      />
     </div>
   );
 }
