@@ -141,12 +141,71 @@ Studio Book は、ダンススタジオ・撮影スタジオ・レンタルス�
 
 ### ホスト・管理者向け画面
 
+ホスト・管理者画面は、日常的に操作する業務画面として**共通の左サイドバー**で各機能を切り替えます（折りたたみ可、スマホではドロワー表示）。
+一般ユーザー向け画面は、従来どおりヘッダー型のナビゲーションです。
+
 ホストは売上・稼働率・レビュー平均などを確認できます。  
 管理者は全体の登録スタジオ数、ホスト数、予約件数、手数料売上などを確認できます。
 
 | ホスト統計 | 管理者データ一覧 |
 |---|---|
 | ![ホスト統計](docs/images/hostdashboard.jpeg) | ![管理者データ一覧](docs/images/admindashboard.jpeg) |
+
+#### ホスト画面
+
+スタジオを選択すると、サイドバーにそのスタジオの「基本情報・営業時間・休館日・料金ルール」が表示されます。
+
+| スタジオ一覧 | スタジオ詳細 |
+|---|---|
+| ![ホスト スタジオ一覧](docs/images/host-room-list.jpeg) | ![ホスト スタジオ詳細](docs/images/host-room-detail.jpeg) |
+
+| 営業時間設定 | 休館日設定 |
+|---|---|
+| ![営業時間設定](docs/images/host-business-hours.jpeg) | ![休館日設定](docs/images/host-closures.jpeg) |
+
+| 料金ルール設定 | 予約一覧 |
+|---|---|
+| ![料金ルール設定](docs/images/host-price-rules.jpeg) | ![ホスト 予約一覧](docs/images/host-reservations.jpeg) |
+
+| 売上明細一覧 | 売上明細 |
+|---|---|
+| ![売上明細一覧](docs/images/host-sales-list.jpeg) | ![売上明細](docs/images/host-sales-detail.jpeg) |
+
+| レビュー管理 |
+|---|
+| ![レビュー管理](docs/images/host-reviews.jpeg) |
+
+#### 売上明細の出力（CSV / PDF）
+
+売上明細は CSV（UTF-8 BOM付き、Excelで文字化けしない形式）と、請求書形式の PDF（QuestPDF）で出力できます。
+
+| 売上明細CSV（Excelで表示） | 売上明細PDF（請求書） |
+|---|---|
+| ![売上明細CSV](docs/images/host-sales-items-csv.png) | ![売上明細PDF](docs/images/host-sales-invoice-pdf.png) |
+
+#### 管理者画面
+
+| 会員一覧 | 会員詳細 |
+|---|---|
+| ![会員一覧](docs/images/admin-user-list.jpeg) | ![会員詳細](docs/images/admin-user-detail.jpeg) |
+
+| スタジオ一覧 | スタジオ詳細 |
+|---|---|
+| ![管理者 スタジオ一覧](docs/images/admin-room-list.jpeg) | ![管理者 スタジオ詳細](docs/images/admin-room-detail.jpeg) |
+
+| 監査ログ | AI検索ログ |
+|---|---|
+| ![監査ログ](docs/images/admin-audit-logs.jpeg) | ![AI検索ログ](docs/images/admin-ai-search-logs.jpeg) |
+
+| 管理設定 |
+|---|
+| ![管理設定](docs/images/admin-settings.jpeg) |
+
+### ログアウト確認
+
+ログアウト時は確認ダイアログを表示し、誤操作によるログアウトを防ぎます。
+
+<img src="docs/images/logout-dialog.png" alt="ログアウト確認ダイアログ" width="360">
 
 ---
 
@@ -218,11 +277,11 @@ Studio Book は、ダンススタジオ・撮影スタジオ・レンタルス�
 
 - 会員登録
 - メール認証
-- ログイン / ログアウト
+- ログイン / ログアウト（ログアウト確認ダイアログ）
 - JWT Bearer 認証
 - パスワードリセット
 - 会員情報編集
-- ロール別メニュー表示
+- ロール別メニュー表示（ホスト・管理者は共通サイドバー）
 - エラー画面
 - レスポンシブ対応
 

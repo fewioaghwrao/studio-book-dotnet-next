@@ -15,7 +15,8 @@ Next.js App Router・React・TypeScript を使用し、一般ユーザー、ス�
 - トップページ表示
 - ログイン / 会員登録
 - JWT Cookie 認証を前提としたログイン状態管理
-- ロール別ナビゲーション表示
+- ロール別ナビゲーション表示（ホスト・管理者は共通サイドバー）
+- ログアウト確認ダイアログ
 - スタジオ一覧 / 詳細表示
 - AI自然文スタジオ検索
 - 予約入力 / 予約内容確認
@@ -233,8 +234,9 @@ NEXT_PUBLIC_API_BASE_URL=https://localhost:7226
 |---|---|
 | 未ログイン | トップ、スタジオ一覧、詳細、ログイン、会員登録などを表示 |
 | 一般ユーザー | 予約、予約履歴、レビュー投稿、会員情報を表示 |
-| ホスト | ホスト管理メニューを表示 |
-| 管理者 | 管理者メニューを表示 |
+| ホスト | ホスト管理メニュー（ヘッダー）と共通サイドバーを表示 |
+| 管理者 | 管理者メニュー（ヘッダー）と共通サイドバーを表示 |
+| ログアウト | 確認ダイアログで確定後にログアウト |
 | 権限不足 | 403画面へ誘導 |
 
 ---
@@ -319,6 +321,31 @@ AIスタジオ検索では、ユーザーが自然文で希望条件を入力で
 - PDF出力
 - 統計表示
 
+### サイドバー
+
+`app/host/layout.tsx` で共通サイドバー（`DashboardShell`）を適用しています。
+スタジオ配下（`/host/rooms/[id]/...`）では、そのスタジオの「基本情報・営業時間・休館日・料金ルール」をサブメニューとして表示します。
+
+| 統計 | スタジオ一覧 |
+|---|---|
+| ![ホスト統計](../docs/images/hostdashboard.jpeg) | ![ホスト スタジオ一覧](../docs/images/host-room-list.jpeg) |
+
+| スタジオ詳細 | 営業時間設定 |
+|---|---|
+| ![ホスト スタジオ詳細](../docs/images/host-room-detail.jpeg) | ![営業時間設定](../docs/images/host-business-hours.jpeg) |
+
+| 休館日設定 | 料金ルール設定 |
+|---|---|
+| ![休館日設定](../docs/images/host-closures.jpeg) | ![料金ルール設定](../docs/images/host-price-rules.jpeg) |
+
+| 予約一覧 | レビュー管理 |
+|---|---|
+| ![ホスト 予約一覧](../docs/images/host-reservations.jpeg) | ![レビュー管理](../docs/images/host-reviews.jpeg) |
+
+| 売上明細一覧 | 売上明細 |
+|---|---|
+| ![売上明細一覧](../docs/images/host-sales-list.jpeg) | ![売上明細](../docs/images/host-sales-detail.jpeg) |
+
 ### 利用ライブラリ
 
 | ライブラリ | 用途 |
@@ -352,6 +379,26 @@ AIスタジオ検索では、ユーザーが自然文で希望条件を入力で
 - AI検索の利用状況
 - 管理操作ログ
 
+### サイドバー
+
+`app/admin/layout.tsx` で共通サイドバー（`DashboardShell`）を適用しています。
+
+| データ一覧（統計） | 会員一覧 |
+|---|---|
+| ![管理者データ一覧](../docs/images/admindashboard.jpeg) | ![会員一覧](../docs/images/admin-user-list.jpeg) |
+
+| 会員詳細 | スタジオ一覧 |
+|---|---|
+| ![会員詳細](../docs/images/admin-user-detail.jpeg) | ![管理者 スタジオ一覧](../docs/images/admin-room-list.jpeg) |
+
+| スタジオ詳細 | 監査ログ |
+|---|---|
+| ![管理者 スタジオ詳細](../docs/images/admin-room-detail.jpeg) | ![監査ログ](../docs/images/admin-audit-logs.jpeg) |
+
+| AI検索ログ | 管理設定 |
+|---|---|
+| ![AI検索ログ](../docs/images/admin-ai-search-logs.jpeg) | ![管理設定](../docs/images/admin-settings.jpeg) |
+
 ---
 
 ## エラー画面
@@ -379,7 +426,15 @@ AIスタジオ検索では、ユーザーが自然文で希望条件を入力で
 | `Header` | 共通ヘッダー |
 | `Footer` | 共通フッター |
 | `AuthNav` | ログイン状態・ロール別ナビゲーション |
+| `LogoutConfirmDialog` | ログアウト確認ダイアログ（Esc / 背景クリックで閉じる、フォーカス管理あり） |
+| `HeaderContainer` | ヘッダー幅の切替（ホスト・管理者画面では全幅） |
+| `DashboardShell` | ホスト・管理者画面の共通サイドバーレイアウト（折りたたみ・モバイルドロワー） |
+| `SalesTrendChart` | 売上推移グラフ（見込み = 棒、確定 = 折れ線） |
 | `ErrorPageTemplate` | エラーページ共通テンプレート |
+
+### ログアウト確認ダイアログ
+
+<img src="../docs/images/logout-dialog.png" alt="ログアウト確認ダイアログ" width="360">
 
 ---
 
