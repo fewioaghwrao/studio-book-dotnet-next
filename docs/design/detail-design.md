@@ -67,25 +67,28 @@
 ```text
 HTTP Request
     ↓
-Controller
+Controller                       （Api）
     ↓
-Service / Interface
+Service / Interface              （Application）
     ↓
-DbContext / External Client
+DbContext / External Client      （Infrastructure：Interface の実装）
     ↓
 MySQL / Stripe / OpenAI / SMTP
 ```
 
-| 層 | 主な責務 |
-|---|---|
-| Controller | Routing、認証・認可、ModelState、HTTP応答 |
-| Service | 業務ロジック、検証、検索、集計、更新 |
-| Client | OpenAI等の外部HTTP通信 |
-| DTO | Request/Responseデータ |
-| Entity | DB永続化モデル |
-| DbContext | テーブル、制約、関連、インデックス |
-| Settings | 外部設定の型定義 |
-| Seeder | デモデータ投入 |
+| 層 | プロジェクト | 主な責務 |
+|---|---|---|
+| Controller | Api（`Studiobook_backend`） | Routing、認証・認可、ModelState、HTTP応答 |
+| Service | Application | 業務ロジック、検証、検索、集計、更新 |
+| DTO | Application | Request/Responseデータ |
+| Settings | Application | 外部設定の型定義 |
+| Entity | Domain | DB永続化モデル |
+| DbContext | Infrastructure（`Persistence`） | テーブル、制約、関連、インデックス |
+| Client | Infrastructure（`Services`） | OpenAI、Stripe、メール等の外部通信 |
+| 帳票出力 | Infrastructure（`Reports`） | 売上CSV・請求書PDFの生成 |
+| Seeder | Infrastructure（`Seeders`） | デモデータ投入 |
+
+ControllerはDbContextを直接参照せず、Application層のServiceを経由する。
 
 ### 2.2 主な外部サービス
 
@@ -99,17 +102,26 @@ MySQL / Stripe / OpenAI / SMTP
 
 ### 2.3 DI登録
 
-主なServiceはScopedで登録する。OpenAI Clientは`AddHttpClient`を使用する。
+主なServiceはScopedで登録する。登録処理は層ごとの拡張メソッドに集約している。
+
+- `AddApplication()`（Application層）：認証、公開、予約、レビュー、ホスト、管理者、ログ系Service
+- `AddInfrastructure(configuration)`（Infrastructure層）：AppDbContext（MySQL）、Settings、外部サービス、帳票出力、QuestPDFのライセンス・フォント登録
 
 ```text
-IAuthService                 → AuthService
-IJwtTokenService             → JwtTokenService
-IPasswordHasherService       → PasswordHasherService
-IVerificationTokenService    → VerificationTokenService
-IEmailService                → EmailService
+IAuthService                    → AuthService                    （Application）
+IVerificationTokenService       → VerificationTokenService       （Application）
+IAppDbContext                   → AppDbContext                   （Infrastructure）
+IJwtTokenService                → JwtTokenService                （Infrastructure）
+IPasswordHasherService          → PasswordHasherService          （Infrastructure）
+IEmailService                   → EmailService                   （Infrastructure）
+IOpenAiRoomSearchClient         → OpenAiRoomSearchClient         （Infrastructure、AddHttpClient）
+IOpenAiReviewAssistClient       → OpenAiReviewAssistClient       （Infrastructure、AddHttpClient）
+IStripeCheckoutService          → StripeCheckoutService          （Infrastructure）
+IHostSalesCsvExporter           → HostSalesCsvExporter           （Infrastructure）
+IHostSalesInvoicePdfGenerator   → HostSalesInvoicePdfGenerator   （Infrastructure）
 ```
 
-その他、公開、予約、レビュー、ホスト、管理者系ServiceもScopedとして登録する。
+その他のApplication層Service（HostRoomService、HostSalesService等）は具象クラスのままScopedで登録する。
 
 ---
 
@@ -258,7 +270,7 @@ Bearerヘッダーを正式方式とする。Middlewareには`auth_token` Cookie
 6. PasswordHasherで照合。
 7. Role一覧を取得。
 8. Roleに応じて遷移先を決定。
-9. JWTを生成。
+9. JWTを生成（`IAuthService.IssueTokenAsync`）。
 10. ログイン監査ログを記録。
 11. User、Token、ExpiresAt、RedirectToを返す。
 
@@ -799,6 +811,7 @@ PaymentIntent metadata：
 - UTF-8 BOM付き。
 - 全項目をダブルクォートで囲む。
 - ダブルクォートは二重化する。
+- 生成処理：Infrastructure層 `HostSalesCsvExporter`（`IHostSalesCsvExporter`）。
 
 #### 売上明細CSV
 
@@ -807,6 +820,7 @@ PaymentIntent metadata：
 - 基本情報行
 - 料金明細行
 - UTF-8 BOM付き
+- 生成処理：Infrastructure層 `HostSalesCsvExporter`（`IHostSalesCsvExporter`）。
 
 ### 9.10 PDF
 
@@ -817,6 +831,7 @@ PaymentIntent metadata：
 - NotoSansJP
 - 予約情報、料金明細、合計を出力
 - Content-Type：`application/pdf`
+- 生成処理：Infrastructure層 `HostSalesInvoicePdfGenerator`（`IHostSalesInvoicePdfGenerator`）。
 
 ### 9.11 ホスト統計
 
@@ -1354,9 +1369,9 @@ Serviceの事前検索のみで重複を防いでいる。高負荷・商用運�
 
 UTC保存とローカル時刻判定が混在する。API境界、DB、Frontendでの日時基準を明確化する必要がある。
 
-### 17.10 Controller内DBアクセス
+### 17.10 Controller内DBアクセス（対応済み）
 
-HostRooms、CSV/PDF出力、AuthControllerの一部でControllerからDbContextを直接利用している。保守性向上のためServiceへ移す余地がある。
+HostRooms、CSV/PDF出力、AuthControllerの一部で行っていたDbContextの直接利用は、Application層のService（`HostRoomService`、`HostSalesService`、`AuthService.IssueTokenAsync`）へ移した。CSV/PDFの生成処理もInfrastructure層（`Reports`）へ分離し、ControllerはHTTP入出力のみを担う。
 
 ### 17.11 Seederと本実装の差異
 

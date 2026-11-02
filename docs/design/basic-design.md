@@ -114,26 +114,35 @@ Docker Compose
 
 ## 3.1 Backend構成
 
+バックエンドは Domain / Application / Infrastructure / Api の4プロジェクトで構成する。
+
 ```text
-Controllers
+Api（Controllers）
    ↓
-Services / Service Interfaces
+Application（Services / Interfaces / DTO / Settings）
    ↓
-DbContext / Entities
+Domain（Entities）
+
+Infrastructure（DbContext / Clients / Seeder / 帳票出力）
+   └ Application の Interface を実装
    ↓
-MySQL
+MySQL / Stripe / OpenAI / SMTP
 ```
 
-| 層 | 責務 |
-|---|---|
-| Controller | HTTP入出力、認証・認可、ステータスコード変換 |
-| Service | 業務ロジック、検証、集計、トランザクション |
-| Client | Stripe、OpenAI、メール等の外部接続 |
-| DTO | API入出力モデル |
-| Entity | 永続化モデル |
-| DbContext | EF Core設定、関連、制約 |
-| Settings | 外部設定の型定義 |
-| Seeder | 初期データ・デモデータ投入 |
+依存方向は Api → Application → Domain、Infrastructure → Application とする。
+
+| 層 | プロジェクト | 責務 |
+|---|---|---|
+| Controller | Api（`Studiobook_backend`） | HTTP入出力、認証・認可、ステータスコード変換 |
+| Service | Application | 業務ロジック、検証、集計、トランザクション |
+| Interface | Application | DB・外部サービスの抽象（`IAppDbContext` 等） |
+| DTO | Application | API入出力モデル |
+| Settings | Application | 外部設定の型定義 |
+| Entity | Domain | 永続化モデル |
+| DbContext | Infrastructure | EF Core設定、関連、制約 |
+| Client | Infrastructure | Stripe、OpenAI、メール等の外部接続 |
+| 帳票出力 | Infrastructure | 売上CSV・請求書PDFの生成 |
+| Seeder | Infrastructure | 初期データ・デモデータ投入 |
 
 ## 3.2 Frontend構成
 
@@ -1269,7 +1278,7 @@ API開始
 6. 予約重複時のトランザクション・ロック方式を確定する。
 7. BusinessHoursとPriceRulesの曜日体系差を共通化する。
 8. DB付きHealthCheckを追加検討する。
-9. Program.csの文字化けを修正する。
+9. Program.csの文字化けを修正する。（対応済み：UTF-8へ変換）
 10. SwaggerのBearer認証設定を追加検討する。
 11. EF Core 9.0.1と.NET 10の正式な組合せを確認する。
 12. 本番ログ保存先と保持期間を確定する。

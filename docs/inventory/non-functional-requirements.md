@@ -484,8 +484,10 @@
 
 - バックエンドは .NET 10 / ASP.NET Core 10 を対象とする。
 - ソリューションは `Backend/Studiobook_backend.slnx` で管理する。
-- Controller、Service、Service Interface、Settings、Seederを分離している。
-- DIコンテナへ各Serviceを登録している。
+- Domain / Application / Infrastructure / Api の4プロジェクトに分離し、依存方向を Api → Application → Domain、Infrastructure → Application としている。
+- ControllerはHTTP入出力と認可判断のみを担い、DBアクセスはApplication層のServiceから `IAppDbContext` 経由で行う。
+- DB・外部サービス・帳票出力はApplication層のInterfaceとして抽象化し、Infrastructure層で実装している。
+- DIコンテナへの登録は `AddApplication()` / `AddInfrastructure()` に集約している。
 - 外部APIクライアントはHttpClient Factoryを使用している。
 - 機能ごとにServiceを分割している。
 - 環境変数でSwagger、Migration、Seedを制御できる。

@@ -132,18 +132,29 @@ studio-book-dotnet-next
 ├─ docker-compose.yml
 │
 ├─ Backend
-│  ├─ Studiobook_backend
-│  │  ├─ Controllers
-│  │  ├─ Data
+│  ├─ Studiobook_backend.Domain          # Domain層（依存なし）
+│  │  └─ Entities
+│  │
+│  ├─ Studiobook_backend.Application     # Application層（→ Domain）
 │  │  ├─ Dtos
-│  │  ├─ Entities
-│  │  ├─ Fonts
+│  │  ├─ Interfaces
+│  │  ├─ Services
+│  │  └─ Settings
+│  │
+│  ├─ Studiobook_backend.Infrastructure  # Infrastructure層（→ Application）
+│  │  ├─ Persistence                     # AppDbContext
 │  │  ├─ Migrations
 │  │  ├─ Seeders
-│  │  ├─ Services
-│  │  ├─ Settings
+│  │  ├─ Services                        # Email / JWT / OpenAI / Stripe
+│  │  └─ Reports                         # CSV / PDF出力
+│  │
+│  ├─ Studiobook_backend                 # Api層（→ Application / Infrastructure）
+│  │  ├─ Controllers
+│  │  ├─ Fonts
 │  │  ├─ Dockerfile
-│  │  └─ Program.cs
+│  │  ├─ Program.cs
+│  │  ├─ appsettings.json
+│  │  └─ Procfile
 │  │
 │  └─ Studiobook_backend.Tests
 │     ├─ Controllers
