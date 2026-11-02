@@ -2,11 +2,10 @@
 using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
-using Studiobook_backend.Application.Interfaces;
+using Studiobook_backend.Application.Services;
 
 namespace Studiobook_backend.Controllers
 {
@@ -15,11 +14,11 @@ namespace Studiobook_backend.Controllers
     [Route("api/host/sales")]
     public class HostSalesExportController : ControllerBase
     {
-        private readonly IAppDbContext _context;
+        private readonly HostSalesService _hostSalesService;
 
-        public HostSalesExportController(IAppDbContext context)
+        public HostSalesExportController(HostSalesService hostSalesService)
         {
-            _context = context;
+            _hostSalesService = hostSalesService;
         }
 
         [HttpGet("{reservationId:int}/items.csv")]
@@ -27,35 +26,25 @@ namespace Studiobook_backend.Controllers
         {
             var hostUserId = GetCurrentUserId();
 
-            var reservation = await _context.Reservations
-                .AsNoTracking()
-                .Include(x => x.Room)
-                .Include(x => x.User)
-                .FirstOrDefaultAsync(x =>
-                    x.Id == reservationId &&
-                    x.Room.UserId == hostUserId);
+            var reservation = await _hostSalesService.FindExportDetailAsync(
+                hostUserId,
+                reservationId);
 
             if (reservation == null)
             {
                 return NotFound(new { message = "売上明細が見つかりません。" });
             }
 
-            var items = await _context.ReservationChargeItems
-                .AsNoTracking()
-                .Where(x => x.ReservationId == reservationId)
-                .OrderBy(x => x.SliceStart == null)
-                .ThenBy(x => x.SliceStart)
-                .ThenBy(x => x.Id)
-                .ToListAsync();
+            var items = reservation.Items;
 
             var csv = new StringBuilder();
 
             // Excel文字化け対策：UTF-8 BOM
             csv.Append('\uFEFF');
 
-            csv.AppendLine($"# 予約ID,{Csv(reservation.Id)}");
-            csv.AppendLine($"# スタジオ名,{Csv(reservation.Room.Name)}");
-            csv.AppendLine($"# 予約者,{Csv(reservation.User.Name)}");
+            csv.AppendLine($"# 予約ID,{Csv(reservation.ReservationId)}");
+            csv.AppendLine($"# スタジオ名,{Csv(reservation.RoomName)}");
+            csv.AppendLine($"# 予約者,{Csv(reservation.GuestName)}");
             csv.AppendLine($"# 期間,{Csv($"{FormatDateTime(reservation.StartAt)} 〜 {FormatDateTime(reservation.EndAt)}")}");
             csv.AppendLine($"# 総額(円),{Csv(reservation.Amount)}");
             csv.AppendLine();
@@ -81,7 +70,7 @@ namespace Studiobook_backend.Controllers
                 ));
             }
 
-            var fileName = $"reservation-{reservation.Id}-items.csv";
+            var fileName = $"reservation-{reservation.ReservationId}-items.csv";
 
             return File(
                 Encoding.UTF8.GetBytes(csv.ToString()),
@@ -95,26 +84,16 @@ namespace Studiobook_backend.Controllers
         {
             var hostUserId = GetCurrentUserId();
 
-            var reservation = await _context.Reservations
-                .AsNoTracking()
-                .Include(x => x.Room)
-                .Include(x => x.User)
-                .FirstOrDefaultAsync(x =>
-                    x.Id == reservationId &&
-                    x.Room.UserId == hostUserId);
+            var reservation = await _hostSalesService.FindExportDetailAsync(
+                hostUserId,
+                reservationId);
 
             if (reservation == null)
             {
                 return NotFound(new { message = "売上明細が見つかりません。" });
             }
 
-            var items = await _context.ReservationChargeItems
-                .AsNoTracking()
-                .Where(x => x.ReservationId == reservationId)
-                .OrderBy(x => x.SliceStart == null)
-                .ThenBy(x => x.SliceStart)
-                .ThenBy(x => x.Id)
-                .ToListAsync();
+            var items = reservation.Items;
 
             var document = Document.Create(container =>
             {
@@ -149,14 +128,14 @@ namespace Studiobook_backend.Controllers
                             });
 
                             AddMetaCell(table, "予約ID", true);
-                            AddMetaCell(table, reservation.Id.ToString(), false);
+                            AddMetaCell(table, reservation.ReservationId.ToString(), false);
                             AddMetaCell(table, "状態", true);
                             AddMetaCell(table, ToStatusLabel(reservation.Status), false);
 
                             AddMetaCell(table, "スタジオ", true);
-                            AddMetaCell(table, reservation.Room.Name, false);
+                            AddMetaCell(table, reservation.RoomName, false);
                             AddMetaCell(table, "予約者", true);
-                            AddMetaCell(table, reservation.User.Name, false);
+                            AddMetaCell(table, reservation.GuestName, false);
 
                             AddMetaCell(table, "利用開始", true);
                             AddMetaCell(table, FormatDateTime(reservation.StartAt), false);
@@ -217,7 +196,7 @@ namespace Studiobook_backend.Controllers
 
             var pdf = document.GeneratePdf();
 
-            var fileName = $"reservation-{reservation.Id}-invoice.pdf";
+            var fileName = $"reservation-{reservation.ReservationId}-invoice.pdf";
 
             return File(
                 pdf,

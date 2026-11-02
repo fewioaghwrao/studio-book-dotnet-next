@@ -2,8 +2,7 @@
 using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Studiobook_backend.Application.Interfaces;
+using Studiobook_backend.Application.Services;
 
 namespace Studiobook_backend.Controllers
 {
@@ -12,11 +11,11 @@ namespace Studiobook_backend.Controllers
     [Route("api/host")]
     public class HostSalesCsvController : ControllerBase
     {
-        private readonly IAppDbContext _context;
+        private readonly HostSalesService _hostSalesService;
 
-        public HostSalesCsvController(IAppDbContext context)
+        public HostSalesCsvController(HostSalesService hostSalesService)
         {
-            _context = context;
+            _hostSalesService = hostSalesService;
         }
 
         [HttpGet("sales.csv")]
@@ -26,35 +25,10 @@ namespace Studiobook_backend.Controllers
         {
             var hostUserId = GetCurrentUserId();
 
-            var query = _context.Reservations
-                .AsNoTracking()
-                .Include(x => x.Room)
-                .Include(x => x.User)
-                .Where(x => x.Room.UserId == hostUserId);
-
-            if (roomId.HasValue)
-            {
-                query = query.Where(x => x.RoomId == roomId.Value);
-            }
-
-            if (onlyWithItems)
-            {
-                query = query.Where(x => x.Amount > 0);
-            }
-
-            var rows = await query
-                .OrderByDescending(x => x.StartAt)
-                .Select(x => new
-                {
-                    ReservationId = x.Id,
-                    RoomName = x.Room.Name,
-                    GuestName = x.User.Name,
-                    StartAt = x.StartAt,
-                    EndAt = x.EndAt,
-                    Amount = x.Amount,
-                    Status = x.Status
-                })
-                .ToListAsync();
+            var rows = await _hostSalesService.GetCsvRowsAsync(
+                hostUserId,
+                roomId,
+                onlyWithItems);
 
             var csv = new StringBuilder();
 

@@ -3,6 +3,7 @@ using System.Text;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Studiobook_backend.Controllers;
+using Studiobook_backend.Application.Services;
 using Studiobook_backend.Infrastructure.Persistence;
 using Studiobook_backend.Domain.Entities;
 using Studiobook_backend.Tests.Helpers;
@@ -147,7 +148,7 @@ public class HostSalesExportControllerTests
         // Arrange
         await using var context = TestDbContextFactory.Create();
 
-        var controller = new HostSalesExportController(context)
+        var controller = new HostSalesExportController(new HostSalesService(context))
         {
             ControllerContext = new ControllerContext
             {
@@ -277,7 +278,7 @@ public class HostSalesExportControllerTests
         // Arrange
         await using var context = TestDbContextFactory.Create();
 
-        var controller = new HostSalesExportController(context)
+        var controller = new HostSalesExportController(new HostSalesService(context))
         {
             ControllerContext = new ControllerContext
             {
@@ -297,7 +298,7 @@ public class HostSalesExportControllerTests
         AppDbContext context,
         int userId)
     {
-        var controller = new HostSalesExportController(context);
+        var controller = new HostSalesExportController(new HostSalesService(context));
 
         controller.ControllerContext = new ControllerContext
         {

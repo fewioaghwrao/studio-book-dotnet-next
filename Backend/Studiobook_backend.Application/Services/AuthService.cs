@@ -13,17 +13,46 @@ namespace Studiobook_backend.Application.Services
         private readonly IPasswordHasherService _passwordHasherService;
         private readonly IVerificationTokenService _verificationTokenService;
         private readonly IEmailService _emailService;
+        private readonly IJwtTokenService _jwtTokenService;
 
         public AuthService(
             IAppDbContext dbContext,
             IPasswordHasherService passwordHasherService,
             IVerificationTokenService verificationTokenService,
-            IEmailService emailService)
+            IEmailService emailService,
+            IJwtTokenService jwtTokenService)
         {
             _dbContext = dbContext;
             _passwordHasherService = passwordHasherService;
             _verificationTokenService = verificationTokenService;
             _emailService = emailService;
+            _jwtTokenService = jwtTokenService;
+        }
+
+        /// <summary>
+        /// ログイン成功後、ユーザーのロールを読み込んでアクセストークン（JWT）を発行します。
+        /// </summary>
+        public async Task<AuthTokenResultDto> IssueTokenAsync(int userId)
+        {
+            var user = await _dbContext.Users
+                .Include(u => u.UserRoles)
+                    .ThenInclude(ur => ur.Role)
+                .FirstAsync(u => u.Id == userId);
+
+            var roles = user.UserRoles
+                .Select(x => x.Role.Name)
+                .Distinct()
+                .ToList();
+
+            var token = _jwtTokenService.GenerateToken(user, roles, out var expiresAtUtc);
+
+            return new AuthTokenResultDto
+            {
+                Token = token,
+                ExpiresAtUtc = expiresAtUtc,
+                UserId = user.Id,
+                UserName = user.Name
+            };
         }
 
         public async Task<LoginResponseDto?> LoginAsync(LoginRequestDto request)

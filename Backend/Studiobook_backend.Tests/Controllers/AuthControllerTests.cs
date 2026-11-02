@@ -15,14 +15,10 @@ public class AuthControllerTests
 {
     private static AuthController CreateController(
         IAuthService? authService = null,
-        IJwtTokenService? jwtTokenService = null,
-        AppDbContext? dbContext = null,
         PasswordResetService? passwordResetService = null,
         AuditLogService? auditLogService = null)
     {
         var authMock = authService ?? Mock.Of<IAuthService>();
-        var jwtMock = jwtTokenService ?? Mock.Of<IJwtTokenService>();
-        var db = dbContext ?? TestDbContextFactory.Create();
 
         // ここは実装状況によって調整が必要
         // PasswordResetService / AuditLogService が具象クラス依存なので、
@@ -32,8 +28,6 @@ public class AuthControllerTests
 
         var controller = new AuthController(
             authMock,
-            jwtMock,
-            db,
             passwordReset,
             auditLog);
 

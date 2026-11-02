@@ -3,6 +3,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Studiobook_backend.Controllers;
+using Studiobook_backend.Application.Services;
 using Studiobook_backend.Infrastructure.Persistence;
 using Studiobook_backend.Application.Dtos;
 using Studiobook_backend.Domain.Entities;
@@ -146,7 +147,7 @@ public class HostRoomsControllerTests
         // Arrange
         await using var context = TestDbContextFactory.Create();
 
-        var controller = new HostRoomsController(context)
+        var controller = new HostRoomsController(new HostRoomService(context))
         {
             ControllerContext = new ControllerContext
             {
@@ -275,7 +276,7 @@ public class HostRoomsControllerTests
         // Arrange
         await using var context = TestDbContextFactory.Create();
 
-        var controller = new HostRoomsController(context)
+        var controller = new HostRoomsController(new HostRoomService(context))
         {
             ControllerContext = new ControllerContext
             {
@@ -323,7 +324,7 @@ public class HostRoomsControllerTests
         AppDbContext context,
         int userId)
     {
-        var controller = new HostRoomsController(context);
+        var controller = new HostRoomsController(new HostRoomService(context));
 
         controller.ControllerContext = new ControllerContext
         {
@@ -345,7 +346,7 @@ public class HostRoomsControllerTests
         AppDbContext context,
         int userId)
     {
-        var controller = new HostRoomsController(context);
+        var controller = new HostRoomsController(new HostRoomService(context));
 
         controller.ControllerContext = new ControllerContext
         {

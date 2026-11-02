@@ -39,6 +39,7 @@ public static class DependencyInjection
         services.AddScoped<HostReservationService>();
         services.AddScoped<HostReviewService>();
         services.AddScoped<HostSalesService>();
+        services.AddScoped<HostRoomService>();
         services.AddScoped<HostStatusService>();
 
         // 管理者
