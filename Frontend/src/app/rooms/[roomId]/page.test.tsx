@@ -12,6 +12,8 @@ jest.mock("next/navigation", () => ({
 jest.mock("@fullcalendar/react", () => {
   return function MockFullCalendar(props: {
     initialView?: string;
+    slotMinTime?: string;
+    slotMaxTime?: string;
     events?: Array<{
       id: string;
       title: string;
@@ -23,6 +25,9 @@ jest.mock("@fullcalendar/react", () => {
     return (
       <div data-testid="full-calendar">
         <div>initialView: {props.initialView}</div>
+        <div>
+          slotRange: {props.slotMinTime}-{props.slotMaxTime}
+        </div>
         <div>events: {props.events?.length ?? 0}</div>
         {props.events?.map((event) => (
           <div key={event.id}>{event.title}</div>
@@ -575,7 +580,9 @@ expect(screen.getByText("ホスト 太郎")).toBeInTheDocument();
 
     expect(screen.getByText("カレンダー")).toBeInTheDocument();
     expect(
-      screen.getByText("営業時間・休館・予約済みの予定を確認できます。")
+      screen.getByText(
+        "営業時間・休館・予約済みの予定を確認できます（営業時間の前後1時間を表示）。"
+      )
     ).toBeInTheDocument();
 
     expect(screen.getAllByText("営業時間").length).toBeGreaterThan(0);
@@ -587,6 +594,19 @@ expect(screen.getByText("ホスト 太郎")).toBeInTheDocument();
     expect(screen.getByText("events: 3")).toBeInTheDocument();
 
     expect(screen.getAllByText("休館").length).toBeGreaterThan(0);
+  });
+
+  test("カレンダーの縦幅を営業時間の前後1時間に絞る", async () => {
+    // 営業時間は 9:00〜18:00 / 10:00〜19:00、予約は 10:00〜12:00
+    setupFetch();
+
+    render(<RoomDetailPage />);
+
+    await waitForLoaded();
+
+    expect(
+      screen.getByText("slotRange: 08:00:00-20:00:00")
+    ).toBeInTheDocument();
   });
 
   test("スマホ幅の場合、カレンダー初期表示が日表示になる", async () => {

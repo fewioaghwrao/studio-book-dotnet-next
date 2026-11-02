@@ -168,12 +168,13 @@ export default function SignupPage() {
             <p className="text-sm font-medium tracking-[0.2em] text-white/80">
               SIGN UP
             </p>
-            <h1 className="mt-4 text-4xl font-semibold leading-relaxed xl:text-5xl">
-              Studio Book の会員登録で、
+            {/* 語の途中で折り返さないよう keep-all にし、文節の区切りにだけ改行候補（wbr）を置く */}
+            <h1 className="mt-4 text-3xl font-semibold leading-snug [word-break:keep-all] sm:text-4xl xl:text-[2.75rem]">
+              Studio Book の<wbr />会員登録で、
               <br />
-              スタジオ利用をもっと便利に。
+              スタジオ利用を<wbr />もっと便利に。
             </h1>
-            <p className="mt-6 max-w-xl text-sm leading-7 text-white/85 md:text-base">
+            <p className="mt-6 max-w-xl text-sm leading-7 text-white/85 [word-break:auto-phrase] md:text-base">
               会員登録後、認証メールのリンクを開くことで登録が完了します。
               お気に入り登録や予約確認など、会員向け機能をご利用いただけます。
             </p>
@@ -200,7 +201,7 @@ export default function SignupPage() {
                 <h2 className="text-2xl font-semibold text-slate-800">
                   会員登録
                 </h2>
-                <p className="mt-2 text-sm text-slate-500">
+                <p className="mt-2 text-sm text-slate-500 text-balance [word-break:auto-phrase]">
                   必要事項を入力してアカウントを作成してください。
                 </p>
               </div>

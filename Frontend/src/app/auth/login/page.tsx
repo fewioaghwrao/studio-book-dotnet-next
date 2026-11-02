@@ -103,12 +103,13 @@ window.location.href = data.redirectTo ?? "/";
             <p className="text-sm font-medium tracking-[0.2em] text-white/80">
               LOGIN
             </p>
-            <h1 className="mt-4 text-4xl font-semibold leading-relaxed xl:text-5xl">
-              Studio Book にログインして、
+            {/* 語の途中で折り返さないよう keep-all にし、文節の区切りにだけ改行候補（wbr）を置く */}
+            <h1 className="mt-4 text-3xl font-semibold leading-snug [word-break:keep-all] sm:text-4xl xl:text-[2.75rem]">
+              Studio Book に<wbr />ログインして、
               <br />
-              予約管理をもっとスムーズに。
+              予約管理を<wbr />もっとスムーズに。
             </h1>
-            <p className="mt-6 max-w-xl text-sm leading-7 text-white/85 md:text-base">
+            <p className="mt-6 max-w-xl text-sm leading-7 text-white/85 [word-break:auto-phrase] md:text-base">
               お気に入りスタジオの確認、予約情報の管理、
               会員向け機能の利用のためのログイン画面です。
             </p>
@@ -135,7 +136,7 @@ window.location.href = data.redirectTo ?? "/";
                 <h2 className="text-2xl font-semibold text-slate-800">
                   ログイン
                 </h2>
-                <p className="mt-2 text-sm text-slate-500">
+                <p className="mt-2 text-sm text-slate-500 text-balance [word-break:auto-phrase]">
                   登録済みのメールアドレスとパスワードを入力してください。
                 </p>
               </div>

@@ -58,11 +58,11 @@ Frontend
 │
 ├─ src
 │  ├─ app
-│  │  ├─ admin
+│  │  ├─ admin              # layout.tsx でサイドバー付きレイアウトを適用
 │  │  ├─ auth
 │  │  ├─ error
 │  │  ├─ forgot-password
-│  │  ├─ host
+│  │  ├─ host               # layout.tsx でサイドバー付きレイアウトを適用
 │  │  ├─ legal
 │  │  ├─ reservations
 │  │  ├─ reset-password
@@ -77,11 +77,14 @@ Frontend
 │  │  └─ global-error.tsx
 │  │
 │  ├─ components
+│  │  ├─ charts             # 売上推移グラフ（SalesTrendChart）
+│  │  ├─ dashboard          # ホスト・管理者共通サイドバー（DashboardShell / navigation）
 │  │  ├─ errors
 │  │  └─ layout
 │  │
 │  └─ lib
-│     └─ apiFetch.ts
+│     ├─ apiFetch.ts
+│     └─ calendarTimeRange.ts  # 予約カレンダーの表示時間帯の算出
 │
 ├─ jest.config.ts
 ├─ jest.setup.ts
@@ -181,7 +184,8 @@ Next.js App Router を使用し、`src/app` 配下で画面単位のルーティ
 | 区分 | 方針 |
 |---|---|
 | `src/app` | ページ単位のルーティング |
-| `src/components` | Header / Footer / ErrorPageTemplate などの共通部品 |
+| `src/components` | Header / Footer / ErrorPageTemplate、ダッシュボード用サイドバー、グラフなどの共通部品 |
+| 画面種別ごとのナビゲーション | トップ・検索・予約・会員登録・ログイン・一般会員画面はヘッダー型、ホスト（`/host`）・管理者（`/admin`）画面は `layout.tsx` で共通サイドバー型 |
 | `src/lib` | API通信などの共通処理 |
 | 動的ルート | `[roomId]`、`[id]`、`[userId]` などを使用 |
 | エラー画面 | 400 / 401 / 403 / 500 / 503 を個別ページとして定義 |

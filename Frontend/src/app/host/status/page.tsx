@@ -3,17 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "@/lib/apiFetch";
-import {
-  Bar,
-  CartesianGrid,
-  ComposedChart,
-  Legend,
-  Line,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import SalesTrendChart, { type SalesTrendRow } from "@/components/charts/SalesTrendChart";
 
 type RoomOption = {
   id: number;
@@ -29,20 +19,6 @@ type HostStatusResponse = {
   reviewAvgPublic: number | null;
   roomOptions: RoomOption[];
 };
-
-type ChartRow = {
-  label: string;
-  booked: number;
-  paid: number;
-};
-
-function formatYen(value: number) {
-  return new Intl.NumberFormat("ja-JP", {
-    style: "currency",
-    currency: "JPY",
-    maximumFractionDigits: 0,
-  }).format(value);
-}
 
 function formatAverage(value: number | null) {
   if (value === null || value === undefined) {
@@ -154,7 +130,7 @@ const handleMoveMonth = (diff: number) => {
   fetchStatus(selectedRoomId, next.year, next.month);
 };
 
-  const chartRows: ChartRow[] =
+  const chartRows: SalesTrendRow[] =
     data?.labels.map((label, index) => ({
       label,
       booked: data.booked[index] ?? 0,
@@ -266,41 +242,11 @@ const handleMoveMonth = (diff: number) => {
                 </div>
 
                 <div className="h-[320px] rounded-3xl border border-stone-200 bg-white p-4 shadow-sm">
-<ResponsiveContainer width="100%" height="100%">
-  <ComposedChart
-    data={chartRows}
-    margin={{ top: 12, right: 12, left: 0, bottom: 20 }}
-  >
-    <CartesianGrid strokeDasharray="3 3" />
-
-    <XAxis
-      dataKey="label"
-      interval={0}
-      tick={{ fontSize: 10 }}
-      tickMargin={10}
-      angle={-20}
-      textAnchor="end"
-      height={50}
-    />
-
-    <YAxis
-      tick={{ fontSize: 11 }}
-      tickFormatter={(value) => `${Number(value) / 10000}万`}
-    />
-
-    <Tooltip formatter={(value) => formatYen(Number(value))} />
-    <Legend wrapperStyle={{ fontSize: 12 }} />
-
-    <Bar dataKey="booked" name="見込み売上" />
-
-    <Line
-      type="monotone"
-      dataKey="paid"
-      name="確定売上"
-      strokeWidth={2}
-    />
-  </ComposedChart>
-</ResponsiveContainer>
+<SalesTrendChart
+                    rows={chartRows}
+                    bookedName="見込み売上"
+                    paidName="確定売上"
+                  />
                 </div>
               </section>
 
