@@ -19,14 +19,21 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="9.0.0" />
-    <PackageReference Include="QuestPDF" Version="2026.2.4" />
     <PackageReference Include="Stripe.net" Version="51.1.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
 	<Content Include="Fonts\*.ttf">
 		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		  <CopyToPublishDirectory>Always</CopyToPublishDirectory>
     </Content>
+  </ItemGroup>
+
+  <!--
+    API（Presentation）層: Controller・認証/認可・CORS・レート制限などの HTTP の入口。
+    業務ロジックは Application 層、DB・外部サービスは Infrastructure 層に分離しています。
+  -->
+  <ItemGroup>
+    <ProjectReference Include="..\Studiobook_backend.Application\Studiobook_backend.Application.csproj" />
+    <ProjectReference Include="..\Studiobook_backend.Infrastructure\Studiobook_backend.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

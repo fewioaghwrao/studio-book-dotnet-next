@@ -4,11 +4,12 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Studiobook_backend.Controllers;
-using Studiobook_backend.Data;
-using Studiobook_backend.Dtos.Reservations;
-using Studiobook_backend.Entities;
-using Studiobook_backend.Services;
-using Studiobook_backend.Settings;
+using Studiobook_backend.Infrastructure.Persistence;
+using Studiobook_backend.Application.Dtos.Reservations;
+using Studiobook_backend.Domain.Entities;
+using Studiobook_backend.Application.Services;
+using Studiobook_backend.Infrastructure.Services;
+using Studiobook_backend.Application.Settings;
 using Studiobook_backend.Tests.Helpers;
 
 namespace Studiobook_backend.Tests.Controllers;

@@ -1,8 +1,8 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using Studiobook_backend.Dtos.Ai;
-using Studiobook_backend.Services;
+using Studiobook_backend.Application.Dtos.Ai;
+using Studiobook_backend.Application.Services;
 
 namespace Studiobook_backend.Controllers;
 

@@ -1,9 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Studiobook_backend.Controllers;
-using Studiobook_backend.Data;
-using Studiobook_backend.Dtos.Admin;
-using Studiobook_backend.Services;
+using Studiobook_backend.Infrastructure.Persistence;
+using Studiobook_backend.Application.Dtos.Admin;
+using Studiobook_backend.Application.Services;
+using Studiobook_backend.Infrastructure.Services;
 
 namespace Studiobook_backend.Tests.Controllers;
 

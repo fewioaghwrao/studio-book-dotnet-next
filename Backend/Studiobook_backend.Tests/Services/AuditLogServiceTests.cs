@@ -1,7 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
-using Studiobook_backend.Data;
-using Studiobook_backend.Services;
+using Studiobook_backend.Infrastructure.Persistence;
+using Studiobook_backend.Application.Services;
+using Studiobook_backend.Infrastructure.Services;
 
 namespace Studiobook_backend.Tests.Services;
 

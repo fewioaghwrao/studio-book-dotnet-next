@@ -1,4 +1,11 @@
 <Solution>
-  <Project Path="Studiobook_backend.Tests/Studiobook_backend.Tests.csproj" />
-  <Project Path="Studiobook_backend/Studiobook_backend.csproj" />
+  <Folder Name="/src/">
+    <Project Path="Studiobook_backend.Domain/Studiobook_backend.Domain.csproj" />
+    <Project Path="Studiobook_backend.Application/Studiobook_backend.Application.csproj" />
+    <Project Path="Studiobook_backend.Infrastructure/Studiobook_backend.Infrastructure.csproj" />
+    <Project Path="Studiobook_backend/Studiobook_backend.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="Studiobook_backend.Tests/Studiobook_backend.Tests.csproj" />
+  </Folder>
 </Solution>

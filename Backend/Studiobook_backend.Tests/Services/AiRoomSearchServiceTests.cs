@@ -1,4 +1,5 @@
-﻿using Studiobook_backend.Services;
+﻿using Studiobook_backend.Application.Services;
+using Studiobook_backend.Infrastructure.Services;
 
 namespace Studiobook_backend.Tests.Services;
 

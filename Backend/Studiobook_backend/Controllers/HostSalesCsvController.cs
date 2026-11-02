@@ -1,9 +1,8 @@
 ﻿using System.Security.Claims;
-using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Studiobook_backend.Data;
+using Studiobook_backend.Application.Interfaces;
+using Studiobook_backend.Application.Services;
 
 namespace Studiobook_backend.Controllers
 {
@@ -12,11 +11,15 @@ namespace Studiobook_backend.Controllers
     [Route("api/host")]
     public class HostSalesCsvController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly HostSalesService _hostSalesService;
+        private readonly IHostSalesCsvExporter _csvExporter;
 
-        public HostSalesCsvController(AppDbContext context)
+        public HostSalesCsvController(
+            HostSalesService hostSalesService,
+            IHostSalesCsvExporter csvExporter)
         {
-            _context = context;
+            _hostSalesService = hostSalesService;
+            _csvExporter = csvExporter;
         }
 
         [HttpGet("sales.csv")]
@@ -26,68 +29,17 @@ namespace Studiobook_backend.Controllers
         {
             var hostUserId = GetCurrentUserId();
 
-            var query = _context.Reservations
-                .AsNoTracking()
-                .Include(x => x.Room)
-                .Include(x => x.User)
-                .Where(x => x.Room.UserId == hostUserId);
+            var rows = await _hostSalesService.GetCsvRowsAsync(
+                hostUserId,
+                roomId,
+                onlyWithItems);
 
-            if (roomId.HasValue)
-            {
-                query = query.Where(x => x.RoomId == roomId.Value);
-            }
-
-            if (onlyWithItems)
-            {
-                query = query.Where(x => x.Amount > 0);
-            }
-
-            var rows = await query
-                .OrderByDescending(x => x.StartAt)
-                .Select(x => new
-                {
-                    ReservationId = x.Id,
-                    RoomName = x.Room.Name,
-                    GuestName = x.User.Name,
-                    StartAt = x.StartAt,
-                    EndAt = x.EndAt,
-                    Amount = x.Amount,
-                    Status = x.Status
-                })
-                .ToListAsync();
-
-            var csv = new StringBuilder();
-
-            // Excel文字化け対策：UTF-8 BOM
-            csv.Append('\uFEFF');
-
-            csv.AppendLine(string.Join(",",
-                Csv("予約ID"),
-                Csv("スタジオ名"),
-                Csv("予約者"),
-                Csv("予約開始日時"),
-                Csv("予約終了日時"),
-                Csv("総額(円)"),
-                Csv("状態")
-            ));
-
-            foreach (var row in rows)
-            {
-                csv.AppendLine(string.Join(",",
-                    Csv(row.ReservationId),
-                    Csv(row.RoomName),
-                    Csv(row.GuestName),
-                    Csv(FormatDateTime(row.StartAt)),
-                    Csv(FormatDateTime(row.EndAt)),
-                    Csv(row.Amount),
-                    Csv(ToStatusLabel(row.Status))
-                ));
-            }
+            var content = _csvExporter.CreateSalesCsv(rows);
 
             var fileName = $"host-sales-{DateTime.Now:yyyyMMddHHmmss}.csv";
 
             return File(
-                Encoding.UTF8.GetBytes(csv.ToString()),
+                content,
                 "text/csv; charset=utf-8",
                 fileName
             );
@@ -103,35 +55,6 @@ namespace Studiobook_backend.Controllers
             }
 
             return userId;
-        }
-
-        private static string FormatDateTime(DateTime value)
-        {
-            return value.ToString("yyyy-MM-dd HH:mm");
-        }
-
-        private static string ToStatusLabel(string? status)
-        {
-            return status switch
-            {
-                "booked" => "予約済み",
-                "paid" => "利用済み",
-                "canceled" => "キャンセル済み",
-                _ => status ?? ""
-            };
-        }
-
-        private static string Csv(object? value)
-        {
-            if (value == null)
-            {
-                return "\"\"";
-            }
-
-            var text = value.ToString() ?? "";
-            text = text.Replace("\"", "\"\"");
-
-            return $"\"{text}\"";
         }
     }
 }

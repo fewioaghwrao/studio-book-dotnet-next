@@ -37,7 +37,7 @@ describe("SignupPage", () => {
     expect(screen.getByText("SIGN UP")).toBeInTheDocument();
 
     expect(
-      screen.getByRole("heading", { name: /Studio Book の会員登録で/ })
+      screen.getByRole("heading", { name: /Studio Book の\s*会員登録で/ })
     ).toBeInTheDocument();
 
     expect(

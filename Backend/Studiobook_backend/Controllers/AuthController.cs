@@ -1,10 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Studiobook_backend.Data;
-using Studiobook_backend.Dtos;
-using Studiobook_backend.Services;
-using Studiobook_backend.Services.Interfaces;
+using Studiobook_backend.Application.Dtos;
+using Studiobook_backend.Application.Services;
+using Studiobook_backend.Application.Interfaces;
 
 namespace Studiobook_backend.Controllers
 {
@@ -16,20 +14,14 @@ namespace Studiobook_backend.Controllers
         private readonly AuditLogService _auditLogService;
 
         private readonly IAuthService _authService;
-        private readonly IJwtTokenService _jwtTokenService;
-        private readonly AppDbContext _dbContext;
         private readonly PasswordResetService _passwordResetService;
 
         public AuthController(
             IAuthService authService,
-            IJwtTokenService jwtTokenService,
-            AppDbContext dbContext,
             PasswordResetService passwordResetService,
             AuditLogService auditLogService)
         {
             _authService = authService;
-            _jwtTokenService = jwtTokenService;
-            _dbContext = dbContext;
             _passwordResetService = passwordResetService;
             _auditLogService = auditLogService;
         }
@@ -63,17 +55,7 @@ namespace Studiobook_backend.Controllers
                     });
                 }
 
-                var user = await _dbContext.Users
-                    .Include(u => u.UserRoles)
-                        .ThenInclude(ur => ur.Role)
-                    .FirstAsync(u => u.Id == loginResult.User.Id);
-
-                var roles = user.UserRoles
-                    .Select(x => x.Role.Name)
-                    .Distinct()
-                    .ToList();
-
-                var token = _jwtTokenService.GenerateToken(user, roles, out var expiresAtUtc);
+                var issued = await _authService.IssueTokenAsync(loginResult.User.Id);
 
                 // Bearer方式にするため、Cookieには保存しない
                 // Response.Cookies.Append(AuthCookieName, token, new CookieOptions
@@ -85,16 +67,16 @@ namespace Studiobook_backend.Controllers
                 //     Path = "/"
                 // });
 
-                loginResult.Token = token;
-                loginResult.ExpiresAt = expiresAtUtc;
+                loginResult.Token = issued.Token;
+                loginResult.ExpiresAt = issued.ExpiresAtUtc;
 
                 await _auditLogService.WriteAsync(
-    actorId: user.Id,
-    action: "LOGIN",
-    entity: "User",
-    entityId: user.Id,
-    note: $"ユーザー「{user.Name}」がログインしました。"
-);
+                    actorId: issued.UserId,
+                    action: "LOGIN",
+                    entity: "User",
+                    entityId: issued.UserId,
+                    note: $"ユーザー「{issued.UserName}」がログインしました。"
+                );
 
                 return Ok(loginResult);
             }

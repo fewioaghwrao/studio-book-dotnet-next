@@ -1,7 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Studiobook_backend.Controllers;
-using Studiobook_backend.Dtos.Ai;
-using Studiobook_backend.Services;
+using Studiobook_backend.Application.Dtos.Ai;
+using Studiobook_backend.Application.Services;
+using Studiobook_backend.Infrastructure.Services;
 
 namespace Studiobook_backend.Tests.Controllers;
 

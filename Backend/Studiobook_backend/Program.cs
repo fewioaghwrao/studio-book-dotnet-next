@@ -1,62 +1,25 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+Ôªøusing Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Studiobook_backend.Data;
-using Studiobook_backend.Services;
-using Studiobook_backend.Services.Interfaces;
-using Studiobook_backend.Settings;
-using Studiobook_backend.Seeders;
-using Studiobook_backend.Entities;
-using Microsoft.AspNetCore.Identity;
-using QuestPDF.Infrastructure;
-using Stripe;
+using Studiobook_backend.Application;
+using Studiobook_backend.Application.Services;
+using Studiobook_backend.Application.Settings;
+using Studiobook_backend.Infrastructure;
+using Studiobook_backend.Infrastructure.Persistence;
+using Studiobook_backend.Infrastructure.Seeders;
 using System.Text;
-using ReviewService = Studiobook_backend.Services.ReviewService;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
 using System.Security.Claims;
 using System.Text.Json;
-using QuestPDF.Drawing;
 
 var builder = WebApplication.CreateBuilder(args);
 
-QuestPDF.Settings.License = LicenseType.Community;
-
-var regularFontPath = Path.Combine(
-    AppContext.BaseDirectory,
-    "Fonts",
-    "NotoSansJP-Regular.ttf"
-);
-
-if (System.IO.File.Exists(regularFontPath))
-{
-    using var regularFontStream = System.IO.File.OpenRead(regularFontPath);
-    FontManager.RegisterFontWithCustomName("NotoSansJP", regularFontStream);
-}
-
-var boldFontPath = Path.Combine(
-    AppContext.BaseDirectory,
-    "Fonts",
-    "NotoSansJP-Bold.ttf"
-);
-
-if (System.IO.File.Exists(boldFontPath))
-{
-    using var boldFontStream = System.IO.File.OpenRead(boldFontPath);
-    FontManager.RegisterFontWithCustomName("NotoSansJP", boldFontStream);
-}
-
-// DbContext(MySQL)
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseMySql(
-        connectionString,
-        ServerVersion.AutoDetect(connectionString)
-    ));
+// Application Â±§Ôºà„É¶„Éº„Çπ„Ç±„Éº„ÇπÔºâ/ Infrastructure Â±§ÔºàDB„ÉªÂ§ñÈÉ®„Çµ„Éº„Éì„Çπ„ÉªÂ∏≥Á•®Âá∫Âäõ„ÄÅQuestPDF „ÅÆ„Éï„Ç©„É≥„ÉàÁôªÈå≤„ÇíÂê´„ÇÄÔºâ„ÅÆÁôªÈå≤
+builder.Services.AddApplication();
+builder.Services.AddInfrastructure(builder.Configuration);
 
 // Settings
-builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
 var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>()
                  ?? throw new InvalidOperationException("Jwt settings are missing.");
 
@@ -82,7 +45,7 @@ builder.Services.AddAuthentication(options =>
         ClockSkew = TimeSpan.Zero
     };
 
-    // Cookie Ç©ÇÁ JWT Çì«Çﬁ
+    // Cookie „Åã„Çâ JWT „ÇíË™≠„ÇÄ
     options.Events = new JwtBearerEvents
     {
         OnMessageReceived = context =>
@@ -119,13 +82,13 @@ builder.Services.AddRateLimiter(options =>
 
         await logService.WriteAsync(
             query: string.IsNullOrWhiteSpace(query)
-                ? "[RateLimitRejected] AIåüçıÉäÉNÉGÉXÉg"
+                ? "[RateLimitRejected] AIÊ§úÁ¥¢„É™„ÇØ„Ç®„Çπ„Éà"
                 : query,
             ipAddress: ipAddress,
             userId: userId,
             succeeded: false,
             resultCount: 0,
-            errorMessage: "AIåüçıÇÃóòópâÒêîÇ™àÍéûìIÇ…è„å¿Ç…íBÇµÇ‹ÇµÇΩÅB"
+            errorMessage: "AIÊ§úÁ¥¢„ÅÆÂà©Áî®ÂõûÊï∞„Åå‰∏ÄÊôÇÁöÑ„Å´‰∏äÈôê„Å´ÈÅî„Åó„Åæ„Åó„Åü„ÄÇ"
         );
 
         httpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
@@ -133,7 +96,7 @@ builder.Services.AddRateLimiter(options =>
 
         var responseBody = JsonSerializer.Serialize(new
         {
-            message = "AIåüçıÇÃóòópâÒêîÇ™àÍéûìIÇ…è„å¿Ç…íBÇµÇ‹ÇµÇΩÅBè≠Çµéûä‘ÇÇ®Ç¢ÇƒÇ©ÇÁçƒìxÇ®ééÇµÇ≠ÇæÇ≥Ç¢ÅB"
+            message = "AIÊ§úÁ¥¢„ÅÆÂà©Áî®ÂõûÊï∞„Åå‰∏ÄÊôÇÁöÑ„Å´‰∏äÈôê„Å´ÈÅî„Åó„Åæ„Åó„Åü„ÄÇÂ∞ë„ÅóÊôÇÈñì„Çí„Åä„ÅÑ„Å¶„Åã„ÇâÂÜçÂ∫¶„ÅäË©¶„Åó„Åè„Å†„Åï„ÅÑ„ÄÇ"
         });
 
         await httpContext.Response.WriteAsync(responseBody, cancellationToken);
@@ -156,64 +119,10 @@ builder.Services.AddRateLimiter(options =>
     });
 });
 
-// Services
-builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
-builder.Services.AddScoped<IPasswordHasherService, PasswordHasherService>();
-builder.Services.AddScoped<IVerificationTokenService, VerificationTokenService>();
-builder.Services.AddScoped<IEmailService, EmailService>();
-builder.Services.AddScoped<PasswordResetService>();
-builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
-builder.Services.AddScoped<AuditLogService>();
-builder.Services.AddScoped<HomeService>();
-builder.Services.AddScoped<RoomSearchService>();
-builder.Services.AddScoped<RoomDetailService>();
-
-builder.Services.Configure<StripeSettings>(
-    builder.Configuration.GetSection("Stripe"));
-builder.Services.Configure<OpenAiSettings>(
-    builder.Configuration.GetSection("OpenAI"));
-
-builder.Services.AddHttpClient<OpenAiRoomSearchClient>();
-builder.Services.AddScoped<AiRoomSearchService>();
-builder.Services.AddScoped<AiSearchLogService>();
-
-builder.Services.AddHttpClient<OpenAiReviewAssistClient>();
-builder.Services.AddScoped<AiReviewAssistService>();
-
-builder.Services.AddScoped<ReservationConfirmService>();
-builder.Services.AddScoped<StripeCheckoutService>();
-builder.Services.AddScoped<ReservationCompleteService>();
-builder.Services.AddScoped<UserReservationService>();
-builder.Services.AddScoped<ReviewService>();
-
-builder.Services.AddScoped<HostClosureService>();
-builder.Services.AddScoped<HostBusinessHourService>();
-builder.Services.AddScoped<HostPriceRuleService>();
-builder.Services.AddScoped<HostReservationService>();
-builder.Services.AddScoped<HostReviewService>();
-builder.Services.AddScoped<HostSalesService>();
-builder.Services.AddScoped<HostStatusService>();
-
-builder.Services.AddScoped<AdminStatusService>();
-builder.Services.AddScoped<AdminUserService>();
-builder.Services.AddScoped<AdminRoomService>();
-builder.Services.AddScoped<AdminReservationService>();
-builder.Services.AddScoped<AdminSettingsService>();
-builder.Services.AddScoped<AdminAuditLogService>();
-builder.Services.AddScoped<AdminAiSearchLogService>();
-
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHealthChecks();
-
-var stripeSecretKey = builder.Configuration["Stripe:SecretKey"];
-
-if (!string.IsNullOrWhiteSpace(stripeSecretKey))
-{
-    StripeConfiguration.ApiKey = stripeSecretKey;
-}
 
 // CORS
 var allowedOrigins = builder.Configuration

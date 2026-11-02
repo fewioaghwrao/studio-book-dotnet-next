@@ -1,6 +1,7 @@
-﻿using Studiobook_backend.Data;
-using Studiobook_backend.Entities;
-using Studiobook_backend.Services;
+﻿using Studiobook_backend.Infrastructure.Persistence;
+using Studiobook_backend.Domain.Entities;
+using Studiobook_backend.Application.Services;
+using Studiobook_backend.Infrastructure.Services;
 using Studiobook_backend.Tests.Helpers;
 
 namespace Studiobook_backend.Tests.Services;

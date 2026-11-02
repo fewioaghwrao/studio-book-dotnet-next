@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Studiobook_backend.Data;
+using Studiobook_backend.Infrastructure.Persistence;
 
 namespace Studiobook_backend.Tests.Helpers;
 

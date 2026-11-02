@@ -2,8 +2,8 @@
 using Microsoft.Extensions.Options;
 using Stripe;
 using Stripe.Checkout;
-using Studiobook_backend.Services;
-using Studiobook_backend.Settings;
+using Studiobook_backend.Application.Services;
+using Studiobook_backend.Application.Settings;
 
 namespace Studiobook_backend.Controllers;
 

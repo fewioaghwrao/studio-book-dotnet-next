@@ -1,8 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Studiobook_backend.Data;
-using Studiobook_backend.Dtos;
+using Studiobook_backend.Application.Dtos;
+using Studiobook_backend.Application.Services;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
@@ -13,11 +12,11 @@ namespace Studiobook_backend.Controllers
     [Authorize(Roles = "Host")]
     public class HostRoomsController : ControllerBase
     {
-        private readonly AppDbContext _dbContext;
+        private readonly HostRoomService _hostRoomService;
 
-        public HostRoomsController(AppDbContext dbContext)
+        public HostRoomsController(HostRoomService hostRoomService)
         {
-            _dbContext = dbContext;
+            _hostRoomService = hostRoomService;
         }
 
         [HttpGet]
@@ -37,46 +36,13 @@ namespace Studiobook_backend.Controllers
                 });
             }
 
-            page = Math.Max(page, 1);
-            pageSize = Math.Clamp(pageSize, 1, 50);
+            var result = await _hostRoomService.GetListAsync(
+                userId.Value,
+                keyword,
+                page,
+                pageSize);
 
-            var query = _dbContext.Rooms
-                .AsNoTracking()
-                .Where(x => x.UserId == userId.Value);
-
-            if (!string.IsNullOrWhiteSpace(keyword))
-            {
-                var trimmedKeyword = keyword.Trim();
-                query = query.Where(x => x.Name.Contains(trimmedKeyword));
-            }
-
-            var totalCount = await query.CountAsync();
-
-            var items = await query
-                .OrderBy(x => x.Id)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .Select(x => new HostRoomListItemDto
-                {
-                    Id = x.Id,
-                    Name = x.Name,
-                    PostalCode = x.PostalCode,
-                    Address = x.Address
-                })
-                .ToListAsync();
-
-            var totalPages = totalCount == 0
-                ? 1
-                : (int)Math.Ceiling(totalCount / (double)pageSize);
-
-            return Ok(new PagedResponseDto<HostRoomListItemDto>
-            {
-                Items = items,
-                Page = page,
-                PageSize = pageSize,
-                TotalCount = totalCount,
-                TotalPages = totalPages
-            });
+            return Ok(result);
         }
 
         private int? GetCurrentUserId()
@@ -111,21 +77,7 @@ namespace Studiobook_backend.Controllers
                 });
             }
 
-            var room = await _dbContext.Rooms
-                .AsNoTracking()
-                .Where(x => x.Id == id && x.UserId == userId.Value)
-                .Select(x => new HostRoomDetailDto
-                {
-                    Id = x.Id,
-                    Name = x.Name,
-                    ImageName = x.ImageName,
-                    Description = x.Description,
-                    Price = x.Price,
-                    Capacity = x.Capacity,
-                    PostalCode = x.PostalCode,
-                    Address = x.Address
-                })
-                .FirstOrDefaultAsync();
+            var room = await _hostRoomService.FindDetailAsync(userId.Value, id);
 
             if (room == null)
             {

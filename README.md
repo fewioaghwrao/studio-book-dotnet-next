@@ -406,25 +406,30 @@ MySQL 8.4 / Docker
 
 ### レイヤー構成
 
+バックエンドは **Domain / Application / Infrastructure / Api** の4プロジェクトに分離しています。
+
 ```
-Controller
+Api（Controller）
   ↓
-Service
+Application（Service / DTO / Interface）
   ↓
-DbContext / Entity
-  ↓
-MySQL
+Domain（Entity）
+
+Infrastructure（AppDbContext / 外部サービス連携 / CSV・PDF出力）
+  └ Application の Interface を実装し、MySQL・Stripe・OpenAI・SMTP へ接続
 ```
+
+依存の向きは Api → Application → Domain、Infrastructure → Application です。
 
 ### 責務分離
 
 | 層 | 主な責務 |
 |---|---|
-| Controller | APIエンドポイント、認証・認可、HTTPレスポンス変換 |
-| Service | 業務ロジック、予約処理、料金計算、売上集計、AI連携、ログ記録 |
-| Entity | DB永続化モデル |
-| DTO | API入出力モデル |
-| DbContext | EF Core によるDB操作 |
+| Api（Controller） | APIエンドポイント、認証・認可、HTTPレスポンス変換 |
+| Application（Service） | 業務ロジック、予約処理、料金計算、売上集計、AI連携、ログ記録 |
+| Application（DTO / Interface） | API入出力モデル、DB・外部サービスの抽象 |
+| Domain（Entity） | DB永続化モデル |
+| Infrastructure | EF Core（AppDbContext）によるDB操作、Migration・Seed、Stripe・OpenAI・メール連携、CSV・PDF出力 |
 | Frontend Page | 画面単位のUI・状態管理 |
 | Components | 共通UI部品 |
 | lib/apiFetch | API通信の共通化 |
@@ -455,15 +460,24 @@ studio-book-dotnet-next
 ├─ Backend
 │  ├─ README.md
 │  ├─ Studiobook_backend.slnx
-│  ├─ Studiobook_backend
-│  │  ├─ Controllers
-│  │  ├─ Data
+│  ├─ Studiobook_backend.Domain          # Domain層（依存なし）
+│  │  └─ Entities
+│  │
+│  ├─ Studiobook_backend.Application     # Application層（→ Domain）
 │  │  ├─ Dtos
-│  │  ├─ Entities
+│  │  ├─ Interfaces
+│  │  ├─ Services
+│  │  └─ Settings
+│  │
+│  ├─ Studiobook_backend.Infrastructure  # Infrastructure層（→ Application）
+│  │  ├─ Persistence                     # AppDbContext
 │  │  ├─ Migrations
 │  │  ├─ Seeders
-│  │  ├─ Services
-│  │  ├─ Settings
+│  │  ├─ Services                        # Email / JWT / OpenAI / Stripe
+│  │  └─ Reports                         # CSV / PDF出力
+│  │
+│  ├─ Studiobook_backend                 # Api層（→ Application / Infrastructure）
+│  │  ├─ Controllers
 │  │  ├─ Fonts
 │  │  ├─ Dockerfile
 │  │  ├─ Program.cs

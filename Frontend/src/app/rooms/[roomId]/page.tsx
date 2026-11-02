@@ -9,6 +9,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { apiFetch } from "@/lib/apiFetch";
+import { getCalendarTimeRange } from "@/lib/calendarTimeRange";
 
 type RoomBusinessHour = {
   dayOfWeek: number;
@@ -638,6 +639,12 @@ const response = await apiFetch(`${apiBaseUrl}/api/auth/me`, {
 
   const imageSrc = getImageSrc(room.imageName);
 
+  // 24時間すべてではなく、営業時間（と予約）の前後だけを表示して縦スクロールを抑える
+  const calendarTimeRange = getCalendarTimeRange(
+    room.businessHours,
+    room.calendarEvents
+  );
+
   return (
     <main className="bg-stone-50">
       <div className="mx-auto max-w-6xl px-4 py-6 sm:py-10">
@@ -732,7 +739,7 @@ const response = await apiFetch(`${apiBaseUrl}/api/auth/me`, {
               カレンダー
             </h2>
             <p className="mt-2 text-sm text-slate-500">
-              営業時間・休館・予約済みの予定を確認できます。
+              営業時間・休館・予約済みの予定を確認できます（営業時間の前後1時間を表示）。
             </p>
           </div>
 
@@ -753,8 +760,8 @@ const response = await apiFetch(`${apiBaseUrl}/api/auth/me`, {
                 timeZone="local"
                 height="auto"
                 nowIndicator
-                slotMinTime="00:00:00"
-                slotMaxTime="24:00:00"
+                slotMinTime={calendarTimeRange.slotMinTime}
+                slotMaxTime={calendarTimeRange.slotMaxTime}
                 events={room.calendarEvents.map((event) => ({
                   id: event.id,
                   title: event.title,
