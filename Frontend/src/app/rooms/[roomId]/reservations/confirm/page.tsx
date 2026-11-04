@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { apiFetch } from "@/lib/apiFetch";
+import { getApiBaseUrl } from "@/lib/apiConfig";
 
 type CurrentUserResponse = {
   isAuthenticated: boolean;
@@ -109,7 +110,7 @@ export default function ReservationConfirmPage() {
   const router = useRouter();
 
   const apiBaseUrl = useMemo(() => {
-    return process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://localhost:7226";
+    return getApiBaseUrl();
   }, []);
 
   const [confirm, setConfirm] = useState<ReservationConfirmResponse | null>(

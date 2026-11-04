@@ -197,7 +197,7 @@ Next.js App Router を使用し、`src/app` 配下で画面単位のルーティ
 
 バックエンドAPIとの通信は、`src/lib/apiFetch.ts` を中心に共通化しています。
 
-- `NEXT_PUBLIC_API_BASE_URL` を使用してAPIベースURLを切り替える
+- `NEXT_PUBLIC_API_BASE_URL` を使用してAPIベースURLを切り替える（`src/lib/apiConfig.ts` の `getApiBaseUrl()` に集約）
 - Cookie認証を前提に `credentials: "include"` を付与
 - APIエラー時は共通的にエラーハンドリングする
 - ページ側では、必要なデータ取得・表示・エラー表示に集中する
@@ -206,13 +206,16 @@ Next.js App Router を使用し、`src/app` 配下で画面単位のルーティ
 
 ## 環境変数
 
-`Frontend/.env.local` を作成します。
+`Frontend/.env.example` をコピーして `Frontend/.env.local` を作成し、API URLを設定します。
 
 ```env
 NEXT_PUBLIC_API_BASE_URL=https://localhost:7226
 ```
 
-本番環境では Azure Static Web Apps 側の環境変数として設定します。
+- 参照は `src/lib/apiConfig.ts`（`getApiBaseUrl()`）の1か所に集約しています。末尾の `/` は自動で取り除きます。
+- 開発・テストで未設定の場合は `https://localhost:7226` を使います。
+- **本番ビルド（`next build`）では必須**です。未設定の場合はビルドがエラーで停止します（`next.config.ts`）。
+- 本番環境では **Vercel のプロジェクト設定（Environment Variables）** に設定します。
 
 ---
 
@@ -568,13 +571,16 @@ npm run dev -- --webpack
 
 ### 環境変数
 
-`Frontend/.env.local` を作成し、API URLを設定します。
+`Frontend/.env.example` をコピーして `Frontend/.env.local` を作成し、API URLを設定します。
 
 ```env
 NEXT_PUBLIC_API_BASE_URL=https://localhost:7226
 ```
 
-本番環境では、Azure Static Web Apps の環境変数として設定します。
+- 参照は `src/lib/apiConfig.ts`（`getApiBaseUrl()`）の1か所に集約しています。末尾の `/` は自動で取り除きます。
+- 開発・テストで未設定の場合は `https://localhost:7226` を使います。
+- **本番ビルド（`next build`）では必須**です。未設定の場合はビルドがエラーで停止します（`next.config.ts`）。
+- 本番環境では **Vercel のプロジェクト設定（Environment Variables）** に設定します。
 
 ---
 

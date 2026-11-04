@@ -175,7 +175,7 @@ test("正常入力でPOSTし、成功メッセージ表示後ログイン画面�
   });
 
   expect(mockFetch).toHaveBeenCalledWith(
-    "http://localhost:8080/api/auth/reset-password",
+    "https://localhost:7226/api/auth/reset-password",
     expect.objectContaining({
       method: "POST",
       headers: {

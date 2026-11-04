@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { apiFetch } from "@/lib/apiFetch";
+import { getApiBaseUrl } from "@/lib/apiConfig";
 
 type CurrentUserResponse = {
   isAuthenticated: boolean;
@@ -49,7 +50,7 @@ function isAdminRole(roles: string[] | undefined) {
 
 export default function AdminEditPage() {
   const apiBaseUrl = useMemo(() => {
-    return process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://localhost:7226";
+    return getApiBaseUrl();
   }, []);
 
   const [form, setForm] = useState<FormState>(initialFormState);

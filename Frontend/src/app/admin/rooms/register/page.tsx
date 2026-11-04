@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { apiFetch } from "@/lib/apiFetch";
+import { getApiBaseUrl } from "@/lib/apiConfig";
 
 type HostOption = {
   id: number;
@@ -39,7 +40,7 @@ const imageOptions = Array.from({ length: 24 }, (_, index) => {
 
 export default function AdminRoomRegisterPage() {
   const apiBaseUrl = useMemo(() => {
-    return process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://localhost:7226";
+    return getApiBaseUrl();
   }, []);
 
   const [form, setForm] = useState<RoomFormState>(initialFormState);

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { getApiBaseUrl } from "@/lib/apiConfig";
 
 type TopRoomItem = {
   id: number;
@@ -54,7 +55,7 @@ function renderStars(rating: number | null) {
 
 export default function StudioBookTopPage() {
   const apiBaseUrl = useMemo(() => {
-    return process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://localhost:7226";
+    return getApiBaseUrl();
   }, []);
 
   const router = useRouter();

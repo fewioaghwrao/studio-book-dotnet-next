@@ -823,7 +823,9 @@ dotnet user-secrets set "Stripe:WebhookSecret" "your-stripe-webhook-secret"
 
 ### Frontend
 
-`Frontend/.env.local` を作成します。
+`Frontend/.env.example` をコピーして `Frontend/.env.local` を作成します。
+
+`NEXT_PUBLIC_API_BASE_URL` は**本番ビルドでは必須**です（未設定の場合は `next build` がエラーで停止します）。本番は Vercel の Environment Variables に設定します。開発・テストで未設定の場合は `https://localhost:7226` を使います。
 
 Docker ComposeでバックエンドAPIを起動する場合:
 

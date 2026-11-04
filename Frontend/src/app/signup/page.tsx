@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { FormEvent, useMemo, useState } from "react";
+import { getApiBaseUrl } from "@/lib/apiConfig";
 
 type SignupResponse = {
   success?: boolean;
@@ -12,7 +13,7 @@ type UsageType = "personal" | "business";
 
 export default function SignupPage() {
   const apiBaseUrl = useMemo(() => {
-    return process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://localhost:7226";
+    return getApiBaseUrl();
   }, []);
 
   const [name, setName] = useState("");
