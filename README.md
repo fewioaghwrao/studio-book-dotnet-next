@@ -808,7 +808,7 @@ dotnet user-secrets set "Stripe:WebhookSecret" "your-stripe-webhook-secret"
 | Stripe:PublishableKey | Stripe Publishable Key |
 | Stripe:WebhookSecret | Stripe Webhook Secret |
 | OpenAI:ApiKey | OpenAI API Key |
-| Frontend:BaseUrl | フロントエンドURL |
+| Frontend:BaseUrl | フロントエンドの公開URL（**本番では必須**）。メール認証後のリダイレクト先・パスワード再設定メールのリンクに使用。開発環境で未設定の場合のみ `http://localhost:3000`、それ以外の環境で未設定・不正な値の場合は起動時にエラー |
 | Mailtrap:Host | Mailtrapホスト |
 | Mailtrap:Port | Mailtrapポート |
 | Mailtrap:From | 送信元メールアドレス |

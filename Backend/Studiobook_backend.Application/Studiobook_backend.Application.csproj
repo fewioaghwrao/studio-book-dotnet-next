@@ -15,8 +15,6 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.1" />
     <!-- PasswordResetService が IPasswordHasher<User> を利用するため -->
     <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="9.0.1" />
-    <!-- PasswordResetService がフロントエンド URL を IConfiguration から読むため -->
-    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.1" />
     <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.1" />
   </ItemGroup>
 
@@ -26,7 +24,6 @@
 
   <ItemGroup>
     <!-- 旧 Web プロジェクト（Microsoft.NET.Sdk.Web）の暗黙 using のうち、移設したコードが使っているもの -->
-    <Using Include="Microsoft.Extensions.Configuration" />
     <Using Include="Microsoft.Extensions.DependencyInjection" />
     <Using Include="Microsoft.Extensions.Logging" />
   </ItemGroup>

@@ -57,6 +57,9 @@ services:
       Cors__AllowedOrigins__0: http://localhost:3000
       Cors__AllowedOrigins__1: http://127.0.0.1:3000
 
+      # フロントエンドの公開URL（メール認証後のリダイレクト先・パスワード再設定メールのリンク）
+      Frontend__BaseUrl: http://localhost:3000
+
       ENABLE_SWAGGER: "true"
       ENABLE_DB_MIGRATION: "true"
       ENABLE_DB_SEED: "true"

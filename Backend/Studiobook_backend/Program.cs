@@ -19,6 +19,23 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
+// フロントエンドURL（メール認証後のリダイレクト先・パスワード再設定メールのリンク）
+// 開発環境で未設定の場合のみ http://localhost:3000 を使い、それ以外の環境では未設定なら起動時にエラーにする
+builder.Services
+    .AddOptions<FrontendSettings>()
+    .Bind(builder.Configuration.GetSection(FrontendSettings.SectionName))
+    .PostConfigure(settings =>
+    {
+        if (string.IsNullOrWhiteSpace(settings.BaseUrl) && builder.Environment.IsDevelopment())
+        {
+            settings.BaseUrl = FrontendSettings.DevelopmentDefaultBaseUrl;
+        }
+    })
+    .Validate(
+        settings => settings.HasValidBaseUrl(),
+        "Frontend:BaseUrl（環境変数 Frontend__BaseUrl）にフロントエンドの公開URL（http/https）を設定してください。")
+    .ValidateOnStart();
+
 // Settings
 var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>()
                  ?? throw new InvalidOperationException("Jwt settings are missing.");

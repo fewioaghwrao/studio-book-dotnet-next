@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using Studiobook_backend.Application.Dtos;
 using Studiobook_backend.Application.Services;
 using Studiobook_backend.Application.Interfaces;
+using Studiobook_backend.Application.Settings;
 
 namespace Studiobook_backend.Controllers
 {
@@ -15,15 +17,18 @@ namespace Studiobook_backend.Controllers
 
         private readonly IAuthService _authService;
         private readonly PasswordResetService _passwordResetService;
+        private readonly FrontendSettings _frontendSettings;
 
         public AuthController(
             IAuthService authService,
             PasswordResetService passwordResetService,
-            AuditLogService auditLogService)
+            AuditLogService auditLogService,
+            IOptions<FrontendSettings> frontendOptions)
         {
             _authService = authService;
             _passwordResetService = passwordResetService;
             _auditLogService = auditLogService;
+            _frontendSettings = frontendOptions.Value;
         }
 
         [HttpPost("login")]
@@ -216,21 +221,20 @@ namespace Studiobook_backend.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> Verify([FromQuery] string token)
         {
-            const string frontendBaseUrl = "http://localhost:3000";
-
+            // リダイレクト先は設定（Frontend:BaseUrl）のフロントエンドに限定する
             if (string.IsNullOrWhiteSpace(token))
             {
-                return Redirect($"{frontendBaseUrl}/signup/verify-error?reason=token-required");
+                return Redirect(_frontendSettings.BuildUrl("/signup/verify-error?reason=token-required"));
             }
 
             var success = await _authService.VerifySignupAsync(token);
 
             if (!success)
             {
-                return Redirect($"{frontendBaseUrl}/signup/verify-error?reason=invalid-token");
+                return Redirect(_frontendSettings.BuildUrl("/signup/verify-error?reason=invalid-token"));
             }
 
-            return Redirect($"{frontendBaseUrl}/signup/verified");
+            return Redirect(_frontendSettings.BuildUrl("/signup/verified"));
         }
 
         [HttpPost("forgot-password")]

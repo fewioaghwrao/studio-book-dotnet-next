@@ -1,8 +1,10 @@
 ﻿using System.Security.Cryptography;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Studiobook_backend.Domain.Entities;
 using Studiobook_backend.Application.Interfaces;
+using Studiobook_backend.Application.Settings;
 
 namespace Studiobook_backend.Application.Services
 {
@@ -11,18 +13,18 @@ namespace Studiobook_backend.Application.Services
         private readonly IAppDbContext _dbContext;
         private readonly IPasswordHasher<User> _passwordHasher;
         private readonly IEmailService _emailService;
-        private readonly IConfiguration _configuration;
+        private readonly FrontendSettings _frontendSettings;
 
         public PasswordResetService(
             IAppDbContext dbContext,
             IPasswordHasher<User> passwordHasher,
             IEmailService emailService,
-            IConfiguration configuration)
+            IOptions<FrontendSettings> frontendOptions)
         {
             _dbContext = dbContext;
             _passwordHasher = passwordHasher;
             _emailService = emailService;
-            _configuration = configuration;
+            _frontendSettings = frontendOptions.Value;
         }
 
         public async Task RequestResetAsync(string email)
@@ -62,8 +64,7 @@ namespace Studiobook_backend.Application.Services
             _dbContext.PasswordResetTokens.Add(resetToken);
             await _dbContext.SaveChangesAsync();
 
-            var frontendBaseUrl = _configuration["Frontend:BaseUrl"] ?? "http://localhost:3000";
-            var resetUrl = $"{frontendBaseUrl}/reset-password?token={Uri.EscapeDataString(token)}";
+            var resetUrl = _frontendSettings.BuildUrl($"/reset-password?token={Uri.EscapeDataString(token)}");
 
             await _emailService.SendPasswordResetEmailAsync(user.Email, resetUrl);
         }
