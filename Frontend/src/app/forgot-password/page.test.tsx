@@ -71,7 +71,7 @@ test("初期表示を行う", () => {
     });
 
     expect(mockFetch).toHaveBeenCalledWith(
-      "http://localhost:8080/api/auth/forgot-password",
+      "https://localhost:7226/api/auth/forgot-password",
       expect.objectContaining({
         method: "POST",
         headers: {

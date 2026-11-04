@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "@/lib/apiFetch";
+import { getApiBaseUrl } from "@/lib/apiConfig";
 import SalesTrendChart, { type SalesTrendRow } from "@/components/charts/SalesTrendChart";
 
 type RoomOption = {
@@ -51,7 +52,7 @@ function moveMonth(year: number, month: number, diff: number) {
 
 export default function HostStatusPage() {
   const apiBaseUrl = useMemo(() => {
-    return process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://localhost:7226";
+    return getApiBaseUrl();
   }, []);
 
   const [selectedRoomId, setSelectedRoomId] = useState("0");

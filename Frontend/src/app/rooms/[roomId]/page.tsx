@@ -9,6 +9,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { apiFetch } from "@/lib/apiFetch";
+import { getApiBaseUrl } from "@/lib/apiConfig";
 import { getCalendarTimeRange } from "@/lib/calendarTimeRange";
 
 type RoomBusinessHour = {
@@ -490,7 +491,7 @@ export default function RoomDetailPage() {
   const params = useParams<{ roomId: string }>();
 
   const apiBaseUrl = useMemo(() => {
-    return process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://localhost:7226";
+    return getApiBaseUrl();
   }, []);
 
   const [room, setRoom] = useState<RoomDetail | null>(null);

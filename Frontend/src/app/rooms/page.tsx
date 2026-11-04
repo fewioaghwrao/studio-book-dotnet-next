@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { apiFetch } from "@/lib/apiFetch";
+import { getApiBaseUrl } from "@/lib/apiConfig";
 
 type RoomListItem = {
   id: number;
@@ -98,7 +99,7 @@ export default function RoomsPage() {
   const searchParams = useSearchParams();
 
   const apiBaseUrl = useMemo(() => {
-    return process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://localhost:7226";
+    return getApiBaseUrl();
   }, []);
 
   const currentKeyword = searchParams.get("keyword") ?? "";

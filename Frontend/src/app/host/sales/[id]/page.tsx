@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { apiFetch } from "@/lib/apiFetch";
+import { getApiBaseUrl } from "@/lib/apiConfig";
 
 type SalesItem = {
   kind: string;
@@ -72,7 +73,7 @@ export default function HostSalesDetailPage() {
   const params = useParams<{ id: string }>();
 
   const apiBaseUrl = useMemo(() => {
-    return process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://localhost:7226";
+    return getApiBaseUrl();
   }, []);
 
   const [detail, setDetail] = useState<SalesDetail | null>(null);

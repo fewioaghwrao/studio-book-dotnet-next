@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { FormEvent, useMemo, useState } from "react";
+import { getApiBaseUrl } from "@/lib/apiConfig";
 
 type ApiErrorResponse = {
   code?: string;
@@ -10,7 +11,7 @@ type ApiErrorResponse = {
 
 export default function ForgotPasswordPage() {
   const apiBaseUrl = useMemo(
-    () => process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080",
+    () => getApiBaseUrl(),
     []
   );
 

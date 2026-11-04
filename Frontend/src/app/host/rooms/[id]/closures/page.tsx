@@ -10,6 +10,7 @@ import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { apiFetch } from "@/lib/apiFetch";
+import { getApiBaseUrl } from "@/lib/apiConfig";
 
 type Closure = {
   id: number;
@@ -38,7 +39,7 @@ export default function HostRoomClosuresPage() {
   const roomId = params.id;
 
   const apiBaseUrl = useMemo(() => {
-    return process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://localhost:7226";
+    return getApiBaseUrl();
   }, []);
 
   const [closures, setClosures] = useState<Closure[]>([]);

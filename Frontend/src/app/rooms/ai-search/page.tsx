@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { FormEvent, useMemo, useState } from "react";
+import { getApiBaseUrl } from "@/lib/apiConfig";
 
 type CapacityCondition = "min" | "max" | "exact" | null;
 
@@ -107,7 +108,7 @@ function displayValue(value: string | number | null | undefined) {
 
 export default function AiRoomSearchPage() {
   const apiBaseUrl = useMemo(() => {
-    return process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://localhost:7226";
+    return getApiBaseUrl();
   }, []);
 
   const [query, setQuery] = useState(

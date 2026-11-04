@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, Suspense, useMemo, useState } from "react";
+import { getApiBaseUrl } from "@/lib/apiConfig";
 
 type ApiErrorResponse = {
   code?: string;
@@ -15,7 +16,7 @@ function ResetPasswordContent() {
   const token = searchParams.get("token") ?? "";
 
   const apiBaseUrl = useMemo(
-    () => process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080",
+    () => getApiBaseUrl(),
     []
   );
 
