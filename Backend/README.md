@@ -526,7 +526,7 @@ dotnet user-secrets set "Stripe:WebhookSecret" "your-stripe-webhook-secret"
 | `Stripe:SuccessUrl` | 決済成功時 URL |
 | `Stripe:CancelUrl` | 決済キャンセル時 URL |
 | `OpenAI:ApiKey` | OpenAI API Key |
-| `Frontend:BaseUrl` | フロントエンド URL |
+| `Frontend:BaseUrl` | フロントエンドの公開 URL（**本番では必須**）。メール認証後のリダイレクト先・パスワード再設定メールのリンクに使用。開発環境で未設定の場合のみ `http://localhost:3000`、それ以外の環境で未設定・不正な値の場合は起動時にエラー |
 | `Mailtrap:Host` | Mailtrap ホスト |
 | `Mailtrap:Port` | Mailtrap ポート |
 | `Mailtrap:From` | 送信元メールアドレス |
@@ -623,6 +623,13 @@ Backendディレクトリ
 ASP.NET Core 10 Web API
         ↓
   JawsDB MySQL
+```
+
+デプロイ前に、Heroku の Config Vars へフロントエンドの公開 URL を設定してください。
+未設定の場合、API は起動時にエラーで停止します（メール認証やパスワード再設定のリンクが localhost を指す状態での稼働を防ぐため）。
+
+```bash
+heroku config:set Frontend__BaseUrl=https://<フロントエンドのドメイン> -a studio-book-api
 ```
 
 Herokuのデプロイ方式がBuildpackの場合は、`Studiobook_backend.slnx` と

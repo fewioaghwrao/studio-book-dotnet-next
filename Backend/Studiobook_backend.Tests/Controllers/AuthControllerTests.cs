@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using Moq;
 using Studiobook_backend.Controllers;
 using Studiobook_backend.Infrastructure.Persistence;
@@ -7,6 +8,7 @@ using Studiobook_backend.Application.Dtos;
 using Studiobook_backend.Application.Services;
 using Studiobook_backend.Infrastructure.Services;
 using Studiobook_backend.Application.Interfaces;
+using Studiobook_backend.Application.Settings;
 using Studiobook_backend.Tests.Helpers;
 
 namespace Studiobook_backend.Tests.Controllers;
@@ -16,7 +18,8 @@ public class AuthControllerTests
     private static AuthController CreateController(
         IAuthService? authService = null,
         PasswordResetService? passwordResetService = null,
-        AuditLogService? auditLogService = null)
+        AuditLogService? auditLogService = null,
+        string frontendBaseUrl = "https://front.example.com")
     {
         var authMock = authService ?? Mock.Of<IAuthService>();
 
@@ -29,7 +32,8 @@ public class AuthControllerTests
         var controller = new AuthController(
             authMock,
             passwordReset,
-            auditLog);
+            auditLog,
+            Options.Create(new FrontendSettings { BaseUrl = frontendBaseUrl }));
 
         controller.ControllerContext = new ControllerContext
         {
@@ -172,5 +176,70 @@ public class AuthControllerTests
 
         Assert.Equal("VALIDATION_ERROR", body.Code);
         Assert.Equal("入力内容を確認してください。", body.Message);
+    }
+
+    [Fact]
+    public async Task Verify_トークン未指定の場合_設定したフロントエンドのエラー画面へリダイレクトする()
+    {
+        // Arrange
+        var authServiceMock = new Mock<IAuthService>();
+        var controller = CreateController(authService: authServiceMock.Object);
+
+        // Act
+        var result = await controller.Verify("");
+
+        // Assert
+        var redirect = Assert.IsType<RedirectResult>(result);
+        Assert.Equal(
+            "https://front.example.com/signup/verify-error?reason=token-required",
+            redirect.Url);
+
+        authServiceMock.Verify(x => x.VerifySignupAsync(It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Verify_無効なトークンの場合_設定したフロントエンドのエラー画面へリダイレクトする()
+    {
+        // Arrange
+        var authServiceMock = new Mock<IAuthService>();
+
+        authServiceMock
+            .Setup(x => x.VerifySignupAsync("invalid-token"))
+            .ReturnsAsync(false);
+
+        var controller = CreateController(authService: authServiceMock.Object);
+
+        // Act
+        var result = await controller.Verify("invalid-token");
+
+        // Assert
+        var redirect = Assert.IsType<RedirectResult>(result);
+        Assert.Equal(
+            "https://front.example.com/signup/verify-error?reason=invalid-token",
+            redirect.Url);
+    }
+
+    [Fact]
+    public async Task Verify_認証成功の場合_設定したフロントエンドの完了画面へリダイレクトする()
+    {
+        // Arrange
+        var authServiceMock = new Mock<IAuthService>();
+
+        authServiceMock
+            .Setup(x => x.VerifySignupAsync("valid-token"))
+            .ReturnsAsync(true);
+
+        // 末尾の / があっても二重スラッシュにならないこと
+        var controller = CreateController(
+            authService: authServiceMock.Object,
+            frontendBaseUrl: "https://front.example.com/");
+
+        // Act
+        var result = await controller.Verify("valid-token");
+
+        // Assert
+        var redirect = Assert.IsType<RedirectResult>(result);
+        Assert.Equal("https://front.example.com/signup/verified", redirect.Url);
+        Assert.DoesNotContain("localhost", redirect.Url);
     }
 }

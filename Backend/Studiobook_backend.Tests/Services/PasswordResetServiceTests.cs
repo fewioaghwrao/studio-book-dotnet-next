@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
+using Studiobook_backend.Application.Settings;
 using Studiobook_backend.Infrastructure.Persistence;
 using Studiobook_backend.Domain.Entities;
 using Studiobook_backend.Application.Services;
@@ -343,18 +344,14 @@ public class PasswordResetServiceTests
         FakeEmailService fakeEmailService,
         IPasswordHasher<User>? passwordHasher = null)
     {
-        var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["Frontend:BaseUrl"] = "https://frontend.example.com"
-            })
-            .Build();
-
         return new PasswordResetService(
             context,
             passwordHasher ?? new PasswordHasher<User>(),
             fakeEmailService,
-            configuration);
+            Options.Create(new FrontendSettings
+            {
+                BaseUrl = "https://frontend.example.com"
+            }));
     }
 
     private static async Task SeedUserAsync(
