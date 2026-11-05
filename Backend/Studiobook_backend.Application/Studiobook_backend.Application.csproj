@@ -12,10 +12,10 @@
 
   <ItemGroup>
     <!-- LINQ to Entities（Include / ToListAsync など）と DbSet を IAppDbContext 経由で使うため -->
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.22" />
     <!-- PasswordResetService が IPasswordHasher<User> を利用するため -->
-    <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="9.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="10.0.14" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.14" />
   </ItemGroup>
 
   <ItemGroup>

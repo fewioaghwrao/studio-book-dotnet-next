@@ -17,9 +17,16 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.25" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.14" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.22" />
+    <!--
+      Pomelo は EF Core 10 対応版が未リリースのため、EF Core は 9.0.x（最新パッチ）を使用する。
+      Pomelo 9.0.0 が依存する MySqlConnector 2.4.0 には脆弱性（GHSA-473q-m89c-ghf8）があるため、修正版を直接指定する。
+    -->
     <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="9.0.0" />
+    <!-- Pomelo は Relational 9.0.0 以上を要求するだけなので、EF Core 本体と同じパッチに揃える（バージョン競合 MSB3277 の回避） -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.22" />
+    <PackageReference Include="MySqlConnector" Version="2.6.2" />
     <PackageReference Include="QuestPDF" Version="2026.2.4" />
     <PackageReference Include="Stripe.net" Version="51.1.0" />
   </ItemGroup>

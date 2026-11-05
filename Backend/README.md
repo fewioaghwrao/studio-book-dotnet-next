@@ -37,7 +37,7 @@ ASP.NET Core Web API・Entity Framework Core・MySQL を使用し、認証・ス
 | C# | バックエンド実装 |
 | Entity Framework Core | ORM / DB アクセス |
 | MySQL | データベース |
-| Pomelo.EntityFrameworkCore.MySql | EF Core MySQL Provider |
+| Pomelo.EntityFrameworkCore.MySql | EF Core MySQL Provider（EF Core 10 対応版が未リリースのため、EF Core は 9.0.x を使用） |
 | JWT Bearer Authentication + HttpOnly Cookie | Cookieに保存したJWTによる認証 |
 | ASP.NET Core Authorization | ロール別認可 |
 | ASP.NET Core RateLimiter | AI 検索などのレート制限 |
