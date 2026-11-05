@@ -79,10 +79,10 @@ Studio Book は、以下のような分離構成です。
 |---|---|
 | Frontend | Next.js / React / TypeScript |
 | Frontend Hosting | Azure Static Web Apps |
-| Backend | ASP.NET Core Web API / C# / .NET 8 |
+| Backend | ASP.NET Core Web API / C# / .NET 10 |
 | Backend Hosting | Heroku |
 | Database | JawsDB MySQL |
-| ORM | Entity Framework Core |
+| ORM | Entity Framework Core 9.0.x（MySQL Provider：Pomelo 9.0.0） |
 | Payment | Stripe Checkout / Webhook |
 | AI | OpenAI API |
 | Mail | Mailtrap |

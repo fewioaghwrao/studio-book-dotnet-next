@@ -1277,7 +1277,7 @@ API開始
 8. DB付きHealthCheckを追加検討する。
 9. Program.csの文字化けを修正する。（対応済み：UTF-8へ変換）
 10. SwaggerのBearer認証設定を追加検討する。
-11. EF Core 9.0.1と.NET 10の正式な組合せを確認する。
+11. EF Core 9.0.1と.NET 10の正式な組合せを確認する。（確認済み：MySQL ProviderのPomeloがEF Core 10未対応のため、.NET 10上でEF Core 9.0.x（9.0.22）を使用。Pomelo 10リリース後にEF Core 10へ移行する）
 12. 本番ログ保存先と保持期間を確定する。
 13. 本番バックアップ方法を確定する。
 14. OpenAI、Stripe、メールのタイムアウト値を確定する。

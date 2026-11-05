@@ -852,6 +852,8 @@ READMEではASP.NET Core 10と記載され、ModelSnapshotではEntity Framework
 
 ターゲットフレームワーク、EF Core、MySQL Providerの正式な組合せを確認する。
 
+**対応状況：** ターゲットフレームワークは .NET 10、ASP.NET Core 関連パッケージは 10.0.x に統一した。MySQL Provider の Pomelo.EntityFrameworkCore.MySql は EF Core 10 対応版が未リリースのため、EF Core は 9.0.x の最新パッチ（9.0.22）を使用する。EF Core 9 は .NET 9 と同じく 2026年11月10日にサポート終了となるため、Pomelo の EF Core 10 対応版がリリースされ次第、EF Core 10 へ移行する。
+
 ## 20.4 予約状態
 
 現行の主な予約状態は以下である。
