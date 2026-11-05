@@ -1,4 +1,6 @@
-﻿namespace Studiobook_backend.Tests.Helpers;
+﻿using Studiobook_backend.Application.Common;
+
+namespace Studiobook_backend.Tests.Helpers;
 
 public static class TestDateTimeHelper
 {
@@ -7,7 +9,8 @@ public static class TestDateTimeHelper
         int hour,
         int minute = 0)
     {
-        var date = DateTime.UtcNow.Date.AddDays(1);
+        // 予約日時は日本時間の壁時計時刻のため、日本時間の明日以降で探す
+        var date = JapanTime.Today(TimeProvider.System).AddDays(1);
 
         while (date.DayOfWeek != targetDay)
         {

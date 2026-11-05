@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Studiobook_backend.Application.Interfaces;
 using Studiobook_backend.Application.Services;
 
@@ -10,6 +11,9 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
+        // 現在時刻（テストでは差し替え可能）。日本時間への変換は Common/JapanTime を使う
+        services.TryAddSingleton(TimeProvider.System);
+
         // 認証・会員
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IVerificationTokenService, VerificationTokenService>();

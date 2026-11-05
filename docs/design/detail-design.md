@@ -197,10 +197,22 @@ Controllerでは`[ApiController]`およびDataAnnotationsによる検証を利�
 
 ### 3.5 日時
 
-- DB登録日時は原則UTCとする。
--`CreatedAtUtc`、`UpdatedAtUtc`、`ExpiresAtUtc`等を使用する。
-- 一部の予約判定、画面用カレンダー、Controllerの既定月では`DateTime.Now`または`DateTime.Today`を使用する。
+日時は用途によって次の2種類に分けて扱う（`Application/Common/JapanTime`）。
+
+| 種類 | 対象 | 保存・送受信の形式 |
+|---|---|---|
+| 業務日時 | 予約・休業日の`StartAt`/`EndAt`、料金明細の`SliceStart`/`SliceEnd`、営業時間 | 日本時間の壁時計時刻（オフセットなし。例：`2026-11-06T10:00:00`） |
+| 記録用日時 | `CreatedAtUtc`、`UpdatedAtUtc`、`ExpiresAtUtc`、`UsedAtUtc`、`EmailVerifiedAtUtc`、`AuditLogs.Ts`、`Reviews.HostReplyAt`、`Closures.CreatedAt` | UTC。APIでは末尾に`Z`を付けて返す |
+
+- 「現在」「今日」「今月」の判定は、サーバーのタイムゾーン（HerokuではUTC）に依存させず、`JapanTime.Now/Today/FirstDayOfCurrentMonth`で日本時間（Asia/Tokyo）に変換して行う。`DateTime.Now`/`DateTime.Today`は使用しない。
+  - 予約確認：開始日時が日本時間の現在より後であること
+  - ホスト・管理者統計：年月未指定時は日本時間の今月
+  - 公開スタジオ詳細のカレンダー範囲、PDFの発行日、CSVのファイル名
+- 記録用日時はDB（MySQLの`datetime`）から読むと`Kind = Unspecified`になるため、`AppDbContext`で読み込み時に`Kind = Utc`を設定する。これによりJSONに`Z`が付き、ブラウザで正しく日本時間に変換される。
+- 管理画面のログ検索（監査ログ・AI検索ログ）で指定する日付は日本時間の1日（0:00〜24:00）とし、UTCへ変換して比較する。
+- 現在時刻は`TimeProvider`をDIで受け取り、テストでは固定時刻に差し替える。
 - 公開スタジオ詳細のカレンダーイベントはUTC+9の`DateTimeOffset`として返す。
+- フロントエンドの表示はブラウザのタイムゾーンで行う（日本国内の利用を前提とする）。
 
 ### 3.6 曜日コード
 
@@ -1365,9 +1377,9 @@ Serviceでは同一User・Roomにつき1レビューに制限するが、DB一�
 
 Serviceの事前検索のみで重複を防いでいる。高負荷・商用運用ではトランザクション、ロック、予約枠テーブル等を検討する。
 
-### 17.9 日時・タイムゾーン
+### 17.9 日時・タイムゾーン（対応済み）
 
-UTC保存とローカル時刻判定が混在する。API境界、DB、Frontendでの日時基準を明確化する必要がある。
+UTC保存とサーバーのローカル時刻による判定が混在し、UTCで動くサーバーでは日本時間と最大9時間ずれていた（過去の時間帯を予約できる、月初の統計が前月になる、ログの時刻が9時間早く表示される等）。「業務日時は日本時間の壁時計時刻、記録用日時はUTC、現在・今日・今月の判定は日本時間」に統一した（3.5参照）。
 
 ### 17.10 Controller内DBアクセス（対応済み）
 

@@ -48,7 +48,9 @@
 - `HostReplyAt`
 - `Ts`
 
-ただし、`Closures` の `StartAt`、`EndAt`、`CreatedAt` は名称に `Utc` を含まないため、実際の保存基準をアプリケーション仕様として統一する必要がある。
+ただし、予約・休業日の業務日時（`Reservations` / `Closures` の `StartAt`、`EndAt`、`ReservationChargeItems` の `SliceStart`、`SliceEnd`）は日本時間の壁時計時刻で保存する。`Closures.CreatedAt` は名称に `Utc` を含まないが UTC で保存する。
+
+UTC で保存した列は、読み込み時に `Kind = Utc` として扱う（`AppDbContext`）。詳細は詳細設計書「3.5 日時」を参照。
 
 ### 3.3 金額管理
 

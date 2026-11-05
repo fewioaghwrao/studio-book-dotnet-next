@@ -229,7 +229,8 @@ public class AdminAiSearchLogServiceTests
             new AiSearchLog
             {
                 Id = 1,
-                CreatedAtUtc = new DateTime(2026, 5, 1, 23, 59, 59),
+                // 日本時間 5/1 23:59:59（UTC 5/1 14:59:59）
+                CreatedAtUtc = new DateTime(2026, 5, 1, 14, 59, 59, DateTimeKind.Utc),
                 Query = "before",
                 Succeeded = true,
                 ResultCount = 1
@@ -237,7 +238,8 @@ public class AdminAiSearchLogServiceTests
             new AiSearchLog
             {
                 Id = 2,
-                CreatedAtUtc = new DateTime(2026, 5, 2, 12, 0, 0),
+                // 日本時間 5/2 0:00（UTC 5/1 15:00）＝指定日の開始
+                CreatedAtUtc = new DateTime(2026, 5, 1, 15, 0, 0, DateTimeKind.Utc),
                 Query = "target",
                 Succeeded = true,
                 ResultCount = 1
@@ -245,7 +247,8 @@ public class AdminAiSearchLogServiceTests
             new AiSearchLog
             {
                 Id = 3,
-                CreatedAtUtc = new DateTime(2026, 5, 3, 0, 0, 0),
+                // 日本時間 5/3 0:00（UTC 5/2 15:00）＝指定日の翌日
+                CreatedAtUtc = new DateTime(2026, 5, 2, 15, 0, 0, DateTimeKind.Utc),
                 Query = "after",
                 Succeeded = true,
                 ResultCount = 1

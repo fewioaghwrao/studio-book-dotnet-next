@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Studiobook_backend.Application.Common;
 using Studiobook_backend.Infrastructure.Persistence;
 using Studiobook_backend.Domain.Entities;
 using Studiobook_backend.Application.Services;
@@ -300,7 +301,7 @@ public class ReservationCompleteServiceTests
         int hour,
         int minute = 0)
     {
-        var date = DateTime.Today.AddDays(1);
+        var date = JapanTime.Today(TimeProvider.System).AddDays(1);
 
         while (date.DayOfWeek != targetDay)
         {

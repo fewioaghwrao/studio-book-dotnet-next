@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Studiobook_backend.Controllers;
 using Studiobook_backend.Infrastructure.Persistence;
+using Studiobook_backend.Application.Common;
 using Studiobook_backend.Application.Dtos.Host;
 using Studiobook_backend.Domain.Entities;
 using Studiobook_backend.Application.Services;
@@ -164,7 +165,7 @@ public class HostStatusControllerTests
 
         var controller = CreateController(context, userId: 10);
 
-        var expectedBaseMonth = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+        var expectedBaseMonth = JapanTime.FirstDayOfCurrentMonth(TimeProvider.System);
         var expectedLabels = new List<string>
         {
             expectedBaseMonth.AddMonths(-2).ToString("yyyy-MM"),
@@ -185,6 +186,33 @@ public class HostStatusControllerTests
         Assert.Equal(expectedLabels, response.Labels);
         Assert.Equal(new List<int> { 0, 0, 0 }, response.Booked);
         Assert.Equal(new List<int> { 0, 0, 0 }, response.Paid);
+    }
+
+    [Fact]
+    public async Task Get_年月未指定の場合_日本時間の今月を基準にする()
+    {
+        // Arrange
+        await using var context = TestDbContextFactory.Create();
+
+        await SeedHostUserAsync(context, userId: 10, name: "ホストA");
+
+        // UTC 10/31 15:30 ＝ 日本時間 11/1 0:30（サーバー時刻のままだと 10 月になってしまう）
+        var controller = CreateController(
+            context,
+            userId: 10,
+            timeProvider: FixedTimeProvider.AtUtc(2026, 10, 31, 15, 30));
+
+        // Act
+        var result = await controller.Get(
+            roomId: null,
+            year: null,
+            month: null);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var response = Assert.IsType<HostStatusResponseDto>(okResult.Value);
+
+        Assert.Equal(new List<string> { "2026-09", "2026-10", "2026-11" }, response.Labels);
     }
 
     [Fact]
@@ -214,10 +242,11 @@ public class HostStatusControllerTests
 
     private static HostStatusController CreateController(
         AppDbContext context,
-        int userId)
+        int userId,
+        TimeProvider? timeProvider = null)
     {
         var service = new HostStatusService(context);
-        var controller = new HostStatusController(service);
+        var controller = new HostStatusController(service, timeProvider);
 
         controller.ControllerContext = new ControllerContext
         {

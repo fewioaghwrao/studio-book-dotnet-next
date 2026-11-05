@@ -1,6 +1,7 @@
 ﻿using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
+using Studiobook_backend.Application.Common;
 using Studiobook_backend.Application.Dtos.Host;
 using Studiobook_backend.Application.Interfaces;
 
@@ -12,6 +13,13 @@ namespace Studiobook_backend.Infrastructure.Reports
     /// </summary>
     public class HostSalesInvoicePdfGenerator : IHostSalesInvoicePdfGenerator
     {
+        private readonly TimeProvider _timeProvider;
+
+        public HostSalesInvoicePdfGenerator(TimeProvider? timeProvider = null)
+        {
+            _timeProvider = timeProvider ?? TimeProvider.System;
+        }
+
         public byte[] CreateInvoicePdf(HostSalesExportDetailDto reservation)
         {
             var items = reservation.Items;
@@ -31,7 +39,7 @@ namespace Studiobook_backend.Infrastructure.Reports
                             .Bold();
 
                         column.Item().PaddingTop(8).AlignRight()
-                            .Text($"発行日：{DateTime.Now:yyyy/MM/dd}");
+                            .Text($"発行日：{JapanTime.Today(_timeProvider):yyyy/MM/dd}");
                     });
 
                     page.Content().PaddingTop(20).Column(column =>

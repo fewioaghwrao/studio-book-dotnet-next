@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Studiobook_backend.Application.Common;
 using Studiobook_backend.Application.Interfaces;
 using Studiobook_backend.Application.Dtos.Rooms;
 using Studiobook_backend.Domain.Entities;
@@ -10,10 +11,12 @@ namespace Studiobook_backend.Application.Services
         private static readonly TimeSpan JstOffset = TimeSpan.FromHours(9);
 
         private readonly IAppDbContext _context;
+        private readonly TimeProvider _timeProvider;
 
-        public RoomDetailService(IAppDbContext context)
+        public RoomDetailService(IAppDbContext context, TimeProvider? timeProvider = null)
         {
             _context = context;
+            _timeProvider = timeProvider ?? TimeProvider.System;
         }
 
         public async Task<RoomDetailDto?> GetDetailAsync(int roomId)
@@ -129,7 +132,8 @@ namespace Studiobook_backend.Application.Services
         {
             var events = new List<RoomCalendarEventDto>();
 
-            var today = DateTime.Today;
+            // カレンダーの表示範囲は日本時間の「今日」を基準にする
+            var today = JapanTime.Today(_timeProvider);
             var from = today.AddDays(-7);
             var to = today.AddDays(60);
 

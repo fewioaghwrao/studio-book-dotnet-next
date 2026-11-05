@@ -1,6 +1,7 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Studiobook_backend.Application.Common;
 using Studiobook_backend.Application.Interfaces;
 using Studiobook_backend.Application.Services;
 
@@ -13,13 +14,16 @@ namespace Studiobook_backend.Controllers
     {
         private readonly HostSalesService _hostSalesService;
         private readonly IHostSalesCsvExporter _csvExporter;
+        private readonly TimeProvider _timeProvider;
 
         public HostSalesCsvController(
             HostSalesService hostSalesService,
-            IHostSalesCsvExporter csvExporter)
+            IHostSalesCsvExporter csvExporter,
+            TimeProvider? timeProvider = null)
         {
             _hostSalesService = hostSalesService;
             _csvExporter = csvExporter;
+            _timeProvider = timeProvider ?? TimeProvider.System;
         }
 
         [HttpGet("sales.csv")]
@@ -36,7 +40,7 @@ namespace Studiobook_backend.Controllers
 
             var content = _csvExporter.CreateSalesCsv(rows);
 
-            var fileName = $"host-sales-{DateTime.Now:yyyyMMddHHmmss}.csv";
+            var fileName = $"host-sales-{JapanTime.Now(_timeProvider):yyyyMMddHHmmss}.csv";
 
             return File(
                 content,
