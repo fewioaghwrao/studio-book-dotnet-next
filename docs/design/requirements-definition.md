@@ -529,12 +529,9 @@ Webhook受信
 
 現行実装はJWT Bearer認証を採用する。
 
-バックエンドは以下からJWTを取得できる。
+バックエンドはAuthorizationヘッダー（`Bearer <token>`）からのみJWTを取得する。
 
-- Authorizationヘッダー
-- `auth_token` Cookie
-
-フロントエンド現行実装では、JWTをクライアント側で保持しAuthorizationヘッダーへ設定する構成が含まれる。
+フロントエンドはJWTをクライアント側（localStorage）で保持し、Authorizationヘッダーへ設定する。
 
 ## 11.2 要件
 
@@ -546,8 +543,8 @@ Webhook受信
 6. JWT署名鍵をソースコードへ保存しない。
 7. パスワードを平文保存しない。
 8. 本番通信はHTTPSを使用する。
-9. Cookieを正式利用する場合、Secure、HttpOnly、SameSiteを適切に設定する。
-10. JWTの正式な保存方式は今後確定する。
+9. JWTはAuthorizationヘッダー（Bearer）で送信し、Cookieは使用しない。
+10. JWTをlocalStorageに保存するため、XSS対策（ユーザー入力をHTMLとして描画しない、CSP等）を行う。
 
 ---
 
@@ -840,6 +837,8 @@ READMEにはHttpOnly Cookie認証と記載されている一方、フロント�
 - HttpOnly Cookie
 - Authorization Bearer
 - Bearerを主方式としCookieを互換方式とする
+
+**対応状況：** Authorization Bearer に統一した。FrontendとAPIが別ドメイン（Vercel / Heroku）のため、サードパーティCookieに依存しない方式を採用した。BackendのCookie読み取り・Cookie削除・CORSの`AllowCredentials`は削除済み。
 
 ## 20.2 Swagger認証
 

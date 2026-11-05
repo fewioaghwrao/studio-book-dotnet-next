@@ -246,7 +246,7 @@ Service内で.NETの`DayOfWeek`からBusinessHour用コードへ変換する。
 - 有効期限検証：有効
 - ClockSkew：0
 
-Bearerヘッダーを正式方式とする。Middlewareには`auth_token` Cookieからトークンを取得する処理も残っている。
+Bearerヘッダーを正式方式とし、トークンはAuthorizationヘッダーからのみ取得する（Cookieからの取得処理は削除済み）。
 
 ### 4.3 ロール
 
@@ -287,7 +287,7 @@ Bearerヘッダーを正式方式とする。Middlewareには`auth_token` Cookie
 **Endpoint**：`POST /api/auth/logout`
 
 - 認証必須。
-- `auth_token` Cookieを削除する。
+- Cookieは操作しない（成功レスポンスのみ返す）。
 - Bearerトークン自体のサーバー失効処理は行わない。
 - クライアント側で保存トークンを削除することを前提とする。
 
@@ -1333,9 +1333,9 @@ Role、UserまたはUserRoleが既に存在する場合はSeed全体をスキッ
 
 ## 17. 既知の課題・要確認事項
 
-### 17.1 BearerとCookieの混在
+### 17.1 BearerとCookieの混在（対応済み）
 
-正式なログイン方式はBearerだが、JWT Middlewareは`auth_token` Cookieも読み、LogoutもCookie削除を行う。正式方式へ統一する必要がある。
+JWT Middlewareの`auth_token` Cookie読み取り、LogoutのCookie削除、CORSの`AllowCredentials`を削除し、Bearer方式に統一した。Frontendのトークン操作は`src/lib/authToken.ts`に集約し、401受信時は保存済みトークンを削除する。
 
 ### 17.2 Claim取得方法のばらつき
 

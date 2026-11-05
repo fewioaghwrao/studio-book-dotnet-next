@@ -14,7 +14,7 @@ Next.js App Router・React・TypeScript を使用し、一般ユーザー、ス�
 
 - トップページ表示
 - ログイン / 会員登録
-- JWT Cookie 認証を前提としたログイン状態管理
+- JWT Bearer 認証（localStorage に保存し `Authorization` ヘッダーで送信）によるログイン状態管理
 - ロール別ナビゲーション表示（ホスト・管理者は共通サイドバー）
 - ログアウト確認ダイアログ
 - スタジオ一覧 / 詳細表示
@@ -198,7 +198,8 @@ Next.js App Router を使用し、`src/app` 配下で画面単位のルーティ
 バックエンドAPIとの通信は、`src/lib/apiFetch.ts` を中心に共通化しています。
 
 - `NEXT_PUBLIC_API_BASE_URL` を使用してAPIベースURLを切り替える（`src/lib/apiConfig.ts` の `getApiBaseUrl()` に集約）
-- Cookie認証を前提に `credentials: "include"` を付与
+- 保存済みの JWT を `Authorization: Bearer` ヘッダーで送信（Cookie は使用しない。トークン操作は `src/lib/authToken.ts` に集約）
+- トークン付きの呼び出しで 401 が返った場合は、保存済みトークンを削除する
 - APIエラー時は共通的にエラーハンドリングする
 - ページ側では、必要なデータ取得・表示・エラー表示に集中する
 
@@ -221,7 +222,7 @@ NEXT_PUBLIC_API_BASE_URL=https://localhost:7226
 
 ## 認証・ロール別表示
 
-本アプリでは、バックエンドが発行した JWT を HttpOnly Cookie に保存します。フロントエンド側では `/api/auth/me` を呼び出し、ログイン状態とロールを判定します。
+ログイン成功時に API が JWT を返し、フロントエンドはブラウザの localStorage に保存します。以降の API リクエストでは `Authorization: Bearer <token>` ヘッダーで JWT を送信します（Cookie は使用しません）。フロントエンド側では `/api/auth/me` を呼び出し、ログイン状態とロールを判定します。
 
 ### 主なロール
 

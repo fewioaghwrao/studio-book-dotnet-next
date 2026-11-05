@@ -62,20 +62,7 @@ builder.Services.AddAuthentication(options =>
         ClockSkew = TimeSpan.Zero
     };
 
-    // Cookie から JWT を読む
-    options.Events = new JwtBearerEvents
-    {
-        OnMessageReceived = context =>
-        {
-            var token = context.Request.Cookies["auth_token"];
-            if (!string.IsNullOrWhiteSpace(token))
-            {
-                context.Token = token;
-            }
-
-            return Task.CompletedTask;
-        }
-    };
+    // 認証は Authorization: Bearer ヘッダーのみで行う（Cookie は使用しない）
 });
 
 builder.Services.AddAuthorization();
@@ -151,10 +138,10 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("FrontendPolicy", policy =>
     {
+        // Bearer 方式のため Cookie を送受信しない（AllowCredentials は不要）
         policy.WithOrigins(allowedOrigins)
               .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials();
+              .AllowAnyMethod();
     });
 });
 

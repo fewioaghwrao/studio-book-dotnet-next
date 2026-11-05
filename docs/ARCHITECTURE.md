@@ -219,7 +219,7 @@ Studiobook_backend.Domain                        │
 ### 主なバックエンド機能
 
 - 認証 / 会員登録 / メール認証
-- JWT Bearer 認証（JWTをHttpOnly Cookieに保存）
+- JWT Bearer 認証（`Authorization` ヘッダーで送信。Cookie は使用しない）
 - ロール別認可
 - スタジオ検索
 - 予約確認
@@ -423,7 +423,7 @@ Stripe決済
 
 ## 認証・認可
 
-本アプリでは、ログイン時にJWTを発行し、HttpOnly Cookie に保存します。
+ログイン成功時に API が JWT を返し、フロントエンドはブラウザの localStorage に保存します。以降の API リクエストでは `Authorization: Bearer <token>` ヘッダーで JWT を送信します（Cookie は使用しません）。
 
 ### 主なロール
 

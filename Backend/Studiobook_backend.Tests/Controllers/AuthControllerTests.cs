@@ -242,4 +242,20 @@ public class AuthControllerTests
         Assert.Equal("https://front.example.com/signup/verified", redirect.Url);
         Assert.DoesNotContain("localhost", redirect.Url);
     }
+
+    [Fact]
+    public void Logout_成功を返し_Cookieを操作しない()
+    {
+        // Arrange
+        var controller = CreateController();
+
+        // Act
+        var result = controller.Logout();
+
+        // Assert
+        Assert.IsType<OkObjectResult>(result);
+
+        // Bearer 方式に統一したため、Set-Cookie（Cookie の削除を含む）を返さない
+        Assert.False(controller.Response.Headers.ContainsKey("Set-Cookie"));
+    }
 }

@@ -363,4 +363,26 @@ describe("AuthNav", () => {
       );
     });
   });
+
+  test("保存済みトークンの有効期限が切れている場合（401）は、トークンを削除して未ログイン表示にする", async () => {
+    localStorage.setItem("token", "expired-token");
+
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 401,
+      json: async () => ({}),
+    });
+
+    render(<AuthNav />);
+
+    expect(await screen.findByRole("link", { name: "ログイン" })).toBeInTheDocument();
+    expect(localStorage.getItem("token")).toBeNull();
+  });
+
+  test("トークンがなければ /api/auth/me を呼ばずに未ログイン表示にする", async () => {
+    render(<AuthNav />);
+
+    expect(await screen.findByRole("link", { name: "ログイン" })).toBeInTheDocument();
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
 });

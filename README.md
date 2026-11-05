@@ -862,9 +862,13 @@ STRIPE_WEBHOOK_SECRET=your-stripe-webhook-secret
 ログインAPIで発行したJWTアクセストークンをBearerトークンとして使用し、
 ASP.NET Core側で認証・ロール別認可を行います。
 
-現在の正式な認証方式はBearer認証です。
-バックエンドには互換用のCookie読取処理が一部残っていますが、
-フロントエンドはAuthorizationヘッダーでJWTを送信します。
+認証方式は **Bearer 認証に統一**しています（Cookie は使用しません）。
+
+- ログイン成功時に API が JWT を返し、フロントエンドは localStorage に保存します（`src/lib/authToken.ts`）
+- API 呼び出しでは `src/lib/apiFetch.ts` が `Authorization: Bearer` ヘッダーを付けます
+- トークンの有効期限切れなどで 401 が返った場合は、保存済みトークンを削除して未ログイン状態に戻します
+- ログアウトは保存済みトークンの削除で行います（JWT はステートレスのため、サーバー側での失効処理はありません）
+- フロントエンド（Vercel）と API（Heroku）が別ドメインのため、サードパーティ Cookie に依存しない方式を採用しています
 
 **主なロール:**
 
@@ -1057,7 +1061,7 @@ GitHub Actions により、push / pull request 時にテストを実行します
 - [ ] UIのレスポンシブ調整
 - [ ] デモ環境の安定化
 - [ ] 予約状態（booked / paid / canceled）の業務上の意味と遷移整理
-- [ ] JWT認証処理をBearer方式へ完全統一
+- [x] JWT認証処理をBearer方式へ完全統一
 - [ ] ログインユーザーID取得処理の共通化
 - [ ] 固定費料金ルールの予約料金計算への反映
 - [ ] 予約状態と状態遷移の整理
