@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Studiobook_backend.Application.Interfaces;
 using Studiobook_backend.Domain.Entities;
 
@@ -512,6 +513,51 @@ namespace Studiobook_backend.Infrastructure.Persistence
                 entity.HasIndex(x => x.UserId);
                 entity.HasIndex(x => x.Succeeded);
             });
+
+            ApplyUtcDateTimeKind(modelBuilder);
+        }
+
+        /// <summary>
+        /// UTC で保存している記録用日時の列名（*Utc 以外）。
+        /// 予約・休業日の StartAt / EndAt などは日本時間の壁時計時刻のため対象外。
+        /// </summary>
+        private static readonly HashSet<string> UtcDateTimePropertyNames = new(StringComparer.Ordinal)
+        {
+            nameof(AuditLog.Ts),
+            nameof(Review.HostReplyAt),
+            $"{nameof(Closure)}.{nameof(Closure.CreatedAt)}",
+        };
+
+        // DB（MySQL の datetime）から読んだ値は Kind = Unspecified になり、JSON に "Z" が付かない。
+        // ブラウザが日本時間として解釈して 9 時間ずれるため、読み込み時に UTC であることを明示する。
+        private static readonly ValueConverter<DateTime, DateTime> UtcKindConverter = new(
+            v => v,
+            v => DateTime.SpecifyKind(v, DateTimeKind.Utc));
+
+        private static void ApplyUtcDateTimeKind(ModelBuilder modelBuilder)
+        {
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+            {
+                foreach (var property in entityType.GetProperties())
+                {
+                    if (property.ClrType != typeof(DateTime) && property.ClrType != typeof(DateTime?))
+                    {
+                        continue;
+                    }
+
+                    if (IsUtcDateTimeColumn(entityType.ClrType.Name, property.Name))
+                    {
+                        property.SetValueConverter(UtcKindConverter);
+                    }
+                }
+            }
+        }
+
+        private static bool IsUtcDateTimeColumn(string entityName, string propertyName)
+        {
+            return propertyName.EndsWith("Utc", StringComparison.Ordinal) ||
+                   UtcDateTimePropertyNames.Contains(propertyName) ||
+                   UtcDateTimePropertyNames.Contains($"{entityName}.{propertyName}");
         }
     }
 }

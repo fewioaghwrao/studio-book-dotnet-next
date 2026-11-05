@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Studiobook_backend.Application.Common;
 using Studiobook_backend.Application.Interfaces;
 using Studiobook_backend.Application.Dtos.Admin;
 
@@ -67,15 +68,16 @@ public class AdminAiSearchLogService
                 x.Model.Contains(normalizedModel));
         }
 
+        // 画面で指定する日付は日本時間の 1 日（0:00〜24:00）。CreatedAtUtc は UTC のため変換して比較する
         if (from.HasValue)
         {
-            var fromUtc = from.Value.Date;
+            var fromUtc = JapanTime.ToUtc(from.Value.Date);
             query = query.Where(x => x.CreatedAtUtc >= fromUtc);
         }
 
         if (to.HasValue)
         {
-            var toExclusiveUtc = to.Value.Date.AddDays(1);
+            var toExclusiveUtc = JapanTime.ToUtc(to.Value.Date.AddDays(1));
             query = query.Where(x => x.CreatedAtUtc < toExclusiveUtc);
         }
 

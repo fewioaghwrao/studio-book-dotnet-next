@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Studiobook_backend.Application.Common;
 using Studiobook_backend.Application.Interfaces;
 using Studiobook_backend.Application.Dtos.Reservations;
 using Studiobook_backend.Domain.Entities;
@@ -9,13 +10,16 @@ public class ReservationConfirmService
 {
     private readonly IAppDbContext _db;
     private readonly AdminSettingsService _adminSettingsService;
+    private readonly TimeProvider _timeProvider;
 
     public ReservationConfirmService(
         IAppDbContext db,
-        AdminSettingsService adminSettingsService)
+        AdminSettingsService adminSettingsService,
+        TimeProvider? timeProvider = null)
     {
         _db = db;
         _adminSettingsService = adminSettingsService;
+        _timeProvider = timeProvider ?? TimeProvider.System;
     }
 
     public async Task<ReservationConfirmResponse> BuildConfirmAsync(
@@ -27,7 +31,9 @@ public class ReservationConfirmService
             throw new InvalidOperationException("終了日時は開始日時より後にしてください。");
         }
 
-        if (request.StartAt <= DateTime.Now)
+        // StartAt は日本時間の壁時計時刻のため、現在時刻も日本時間で比較する
+        // （DateTime.Now はサーバーのタイムゾーン依存で、Heroku では UTC になり 9 時間ずれる）
+        if (request.StartAt <= JapanTime.Now(_timeProvider))
         {
             throw new InvalidOperationException("開始日時は現在時刻より後にしてください。");
         }

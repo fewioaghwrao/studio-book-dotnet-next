@@ -1,4 +1,5 @@
-﻿using Studiobook_backend.Infrastructure.Persistence;
+﻿using Studiobook_backend.Application.Common;
+using Studiobook_backend.Infrastructure.Persistence;
 using Studiobook_backend.Domain.Entities;
 using Studiobook_backend.Application.Services;
 using Studiobook_backend.Infrastructure.Services;
@@ -264,7 +265,7 @@ public class RoomDetailServiceTests
 
         await SeedRoomAsync(context, 1, 10, "新宿スタジオ", "説明", 3000);
 
-        var targetDate = DateTime.Today.AddDays(10).Date;
+        var targetDate = JapanTime.Today(TimeProvider.System).AddDays(10);
         var businessDayOfWeek = ToBusinessDayOfWeek(targetDate.DayOfWeek);
 
         await SeedBusinessHourAsync(
@@ -343,7 +344,7 @@ public class RoomDetailServiceTests
         await SeedHostUserAsync(context, 10, "ホストA");
         await SeedRoomAsync(context, 1, 10, "新宿スタジオ", "説明", 3000);
 
-        var targetDate = DateTime.Today.AddDays(10).Date;
+        var targetDate = JapanTime.Today(TimeProvider.System).AddDays(10);
         var businessDayOfWeek = ToBusinessDayOfWeek(targetDate.DayOfWeek);
 
         await SeedBusinessHourAsync(

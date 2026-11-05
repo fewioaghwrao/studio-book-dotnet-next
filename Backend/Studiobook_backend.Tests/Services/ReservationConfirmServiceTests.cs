@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Studiobook_backend.Application.Common;
 using Studiobook_backend.Infrastructure.Persistence;
 using Studiobook_backend.Application.Dtos.Reservations;
 using Studiobook_backend.Domain.Entities;
@@ -445,12 +446,54 @@ public class ReservationConfirmServiceTests
         Assert.Equal(6000, result.Subtotal);
     }
 
+    [Fact]
+    public async Task BuildConfirmAsync_日本時間で過去の開始日時は_サーバーがUTCでも拒否する()
+    {
+        await using var context = TestDbContextFactory.Create();
+
+        await SeedAdminSettingsAsync(context, "0.10", "0.10");
+        await SeedHostUserAsync(context, 10, "ホストA");
+        await SeedGuestUserAsync(context, 20, "ゲストA");
+        await SeedRoomAsync(context, 1, 10, "新宿スタジオ", 3000);
+        await SeedBusinessHourAsync(
+            context, 1, (int)DayOfWeek.Monday,
+            new TimeOnly(9, 0), new TimeOnly(20, 0), false);
+
+        // 現在：UTC 2026/11/9(月) 1:00 ＝ 日本時間 11/9(月) 10:00
+        var clock = FixedTimeProvider.AtUtc(2026, 11, 9, 1, 0);
+        var service = CreateService(context, clock);
+
+        // 日本時間 9:30 開始はすでに過去（UTC の 1:00 と比べると未来に見えてしまう）
+        var pastRequest = new ReservationConfirmRequest
+        {
+            RoomId = 1,
+            StartAt = new DateTime(2026, 11, 9, 9, 30, 0),
+            EndAt = new DateTime(2026, 11, 9, 11, 0, 0)
+        };
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => service.BuildConfirmAsync(20, pastRequest));
+        Assert.Equal("開始日時は現在時刻より後にしてください。", ex.Message);
+
+        // 日本時間 10:30 開始は未来なので確認できる
+        var futureRequest = new ReservationConfirmRequest
+        {
+            RoomId = 1,
+            StartAt = new DateTime(2026, 11, 9, 10, 30, 0),
+            EndAt = new DateTime(2026, 11, 9, 12, 30, 0)
+        };
+
+        var result = await service.BuildConfirmAsync(20, futureRequest);
+        Assert.Equal(futureRequest.StartAt, result.StartAt);
+    }
+
     private static DateTime GetNextDayOfWeek(
         DayOfWeek targetDay,
         int hour,
         int minute = 0)
     {
-        var date = DateTime.UtcNow.Date.AddDays(1);
+        // 予約日時は日本時間の壁時計時刻のため、日本時間の明日以降で探す
+        var date = JapanTime.Today(TimeProvider.System).AddDays(1);
 
         while (date.DayOfWeek != targetDay)
         {
@@ -460,10 +503,12 @@ public class ReservationConfirmServiceTests
         return date.AddHours(hour).AddMinutes(minute);
     }
 
-    private static ReservationConfirmService CreateService(AppDbContext context)
+    private static ReservationConfirmService CreateService(
+        AppDbContext context,
+        TimeProvider? timeProvider = null)
     {
         var adminSettingsService = new AdminSettingsService(context);
-        return new ReservationConfirmService(context, adminSettingsService);
+        return new ReservationConfirmService(context, adminSettingsService, timeProvider);
     }
 
     private static async Task SeedAdminSettingsAsync(

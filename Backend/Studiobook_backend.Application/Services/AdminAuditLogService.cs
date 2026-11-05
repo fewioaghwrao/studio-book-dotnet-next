@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Studiobook_backend.Application.Common;
 using Studiobook_backend.Application.Interfaces;
 using Studiobook_backend.Application.Dtos.Admin;
 
@@ -64,15 +65,17 @@ namespace Studiobook_backend.Application.Services
                 query = query.Where(x => x.EntityId == entityId.Value);
             }
 
+            // 画面で指定する日付は日本時間の 1 日（0:00〜24:00）。Ts は UTC のため変換して比較する
             if (from.HasValue)
             {
-                query = query.Where(x => x.Ts >= from.Value.Date);
+                var fromUtc = JapanTime.ToUtc(from.Value.Date);
+                query = query.Where(x => x.Ts >= fromUtc);
             }
 
             if (to.HasValue)
             {
-                var toDate = to.Value.Date.AddDays(1).AddTicks(-1);
-                query = query.Where(x => x.Ts <= toDate);
+                var toExclusiveUtc = JapanTime.ToUtc(to.Value.Date.AddDays(1));
+                query = query.Where(x => x.Ts < toExclusiveUtc);
             }
 
             var totalCount = await query.CountAsync();

@@ -237,7 +237,8 @@ public class AdminAuditLogServiceTests
             new AuditLog
             {
                 Id = 1,
-                Ts = new DateTime(2026, 5, 1, 23, 59, 59),
+                // 日本時間 5/1 23:59:59（UTC 5/1 14:59:59）
+                Ts = new DateTime(2026, 5, 1, 14, 59, 59, DateTimeKind.Utc),
                 ActorId = 1,
                 Action = "BEFORE",
                 Entity = "User",
@@ -247,7 +248,8 @@ public class AdminAuditLogServiceTests
             new AuditLog
             {
                 Id = 2,
-                Ts = new DateTime(2026, 5, 2, 12, 0, 0),
+                // 日本時間 5/2 0:00（UTC 5/1 15:00）＝指定日の開始
+                Ts = new DateTime(2026, 5, 1, 15, 0, 0, DateTimeKind.Utc),
                 ActorId = 1,
                 Action = "TARGET",
                 Entity = "User",
@@ -257,7 +259,8 @@ public class AdminAuditLogServiceTests
             new AuditLog
             {
                 Id = 3,
-                Ts = new DateTime(2026, 5, 3, 0, 0, 0),
+                // 日本時間 5/3 0:00（UTC 5/2 15:00）＝指定日の翌日
+                Ts = new DateTime(2026, 5, 2, 15, 0, 0, DateTimeKind.Utc),
                 ActorId = 1,
                 Action = "AFTER",
                 Entity = "User",
