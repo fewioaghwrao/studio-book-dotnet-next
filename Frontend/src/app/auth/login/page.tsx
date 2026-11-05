@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useMemo, useState } from "react";
 import { getApiBaseUrl } from "@/lib/apiConfig";
+import { setAuthToken } from "@/lib/authToken";
 
 type LoginResponse = {
   message?: string;
@@ -74,7 +75,7 @@ if (!data.token) {
   return;
 }
 
-localStorage.setItem("token", data.token);
+setAuthToken(data.token);
 
 setSuccessMessage(data?.message ?? "ログインに成功しました。");
 

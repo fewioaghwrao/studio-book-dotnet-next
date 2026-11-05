@@ -13,7 +13,7 @@ ASP.NET Core Web API・Entity Framework Core・MySQL を使用し、認証・ス
 主な役割は以下のとおりです。
 
 - 会員登録 / ログイン / メール認証
-- JWT Bearer 認証（JWTをHttpOnly Cookieに保存）・ロール別認可
+- JWT Bearer 認証（`Authorization` ヘッダーで送信。Cookie は使用しない）・ロール別認可
 - スタジオ検索 / 詳細取得
 - 予約確認 / 料金計算
 - Stripe Checkout セッション作成
@@ -38,7 +38,7 @@ ASP.NET Core Web API・Entity Framework Core・MySQL を使用し、認証・ス
 | Entity Framework Core | ORM / DB アクセス |
 | MySQL | データベース |
 | Pomelo.EntityFrameworkCore.MySql | EF Core MySQL Provider（EF Core 10 対応版が未リリースのため、EF Core は 9.0.x を使用） |
-| JWT Bearer Authentication + HttpOnly Cookie | Cookieに保存したJWTによる認証 |
+| JWT Bearer Authentication | `Authorization: Bearer` ヘッダーの JWT による認証 |
 | ASP.NET Core Authorization | ロール別認可 |
 | ASP.NET Core RateLimiter | AI 検索などのレート制限 |
 | Stripe API | 決済連携 |
@@ -250,7 +250,7 @@ Backend は用途ごとに Controller を分けています。
 
 ## 認証・認可
 
-ログイン成功時に JWT を発行し、HttpOnly Cookie に保存します。以降の API リクエストでは Cookie を通じて認証状態を判定します。
+ログイン成功時に JWT を発行してレスポンスで返します。フロントエンドはブラウザに保存し、以降の API リクエストでは `Authorization: Bearer <token>` ヘッダーで送信します。API はこのヘッダーだけで認証状態を判定します（Cookie は読み取りません。CORS も `AllowCredentials` を設定していません）。
 
 ![認証・認可フロー図](../docs/diagrams/auth-flow.drawio.png)
 

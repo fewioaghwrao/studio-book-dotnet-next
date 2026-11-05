@@ -402,12 +402,9 @@ JWT Bearer認証を使用する。
 
 ## 8.2 トークン取得方法
 
-Backendは以下を受け付ける。
+BackendはAuthorizationヘッダー（`Bearer <token>`）のみを受け付ける。Cookieからのトークン取得は行わない。
 
-1. Authorizationヘッダー
-2. `auth_token` Cookie
-
-現行FrontendはlocalStorageからトークンを取得し、Authorizationヘッダーへ設定する。
+FrontendはlocalStorageにトークンを保存し、共通の`apiFetch`がAuthorizationヘッダーへ設定する。トークン付きの呼び出しで401が返った場合は保存済みトークンを削除する。
 
 ## 8.3 ログイン処理
 
@@ -443,8 +440,8 @@ POST /api/auth/logout
 
 ## 8.5 要確認
 
-- 正式方式をBearerとCookieのどちらに統一するか
-- HttpOnly Cookieを採用する場合のCSRF対策
+- 正式方式はBearerに統一済み（FrontendとAPIが別ドメインのため、サードパーティCookieに依存しない方式を採用）
+- localStorage保存に伴うXSS対策（CSP等）の強化
 - AccessTokenMinutesの正式値
 
 ---
@@ -1270,7 +1267,7 @@ API開始
 
 # 26. 制約・要確認事項
 
-1. JWTの正式保存方式をBearerまたはHttpOnly Cookieへ統一する。
+1. JWTの正式保存方式をBearerまたはHttpOnly Cookieへ統一する。（対応済み：Bearerに統一）
 2. `/login` と `/auth/login` を統一する。
 3. `booked`の業務上の意味を確定する。
 4. Stripe Webhookの冪等性実装を確認・強化する。

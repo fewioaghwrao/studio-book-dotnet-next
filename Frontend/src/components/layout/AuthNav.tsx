@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { apiFetch } from "@/lib/apiFetch";
 import { getApiBaseUrl } from "@/lib/apiConfig";
+import { clearAuthToken, getAuthToken } from "@/lib/authToken";
 import LogoutConfirmDialog from "./LogoutConfirmDialog";
 
 type CurrentUserResponse = {
@@ -51,24 +52,21 @@ export default function AuthNav() {
 
     const fetchCurrentUser = async () => {
       try {
-const token = localStorage.getItem("token");
+        // トークンがなければ API を呼ばずに未ログイン表示にする
+        if (!getAuthToken()) {
+          if (!ignore) {
+            setIsAuthenticated(false);
+            setUserName("");
+            setRole(null);
+          }
+          return;
+        }
 
-if (!token) {
-  if (!ignore) {
-    setIsAuthenticated(false);
-    setUserName("");
-    setRole(null);
-  }
-  return;
-}
-
-const response = await apiFetch(`${apiBaseUrl}/api/auth/me`, {
-  method: "GET",
-  headers: {
-    Authorization: `Bearer ${token}`,
-  },
-  cache: "no-store",
-});
+        // Authorization: Bearer ヘッダーは apiFetch が付ける
+        const response = await apiFetch(`${apiBaseUrl}/api/auth/me`, {
+          method: "GET",
+          cache: "no-store",
+        });
 
         if (!response.ok) {
           if (!ignore) {
@@ -140,21 +138,15 @@ const handleLogout = async () => {
   if (isLoggingOut) return;
   setIsLoggingOut(true);
 
-  const token = localStorage.getItem("token");
-
   try {
+    // サーバー側はステートレス（JWT）なので、通知のみ。Authorization ヘッダーは apiFetch が付ける
     await apiFetch(`${apiBaseUrl}/api/auth/logout`, {
       method: "POST",
-      headers: token
-        ? {
-            Authorization: `Bearer ${token}`,
-          }
-        : {},
     });
   } catch {
     // 失敗時も表示だけはリセットしてトップへ戻す
   } finally {
-    localStorage.removeItem("token");
+    clearAuthToken();
 
     setIsAuthenticated(false);
     setUserName("");

@@ -153,7 +153,7 @@
 - JWT Bearer認証を使用する。
 - Issuer、Audience、署名鍵、有効期限を検証する。
 - `ClockSkew = 0` とし、期限切れを厳密に判定する。
-- Authorizationヘッダーに加えて `auth_token` CookieからもJWTを取得可能とする。
+- JWTはAuthorizationヘッダー（Bearer）からのみ取得する（Cookieは使用しない）。
 - パスワードハッシュ化にはASP.NET Core IdentityのPasswordHasherを使用する。
 
 ### 暫定目標
@@ -164,7 +164,7 @@
 4. アクセストークン有効期限は30～60分程度を暫定値とする。
 5. 認証失敗時は401、権限不足時は403を返す。
 6. 無効化されたユーザーはログイン不可とする。
-7. Cookieを正式利用する場合はSecure、HttpOnly、SameSite属性を適切に設定する。
+7. JWTをlocalStorageに保存するため、XSS対策（CSP等）を行う。
 
 ---
 
@@ -617,7 +617,7 @@
 以下は本番運用方針に合わせて最終確定する。
 
 1. 正式なアクセストークン有効期限
-2. JWTをAuthorizationヘッダーとCookieのどちらで正式運用するか
+2. JWTをAuthorizationヘッダーとCookieのどちらで正式運用するか（Authorizationヘッダーに確定）
 3. 月間稼働率
 4. 同時接続・同時利用者数
 5. RTO・RPO

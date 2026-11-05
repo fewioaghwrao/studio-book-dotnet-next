@@ -12,7 +12,6 @@ namespace Studiobook_backend.Controllers
     [Route("api/auth")]
     public class AuthController : ControllerBase
     {
-        private const string AuthCookieName = "auth_token";
         private readonly AuditLogService _auditLogService;
 
         private readonly IAuthService _authService;
@@ -62,16 +61,7 @@ namespace Studiobook_backend.Controllers
 
                 var issued = await _authService.IssueTokenAsync(loginResult.User.Id);
 
-                // Bearer方式にするため、Cookieには保存しない
-                // Response.Cookies.Append(AuthCookieName, token, new CookieOptions
-                // {
-                //     HttpOnly = true,
-                //     Secure = true,
-                //     SameSite = SameSiteMode.None,
-                //     Expires = expiresAtUtc,
-                //     Path = "/"
-                // });
-
+                // トークンはレスポンスで返し、フロントが Authorization: Bearer ヘッダーで送る（Cookie には保存しない）
                 loginResult.Token = issued.Token;
                 loginResult.ExpiresAt = issued.ExpiresAtUtc;
 
@@ -150,14 +140,8 @@ namespace Studiobook_backend.Controllers
         [Authorize]
         public IActionResult Logout()
         {
-            Response.Cookies.Delete(AuthCookieName, new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.None,
-                Path = "/"
-            });
-
+            // JWT はステートレスのため、サーバー側で破棄するものはない。
+            // フロントは保存済みのトークンを削除してログアウト状態にする。
             return Ok(new
             {
                 success = true
