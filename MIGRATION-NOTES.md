@@ -21,8 +21,9 @@
 
 ## 要確認事項
 
-DB要件書のORM表記 `Entity Framework Core 9.0.1` は、添付資料で確認できる現行値を維持しています。
-NuGetパッケージをEF Core 10へ更新した場合は、実際の `.csproj` に合わせて `Entity Framework Core 10.x` へ変更してください。
+EF Core は 9.0.22 に更新しました（ASP.NET Core 関連パッケージは 10.0.14）。
+MySQL Provider の Pomelo.EntityFrameworkCore.MySql に EF Core 10 対応版がまだないため、EF Core 10 への更新は保留しています。
+EF Core 9 は 2026年11月10日にサポート終了となるため、Pomelo の EF Core 10 対応版リリース後に EF Core 10 へ更新し、DB要件書のORM表記も合わせて変更してください。
 
 Herokuの記載はBuildpack方式とContainer Registry方式の両方を考慮しています。
 実際の運用方式が確定している場合は、使用しない方式の説明を削除できます。
