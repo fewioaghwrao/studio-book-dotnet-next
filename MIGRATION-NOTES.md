@@ -30,7 +30,12 @@ Herokuの記載はBuildpack方式とContainer Registry方式の両方を考慮�
 
 ## DBマイグレーション：AddPaymentIntentIdAndReviewUnique（B6/B7）
 
-`20261109000000_AddPaymentIntentIdAndReviewUnique` で次を追加します。起動時の `MigrateAsync` で自動適用されます。
+`20261109000000_AddPaymentIntentIdAndReviewUnique` で次を追加します。
+
+起動時のマイグレーションは環境変数 `ENABLE_DB_MIGRATION=true` のときだけ実行されます。Heroku などで未設定の場合は自動では適用されず、新しいコードが存在しない列（`Reservations.PaymentIntentId`）を参照して、予約を読むAPIがエラーになります。デプロイと同時に、次のどちらかで適用してください。
+
+- Heroku の Config Vars に `ENABLE_DB_MIGRATION=true` を設定して再起動する（適用後は `false` に戻してもよい）
+- 下記「手動で適用する場合」のSQLを本番DBで実行する
 
 - `Reservations.PaymentIntentId`（varchar(255)、NULL 可）と一意インデックス `IX_Reservations_PaymentIntentId`
 - `Reviews` の一意インデックス `IX_Reviews_RoomId_UserId`（同一ユーザー・同一スタジオのレビューは 1 件）
@@ -49,3 +54,15 @@ HAVING COUNT(*) > 1;
 重複がある場合は、残すレビューを決めてから不要な行を削除してください（自動では削除しません）。
 
 既存の予約の `PaymentIntentId` は NULL のままです（一意インデックスは NULL の重複を許可します）。
+
+### 手動で適用する場合
+
+```sql
+ALTER TABLE `Reservations` ADD `PaymentIntentId` varchar(255) CHARACTER SET utf8mb4 NULL;
+CREATE UNIQUE INDEX `IX_Reservations_PaymentIntentId` ON `Reservations` (`PaymentIntentId`);
+CREATE UNIQUE INDEX `IX_Reviews_RoomId_UserId` ON `Reviews` (`RoomId`, `UserId`);
+INSERT INTO `__EFMigrationsHistory` (`MigrationId`, `ProductVersion`)
+VALUES ('20261109000000_AddPaymentIntentIdAndReviewUnique', '9.0.22');
+```
+
+最後の INSERT で適用済みとして記録するため、後で `ENABLE_DB_MIGRATION=true` にしても二重に実行されません。
