@@ -248,6 +248,40 @@ public class HostSalesCsvControllerTests
     }
 
     [Fact]
+    public async Task ExportSalesCsv_決済済みは終了前なら決済済み_終了後なら利用済みと出力する()
+    {
+        // Arrange
+        await using var context = TestDbContextFactory.Create();
+
+        await SeedHostUserAsync(context, userId: 10, name: "ホストA");
+        await SeedGuestUserAsync(context, userId: 20, name: "ゲストA");
+        await SeedRoomAsync(context, roomId: 1, hostUserId: 10, name: "新宿スタジオ");
+
+        await SeedReservationAsync(context, reservationId: 1, roomId: 1, guestUserId: 20,
+            startAt: new DateTime(2026, 5, 10, 10, 0, 0),
+            endAt: new DateTime(2026, 5, 10, 12, 0, 0),
+            status: "paid", amount: 6000);
+
+        await SeedReservationAsync(context, reservationId: 2, roomId: 1, guestUserId: 20,
+            startAt: new DateTime(2026, 5, 20, 10, 0, 0),
+            endAt: new DateTime(2026, 5, 20, 12, 0, 0),
+            status: "paid", amount: 7000);
+
+        // 現在：日本時間 2026/5/10 15:00（UTC 6:00）
+        var clock = FixedTimeProvider.AtUtc(2026, 5, 10, 6, 0);
+        var controller = CreateController(context, userId: 10, clock);
+
+        // Act
+        var result = await controller.ExportSalesCsv(roomId: null, onlyWithItems: true);
+
+        // Assert
+        var csv = Encoding.UTF8.GetString(Assert.IsType<FileContentResult>(result).FileContents);
+
+        Assert.Contains("\"1\",\"新宿スタジオ\",\"ゲストA\",\"2026-05-10 10:00\",\"2026-05-10 12:00\",\"6000\",\"利用済み\"", csv);
+        Assert.Contains("\"2\",\"新宿スタジオ\",\"ゲストA\",\"2026-05-20 10:00\",\"2026-05-20 12:00\",\"7000\",\"決済済み\"", csv);
+    }
+
+    [Fact]
     public async Task ExportSalesCsv_ThrowsUnauthorizedAccessException_WhenUserIdClaimIsMissing()
     {
         // Arrange
@@ -273,9 +307,13 @@ public class HostSalesCsvControllerTests
 
     private static HostSalesCsvController CreateController(
         AppDbContext context,
-        int userId)
+        int userId,
+        TimeProvider? timeProvider = null)
     {
-        var controller = new HostSalesCsvController(new HostSalesService(context), new HostSalesCsvExporter());
+        var controller = new HostSalesCsvController(
+            new HostSalesService(context, timeProvider),
+            new HostSalesCsvExporter(),
+            timeProvider);
 
         controller.ControllerContext = new ControllerContext
         {

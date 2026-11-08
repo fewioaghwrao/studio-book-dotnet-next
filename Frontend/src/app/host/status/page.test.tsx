@@ -143,7 +143,7 @@ test("API成功時、統計情報を表示する", async () => {
   ).toBeInTheDocument();
 
   expect(
-    screen.getByText("予約済みを見込み売上、利用済みを確定売上として表示します。")
+    screen.getByText("利用前（予約済み・決済済み）の予約を見込み売上、利用済み（終了日時を過ぎた決済済み）の予約を確定売上として表示します。")
   ).toBeInTheDocument();
 
   expect(screen.getByTestId("responsive-container")).toBeInTheDocument();

@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { apiFetch } from "@/lib/apiFetch";
 import { getApiBaseUrl } from "@/lib/apiConfig";
+import { getReservationStatusLabel } from "@/lib/reservationStatus";
 
 type SalesItem = {
   kind: string;
@@ -24,6 +25,7 @@ type SalesDetail = {
   endAt: string;
   amount: number;
   status: string;
+  isUsed: boolean;
   items: SalesItem[];
 };
 
@@ -45,12 +47,6 @@ function formatPeriod(start: string | null, end: string | null) {
   return `${formatDateTime(start)} 〜 ${formatDateTime(end)}`;
 }
 
-function formatStatus(status: string) {
-  if (status === "booked") return "予約済み";
-  if (status === "paid") return "利用済み";
-  if (status === "canceled") return "キャンセル済み";
-  return status;
-}
 
 function formatKind(kind: string) {
   if (kind === "base") return "基本料金";
@@ -240,7 +236,7 @@ export default function HostSalesDetailPage() {
                 value: `${formatDateTime(detail.startAt)} 〜 ${formatDateTime(detail.endAt)}`,
               },
               { label: "合計", value: `${detail.amount.toLocaleString()}円` },
-              { label: "状態", value: formatStatus(detail.status) },
+              { label: "状態", value: getReservationStatusLabel(detail.status, detail.isUsed) },
             ].map((row) => (
               <div
                 key={row.label}

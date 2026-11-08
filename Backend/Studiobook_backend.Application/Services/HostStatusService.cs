@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Studiobook_backend.Application.Common;
 using Studiobook_backend.Application.Interfaces;
 using Studiobook_backend.Application.Dtos.Host;
 using Studiobook_backend.Domain.Entities;
@@ -8,10 +9,12 @@ namespace Studiobook_backend.Application.Services
     public class HostStatusService
     {
         private readonly IAppDbContext _context;
+        private readonly TimeProvider _timeProvider;
 
-        public HostStatusService(IAppDbContext context)
+        public HostStatusService(IAppDbContext context, TimeProvider? timeProvider = null)
         {
             _context = context;
+            _timeProvider = timeProvider ?? TimeProvider.System;
         }
 
         public async Task<HostStatusResponseDto> GetAsync(
@@ -76,6 +79,9 @@ namespace Studiobook_backend.Application.Services
                 .Where(x => roomIds.Contains(x.RoomId))
                 .ToListAsync();
 
+            // 見込み売上＝利用前（予約済み・決済済みで終了前）、確定売上＝利用済み（決済済みで終了日時が過去）
+            var nowJapan = JapanTime.Now(_timeProvider);
+
             var labels = new List<string>();
             var booked = new List<int>();
             var paid = new List<int>();
@@ -90,14 +96,14 @@ namespace Studiobook_backend.Application.Services
 
                 var bookedAmount = reservations
                     .Where(x =>
-                        x.Status == "booked" &&
+                        ReservationUsage.IsUpcoming(x.Status, x.EndAt, nowJapan) &&
                         x.StartAt >= monthStart &&
                         x.StartAt < monthEnd)
                     .Sum(x => x.Amount);
 
                 var paidAmount = reservations
                     .Where(x =>
-                        x.Status == "paid" &&
+                        ReservationUsage.IsUsed(x.Status, x.EndAt, nowJapan) &&
                         x.StartAt >= monthStart &&
                         x.StartAt < monthEnd)
                     .Sum(x => x.Amount);
@@ -113,7 +119,7 @@ namespace Studiobook_backend.Application.Services
                 );
 
                 var reservedHours = CalculateReservedHours(
-                    reservations.Where(x => x.Status is "booked" or "paid"),
+                    reservations.Where(x => x.Status is ReservationStatuses.Booked or ReservationStatuses.Paid),
                     monthStart,
                     monthEnd
                 );

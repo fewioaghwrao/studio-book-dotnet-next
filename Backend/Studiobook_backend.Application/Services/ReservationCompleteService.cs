@@ -45,7 +45,7 @@ public class ReservationCompleteService
             x.StartAt == startAt &&
             x.EndAt == endAt &&
             x.Amount == amount &&
-            x.Status != "canceled");
+            x.Status != ReservationStatuses.Canceled);
 
         if (alreadyExists)
         {
@@ -78,7 +78,7 @@ public class ReservationCompleteService
             StartAt = startAt,
             EndAt = endAt,
             Amount = confirm.Amount,
-            Status = "paid",
+            Status = ReservationStatuses.Paid,
             CreatedAtUtc = now,
             UpdatedAtUtc = now
         };

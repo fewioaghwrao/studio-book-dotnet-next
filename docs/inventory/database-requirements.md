@@ -456,9 +456,9 @@ Reservations
 
 ### 想定値
 
-- `booked`
-- `paid`
-- `canceled`
+- `booked`：予約済み（未決済）
+- `paid`：決済済み（終了日時が過去なら「利用済み」として扱う。利用済みは保存しない）
+- `canceled`：キャンセル済み
 
 ### 業務要件
 

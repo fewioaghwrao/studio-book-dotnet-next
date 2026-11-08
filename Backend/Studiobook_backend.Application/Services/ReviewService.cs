@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Studiobook_backend.Application.Common;
 using Studiobook_backend.Application.Interfaces;
 using Studiobook_backend.Application.Dtos.Reviews;
 using Studiobook_backend.Domain.Entities;
@@ -8,10 +9,12 @@ namespace Studiobook_backend.Application.Services;
 public class ReviewService
 {
     private readonly IAppDbContext _db;
+    private readonly TimeProvider _timeProvider;
 
-    public ReviewService(IAppDbContext db)
+    public ReviewService(IAppDbContext db, TimeProvider? timeProvider = null)
     {
         _db = db;
+        _timeProvider = timeProvider ?? TimeProvider.System;
     }
 
     public async Task<RoomReviewPageResponse> GetRoomReviewPageAsync(
@@ -37,12 +40,16 @@ public class ReviewService
         var alreadyReviewed = await _db.Reviews
             .AnyAsync(x => x.RoomId == roomId && x.UserId == userId);
 
+        // レビューは利用済み（決済済みで終了日時が過去）の予約がある場合のみ
+        var nowJapan = JapanTime.Now(_timeProvider);
+
         var canReviewQuery = _db.Reservations
             .AsNoTracking()
             .Where(x =>
                 x.RoomId == roomId &&
                 x.UserId == userId &&
-                x.Status == "paid");
+                x.Status == ReservationStatuses.Paid &&
+                x.EndAt <= nowJapan);
 
         if (reservationId != null)
         {
@@ -133,12 +140,16 @@ public class ReviewService
             throw new InvalidOperationException("このスタジオへのレビューは投稿済みです。");
         }
 
+        // レビューは利用済み（決済済みで終了日時が過去）の予約がある場合のみ
+        var nowJapan = JapanTime.Now(_timeProvider);
+
         var reservationQuery = _db.Reservations
             .AsNoTracking()
             .Where(x =>
                 x.RoomId == roomId &&
                 x.UserId == userId &&
-                x.Status == "paid");
+                x.Status == ReservationStatuses.Paid &&
+                x.EndAt <= nowJapan);
 
         if (request.ReservationId != null)
         {
@@ -149,7 +160,7 @@ public class ReviewService
 
         if (!hasPaidReservation)
         {
-            throw new InvalidOperationException("決済済みの予約がある場合のみレビューを投稿できます。");
+            throw new InvalidOperationException("利用済みの予約がある場合のみレビューを投稿できます。");
         }
 
         var now = DateTime.UtcNow;

@@ -1,4 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Studiobook_backend.Application.Common;
+using Studiobook_backend.Domain.Entities;
 using Studiobook_backend.Application.Interfaces;
 using Studiobook_backend.Application.Dtos.Host;
 
@@ -7,10 +9,12 @@ namespace Studiobook_backend.Application.Services
     public class HostReservationService
     {
         private readonly IAppDbContext _context;
+        private readonly TimeProvider _timeProvider;
 
-        public HostReservationService(IAppDbContext context)
+        public HostReservationService(IAppDbContext context, TimeProvider? timeProvider = null)
         {
             _context = context;
+            _timeProvider = timeProvider ?? TimeProvider.System;
         }
 
         public async Task<HostReservationListResponseDto> GetListAsync(
@@ -70,6 +74,8 @@ namespace Studiobook_backend.Application.Services
 
             var totalCount = await query.CountAsync();
 
+            var nowJapan = JapanTime.Now(_timeProvider);
+
             var items = await query
                 .OrderByDescending(x => x.StartAt)
                 .Skip((page - 1) * pageSize)
@@ -83,7 +89,8 @@ namespace Studiobook_backend.Application.Services
                     StartAt = x.StartAt,
                     EndAt = x.EndAt,
                     Amount = x.Amount,
-                    Status = x.Status
+                    Status = x.Status,
+                    IsUsed = x.Status == ReservationStatuses.Paid && x.EndAt <= nowJapan
                 })
                 .ToListAsync();
 
@@ -122,9 +129,10 @@ namespace Studiobook_backend.Application.Services
                 throw new KeyNotFoundException("予約が見つからないか、アクセス権限がありません。");
             }
 
-            if (reservation.Status == "booked")
+            // 予約済み（未決済）の予約を、ホストが決済済みとして承認する
+            if (reservation.Status == ReservationStatuses.Booked)
             {
-                reservation.Status = "paid";
+                reservation.Status = ReservationStatuses.Paid;
                 reservation.UpdatedAtUtc = DateTime.UtcNow;
                 await _context.SaveChangesAsync();
             }
@@ -143,9 +151,10 @@ namespace Studiobook_backend.Application.Services
                 throw new KeyNotFoundException("予約が見つからないか、アクセス権限がありません。");
             }
 
-            if (reservation.Status == "booked")
+            // キャンセルできるのは未決済（予約済み）のみ。決済済みのキャンセル（返金）は未対応
+            if (reservation.Status == ReservationStatuses.Booked)
             {
-                reservation.Status = "canceled";
+                reservation.Status = ReservationStatuses.Canceled;
                 reservation.UpdatedAtUtc = DateTime.UtcNow;
                 await _context.SaveChangesAsync();
             }

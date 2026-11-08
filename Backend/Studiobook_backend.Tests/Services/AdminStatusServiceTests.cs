@@ -3,6 +3,7 @@ using Studiobook_backend.Infrastructure.Persistence;
 using Studiobook_backend.Domain.Entities;
 using Studiobook_backend.Application.Services;
 using Studiobook_backend.Infrastructure.Services;
+using Studiobook_backend.Tests.Helpers;
 
 namespace Studiobook_backend.Tests.Services;
 
@@ -248,6 +249,27 @@ public class AdminStatusServiceTests
         Assert.Equal(0, result.Paid[2]);
 
         Assert.Equal(800, result.TotalPaidAmount);
+    }
+
+    [Fact]
+    public async Task GetAsync_終了前の決済済み予約は見込み手数料として集計する()
+    {
+        // Arrange
+        await using var context = CreateDbContext();
+        await SeedBasicDataAsync(context);
+
+        // 現在：日本時間 2026/4/10 11:00（UTC 2:00）＝決済済み予約（4/10 10:00〜12:00）は利用中
+        var service = new AdminStatusService(context, FixedTimeProvider.AtUtc(2026, 4, 10, 2, 0));
+
+        // Act
+        var result = await service.GetAsync(
+            roomId: null,
+            baseMonth: new DateTime(2026, 5, 1));
+
+        // Assert
+        Assert.Equal(new[] { 600, 800, 0 }, result.Booked);
+        Assert.Equal(new[] { 0, 0, 0 }, result.Paid);
+        Assert.Equal(0, result.TotalPaidAmount);
     }
 
     [Fact]

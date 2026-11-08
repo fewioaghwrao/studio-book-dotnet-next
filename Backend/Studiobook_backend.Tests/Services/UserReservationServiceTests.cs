@@ -66,6 +66,40 @@ public class UserReservationServiceTests
     }
 
     [Fact]
+    public async Task GetMyReservationsAsync_決済済みで終了日時を過ぎた予約だけIsUsedがtrue()
+    {
+        // Arrange
+        await using var context = TestDbContextFactory.Create();
+
+        await SeedGuestUserAsync(context, userId: 10, name: "ログインユーザー");
+        await SeedHostUserAsync(context, userId: 20, name: "ホストA");
+        await SeedRoomAsync(context, roomId: 1, hostUserId: 20, name: "新宿スタジオ");
+
+        // 終了済みの決済済み → 利用済み
+        await SeedReservationAsync(context, 1, 1, 10,
+            new DateTime(2026, 5, 10, 10, 0, 0), new DateTime(2026, 5, 10, 12, 0, 0), "paid", 6000);
+
+        // 終了前の決済済み → 利用前
+        await SeedReservationAsync(context, 2, 1, 10,
+            new DateTime(2026, 5, 10, 14, 0, 0), new DateTime(2026, 5, 10, 16, 0, 0), "paid", 6000);
+
+        // 終了済みでもキャンセルは利用済みにしない
+        await SeedReservationAsync(context, 3, 1, 10,
+            new DateTime(2026, 5, 9, 10, 0, 0), new DateTime(2026, 5, 9, 12, 0, 0), "canceled", 6000);
+
+        // 現在：日本時間 2026/5/10 15:00（UTC 6:00）
+        var service = new UserReservationService(context, FixedTimeProvider.AtUtc(2026, 5, 10, 6, 0));
+
+        // Act
+        var result = await service.GetMyReservationsAsync(userId: 10, page: 1, pageSize: 10);
+
+        // Assert
+        Assert.True(result.Items.Single(x => x.ReservationId == 1).IsUsed);
+        Assert.False(result.Items.Single(x => x.ReservationId == 2).IsUsed);
+        Assert.False(result.Items.Single(x => x.ReservationId == 3).IsUsed);
+    }
+
+    [Fact]
     public async Task GetMyReservationsAsync_OrdersByStartAtDescThenIdDesc()
     {
         // Arrange

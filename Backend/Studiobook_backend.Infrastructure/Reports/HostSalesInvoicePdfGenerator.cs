@@ -59,7 +59,7 @@ namespace Studiobook_backend.Infrastructure.Reports
                             AddMetaCell(table, "予約ID", true);
                             AddMetaCell(table, reservation.ReservationId.ToString(), false);
                             AddMetaCell(table, "状態", true);
-                            AddMetaCell(table, HostSalesLabels.ToStatusLabel(reservation.Status), false);
+                            AddMetaCell(table, HostSalesLabels.ToStatusLabel(reservation.Status, reservation.IsUsed), false);
 
                             AddMetaCell(table, "スタジオ", true);
                             AddMetaCell(table, reservation.RoomName, false);

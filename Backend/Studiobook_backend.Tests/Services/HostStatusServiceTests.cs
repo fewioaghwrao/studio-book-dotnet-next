@@ -107,6 +107,46 @@ public class HostStatusServiceTests
     }
 
     [Fact]
+    public async Task GetAsync_決済済みは終了前なら見込み_終了後なら確定として集計する()
+    {
+        // Arrange
+        await using var context = TestDbContextFactory.Create();
+
+        await SeedHostUserAsync(context, userId: 10, name: "ホストA");
+        await SeedGuestUserAsync(context, userId: 20, name: "ゲストA");
+        await SeedRoomAsync(context, roomId: 1, hostUserId: 10, name: "新宿スタジオ");
+
+        // 利用済み（決済済み・終了済み）
+        await SeedReservationAsync(context, 1, 1, 20,
+            new DateTime(2026, 5, 10, 10, 0, 0), new DateTime(2026, 5, 10, 12, 0, 0), "paid", 1000);
+
+        // 利用前（決済済み・終了前）
+        await SeedReservationAsync(context, 2, 1, 20,
+            new DateTime(2026, 5, 20, 10, 0, 0), new DateTime(2026, 5, 20, 12, 0, 0), "paid", 2000);
+
+        // 利用前（予約済み・未決済）
+        await SeedReservationAsync(context, 3, 1, 20,
+            new DateTime(2026, 5, 15, 10, 0, 0), new DateTime(2026, 5, 15, 12, 0, 0), "booked", 4000);
+
+        // キャンセルはどちらにも含めない
+        await SeedReservationAsync(context, 4, 1, 20,
+            new DateTime(2026, 5, 12, 10, 0, 0), new DateTime(2026, 5, 12, 12, 0, 0), "canceled", 8000);
+
+        // 現在：日本時間 2026/5/10 15:00（UTC 6:00）
+        var service = new HostStatusService(context, FixedTimeProvider.AtUtc(2026, 5, 10, 6, 0));
+
+        // Act
+        var result = await service.GetAsync(
+            hostUserId: 10,
+            roomId: null,
+            baseMonth: new DateTime(2026, 5, 1));
+
+        // Assert
+        Assert.Equal(new List<int> { 0, 0, 6000 }, result.Booked);
+        Assert.Equal(new List<int> { 0, 0, 1000 }, result.Paid);
+    }
+
+    [Fact]
     public async Task GetAsync_UsesOnlyLoginHostRooms()
     {
         // Arrange

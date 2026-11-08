@@ -20,5 +20,8 @@ public class UserReservationListItemDto
 
     public string Status { get; set; } = string.Empty;
 
+    /// <summary>利用済み（決済済みで終了日時が日本時間の現在以前）かどうか。</summary>
+    public bool IsUsed { get; set; }
+
     public DateTime CreatedAtUtc { get; set; }
 }

@@ -36,6 +36,7 @@ function mockReservationsResponse() {
         endAt: "2026-05-04T12:00:00Z",
         amount: 6000,
         status: "booked",
+        isUsed: false,
       },
       {
         reservationId: 2,
@@ -46,6 +47,7 @@ function mockReservationsResponse() {
         endAt: "2026-05-05T15:00:00Z",
         amount: 9000,
         status: "paid",
+        isUsed: true,
       },
       {
         reservationId: 3,
@@ -56,6 +58,7 @@ function mockReservationsResponse() {
         endAt: "2026-05-06T11:00:00Z",
         amount: 5000,
         status: "canceled",
+        isUsed: false,
       },
     ],
     page: 1,
@@ -136,8 +139,8 @@ describe("HostReservationsPage", () => {
     expect(screen.getAllByText("5,000円").length).toBeGreaterThan(0);
 
     expect(screen.getAllByText("予約済み").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("承認済み").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("キャンセル").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("利用済み").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("キャンセル済み").length).toBeGreaterThan(0);
 
     expect(screen.getByText("全 3 件")).toBeInTheDocument();
 
@@ -291,6 +294,7 @@ describe("HostReservationsPage", () => {
             endAt: "2026-05-04T12:00:00Z",
             amount: 6000,
             status: "booked",
+            isUsed: false,
           },
         ],
         page: 2,
@@ -332,6 +336,7 @@ describe("HostReservationsPage", () => {
               endAt: "2026-05-04T12:00:00Z",
               amount: 6000,
               status: "booked",
+              isUsed: false,
             },
           ],
           page: 1,
@@ -360,6 +365,7 @@ describe("HostReservationsPage", () => {
               endAt: "2026-05-04T12:00:00Z",
               amount: 6000,
               status: "paid",
+              isUsed: true,
             },
           ],
           page: 1,
@@ -412,6 +418,7 @@ describe("HostReservationsPage", () => {
               endAt: "2026-05-04T12:00:00Z",
               amount: 6000,
               status: "booked",
+              isUsed: false,
             },
           ],
           page: 1,
@@ -464,6 +471,7 @@ describe("HostReservationsPage", () => {
               endAt: "2026-05-04T12:00:00Z",
               amount: 6000,
               status: "booked",
+              isUsed: false,
             },
           ],
           page: 1,
@@ -536,6 +544,7 @@ describe("HostReservationsPage", () => {
             endAt: "2026-05-04T12:00:00Z",
             amount: 6000,
             status: "booked",
+            isUsed: false,
           },
         ],
         page: 1,

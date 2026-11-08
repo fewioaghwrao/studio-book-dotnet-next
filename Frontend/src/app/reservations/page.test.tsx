@@ -44,6 +44,7 @@ function mockReservationsResponse() {
         endAt: "2026-05-10T12:00:00",
         amount: 6000,
         status: "paid",
+        isUsed: true,
         createdAtUtc: "2026-05-01T09:00:00",
       },
       {
@@ -56,6 +57,7 @@ function mockReservationsResponse() {
         endAt: "2026-05-11T15:00:00",
         amount: 9000,
         status: "booked",
+        isUsed: false,
         createdAtUtc: "2026-05-02T09:00:00",
       },
       {
@@ -68,6 +70,7 @@ function mockReservationsResponse() {
         endAt: "2026-05-12T11:00:00",
         amount: 5000,
         status: "canceled",
+        isUsed: false,
         createdAtUtc: "2026-05-03T09:00:00",
       },
     ],
@@ -78,7 +81,7 @@ function mockReservationsResponse() {
   };
 }
 
-function setupSuccessInitialRender() {
+function setupSuccessInitialRender(reservations = mockReservationsResponse()) {
   mockFetch
     .mockResolvedValueOnce({
       ok: true,
@@ -88,7 +91,7 @@ function setupSuccessInitialRender() {
     .mockResolvedValueOnce({
       ok: true,
       status: 200,
-      json: async () => mockReservationsResponse(),
+      json: async () => reservations,
     });
 
   render(<ReservationsPage />);
@@ -119,7 +122,7 @@ describe("ReservationsPage", () => {
     ).toBeInTheDocument();
 
     expect(
-      screen.getByText("予約済み・決済済み・キャンセル済みの予約を確認できます。")
+      screen.getByText("予約済み・決済済み・利用済み・キャンセル済みの予約を確認できます。")
     ).toBeInTheDocument();
 
     expect(screen.getAllByText("池袋ダンスルーム").length).toBeGreaterThan(0);
@@ -134,9 +137,9 @@ describe("ReservationsPage", () => {
     expect(screen.getAllByText("9,000 円").length).toBeGreaterThan(0);
     expect(screen.getAllByText("5,000 円").length).toBeGreaterThan(0);
 
-    expect(screen.getAllByText("決済済み").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("利用済み").length).toBeGreaterThan(0);
     expect(screen.getAllByText("予約済み").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("キャンセル").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("キャンセル済み").length).toBeGreaterThan(0);
   });
 
   test("予約完了クエリがある場合、完了メッセージを表示する", async () => {
@@ -283,7 +286,7 @@ describe("ReservationsPage", () => {
     });
   });
 
-  test("レビューを書くリンクは決済済み予約のみ表示される", async () => {
+  test("レビューを書くリンクは利用済み予約のみ表示される", async () => {
     setupSuccessInitialRender();
 
     await waitForLoaded();
@@ -307,6 +310,19 @@ describe("ReservationsPage", () => {
           "/rooms/102/reviews/new?reservationId=2"
       )
     ).toBe(false);
+  });
+
+  test("決済済みでも利用前の予約は決済済みと表示し、レビューを書くリンクを出さない", async () => {
+    const response = mockReservationsResponse();
+    response.items[0].isUsed = false;
+
+    setupSuccessInitialRender(response);
+
+    await waitForLoaded();
+
+    expect(screen.getAllByText("決済済み").length).toBeGreaterThan(0);
+    expect(screen.queryAllByText("利用済み")).toHaveLength(0);
+    expect(screen.queryAllByRole("link", { name: "レビューを書く" })).toHaveLength(0);
   });
 
   test("スタジオ詳細リンクの遷移先が正しい", async () => {

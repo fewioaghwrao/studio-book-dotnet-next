@@ -36,6 +36,7 @@ function mockSalesResponse() {
         endAt: "2026-05-10T12:00:00",
         amount: 6000,
         status: "paid",
+        isUsed: true,
         hasItems: true,
       },
       {
@@ -47,6 +48,7 @@ function mockSalesResponse() {
         endAt: "2026-05-11T15:00:00",
         amount: 9000,
         status: "booked",
+        isUsed: false,
         hasItems: false,
       },
       {
@@ -58,6 +60,7 @@ function mockSalesResponse() {
         endAt: "2026-05-12T11:00:00",
         amount: 5000,
         status: "canceled",
+        isUsed: false,
         hasItems: true,
       },
     ],

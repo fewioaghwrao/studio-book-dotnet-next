@@ -35,7 +35,7 @@ namespace Studiobook_backend.Infrastructure.Reports
                     Csv(FormatSalesDateTime(row.StartAt)),
                     Csv(FormatSalesDateTime(row.EndAt)),
                     Csv(row.Amount),
-                    Csv(HostSalesLabels.ToStatusLabel(row.Status))
+                    Csv(HostSalesLabels.ToStatusLabel(row.Status, row.IsUsed))
                 ));
             }
 

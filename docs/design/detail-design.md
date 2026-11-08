@@ -705,7 +705,7 @@ PaymentIntent metadata：
 - Content必須、1000文字以内。
 - Roomが存在する。
 - 同一User・Roomのレビューが未投稿。
-- 対象Roomに`paid`予約が存在する。
+- 対象Roomに利用済みの予約（`paid`かつ`EndAt`が日本時間の現在以前）が存在する。
 - ReservationId指定時はその予約が条件を満たす。
 
 ### 8.3 登録内容
@@ -791,11 +791,11 @@ PaymentIntent metadata：
 
 **承認**
 
-`booked`の場合、`paid`へ変更する。
+`booked`（未決済）の場合、`paid`へ変更する。
 
 **キャンセル**
 
-`booked`の場合、`canceled`へ変更する。
+`booked`（未決済）の場合、`canceled`へ変更する。決済済み（`paid`）のキャンセル・返金は未対応。
 
 承認・キャンセル後に監査ログを記録する。
 
@@ -857,8 +857,8 @@ PaymentIntent metadata：
 
 算出値：
 
-- booked金額
-- paid金額
+- 見込み金額（`Booked`）：利用前の予約（`booked`、または`paid`で終了前）
+- 確定金額（`Paid`）：利用済みの予約（`paid`で終了日時が日本時間の現在以前）
 - 稼働率
 - 全レビュー平均
 - 公開レビュー平均
@@ -952,15 +952,13 @@ API: 10.00
 
 基準月を含む直近3か月を対象とする。
 
-- booked・paid：`platform_fee`明細額を集計
+- 見込み・確定：`platform_fee`明細額を集計（区分はホスト統計と同じ）
 - 稼働率：予約時間÷営業時間
 - レビュー平均
 - 全Room数
 - Host数
 - 全Reservation数
-- paidのplatform_fee合計
-
-Roomが0件の場合のTotalPaidAmountのみReservation.Amount合計を使用しており、通常経路との差異がある。
+- 確定手数料売上合計：利用済み予約の`platform_fee`合計（Roomが0件の場合も同じ算出方法）
 
 ### 10.7 監査ログ
 
@@ -1357,9 +1355,9 @@ Controllerごとに`NameIdentifier`、`sub`、`userId`、`id`の参照方法が�
 
 HostPriceRuleServiceでは`flat_fee`を登録できるが、ReservationConfirmServiceの料金計算は`multiplier`のみを適用する。固定費を正式仕様とする場合は計算処理の追加が必要である。
 
-### 17.4 予約状態
+### 17.4 予約状態（対応済み）
 
-Stripe決済完了時は直接`paid`で登録する一方、HostのApproveも`booked → paid`を行う。`booked`、`paid`、利用完了の意味を整理する必要がある。
+Stripe決済完了時は直接`paid`で登録するため、利用前の予約も確定売上に入り、レビューも投稿できていた。`booked`＝予約済み（未決済）、`paid`＝決済済み、利用済み＝`paid`かつ終了日時が過去、と整理し、統計・レビュー・画面表示をこの定義に揃えた（基本設計書12.4参照）。
 
 ### 17.5 Webhook冪等性
 
