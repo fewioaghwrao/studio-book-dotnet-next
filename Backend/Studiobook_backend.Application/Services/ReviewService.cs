@@ -180,6 +180,25 @@ public class ReviewService
         };
 
         _db.Reviews.Add(review);
-        await _db.SaveChangesAsync();
+
+        try
+        {
+            await _db.SaveChangesAsync();
+        }
+        catch (DbUpdateException)
+        {
+            // 同時に投稿された場合は、RoomId + UserId の一意制約で 2 件目が失敗する
+            _db.Reviews.Remove(review);
+
+            var reviewedByOtherRequest = await _db.Reviews
+                .AnyAsync(x => x.RoomId == roomId && x.UserId == userId);
+
+            if (reviewedByOtherRequest)
+            {
+                throw new InvalidOperationException("このスタジオへのレビューは投稿済みです。");
+            }
+
+            throw;
+        }
     }
 }

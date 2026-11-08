@@ -22,9 +22,14 @@ public class ReservationConfirmService
         _timeProvider = timeProvider ?? TimeProvider.System;
     }
 
+    /// <param name="allowPastStart">
+    /// 決済完了（Webhook）時の再検証では true。Checkout 時点で開始前だった予約が、
+    /// Webhook の遅延・再送で開始時刻を過ぎても、決済済みの予約を失わないようにする。
+    /// </param>
     public async Task<ReservationConfirmResponse> BuildConfirmAsync(
         int userId,
-        ReservationConfirmRequest request)
+        ReservationConfirmRequest request,
+        bool allowPastStart = false)
     {
         if (request.StartAt >= request.EndAt)
         {
@@ -33,7 +38,7 @@ public class ReservationConfirmService
 
         // StartAt は日本時間の壁時計時刻のため、現在時刻も日本時間で比較する
         // （DateTime.Now はサーバーのタイムゾーン依存で、Heroku では UTC になり 9 時間ずれる）
-        if (request.StartAt <= JapanTime.Now(_timeProvider))
+        if (!allowPastStart && request.StartAt <= JapanTime.Now(_timeProvider))
         {
             throw new InvalidOperationException("開始日時は現在時刻より後にしてください。");
         }
@@ -150,7 +155,7 @@ public class ReservationConfirmService
     {
         var exists = await _db.Reservations.AnyAsync(x =>
             x.RoomId == roomId &&
-            x.Status != "canceled" &&
+            x.Status != ReservationStatuses.Canceled &&
             x.StartAt < endAt &&
             startAt < x.EndAt);
 

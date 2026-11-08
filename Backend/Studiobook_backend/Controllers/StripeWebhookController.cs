@@ -141,11 +141,19 @@ public class StripeWebhookController : ControllerBase
             throw new InvalidOperationException("PaymentIntent metadata が空です。");
         }
 
-        await _reservationCompleteService.CompleteFromStripeAsync(
+        var result = await _reservationCompleteService.CompleteFromStripeAsync(
             metadata,
             paymentIntent.Id,
             session.Id,
             paymentIntent.Amount);
+
+        // 返金・処理済みの場合も 200 を返し、Stripe の再送を止める
+        _logger.LogInformation(
+            "Stripe checkout completed. Result={Result}, ReservationId={ReservationId}, PaymentIntent={PaymentIntentId}, RefundReason={RefundReason}",
+            result.Status,
+            result.ReservationId,
+            paymentIntent.Id,
+            result.RefundReason);
     }
 
     private static string? GetCheckoutSessionId(Event stripeEvent)

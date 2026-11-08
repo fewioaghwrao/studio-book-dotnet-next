@@ -654,7 +654,7 @@ AiSearchLogs記録
 Status != canceled
 ```
 
-DB一意制約ではなくService側で判定する。
+時間帯の重なりはDB一意制約で表現できないため、Service側で判定する。同時に届いた決済で二重予約にならないよう、予約登録（Stripe Webhook）はスタジオ単位のDBロック内で重複確認と登録を行い、後から届いた決済は全額返金する。
 
 ## 12.4 予約状態
 
@@ -1274,9 +1274,9 @@ API開始
 1. JWTの正式保存方式をBearerまたはHttpOnly Cookieへ統一する。（対応済み：Bearerに統一）
 2. `/login` と `/auth/login` を統一する。
 3. `booked`の業務上の意味を確定する。（対応済み：12.4参照）
-4. Stripe Webhookの冪等性実装を確認・強化する。
+4. Stripe Webhookの冪等性実装を確認・強化する。（対応済み：PaymentIntentIdの一意制約）
 5. ReviewsとReservationsの関連方法を確定する。
-6. 予約重複時のトランザクション・ロック方式を確定する。
+6. 予約重複時のトランザクション・ロック方式を確定する。（対応済み：スタジオ単位のDBロック）
 7. BusinessHoursとPriceRulesの曜日体系差を共通化する。
 8. DB付きHealthCheckを追加検討する。
 9. Program.csの文字化けを修正する。（対応済み：UTF-8へ変換）

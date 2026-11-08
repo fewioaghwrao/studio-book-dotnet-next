@@ -27,3 +27,25 @@ EF Core 9 は 2026年11月10日にサポート終了となるため、Pomelo の
 
 Herokuの記載はBuildpack方式とContainer Registry方式の両方を考慮しています。
 実際の運用方式が確定している場合は、使用しない方式の説明を削除できます。
+
+## DBマイグレーション：AddPaymentIntentIdAndReviewUnique（B6/B7）
+
+`20261109000000_AddPaymentIntentIdAndReviewUnique` で次を追加します。起動時の `MigrateAsync` で自動適用されます。
+
+- `Reservations.PaymentIntentId`（varchar(255)、NULL 可）と一意インデックス `IX_Reservations_PaymentIntentId`
+- `Reviews` の一意インデックス `IX_Reviews_RoomId_UserId`（同一ユーザー・同一スタジオのレビューは 1 件）
+
+### 適用前の確認
+
+既存の `Reviews` に同じ `RoomId`・`UserId` の組み合わせが 2 件以上あると、一意インデックスの作成に失敗し、起動時のマイグレーションでエラーになります。デプロイ前に本番DBで次のSQLを実行し、0 件であることを確認してください。
+
+```sql
+SELECT RoomId, UserId, COUNT(*) AS Count
+FROM Reviews
+GROUP BY RoomId, UserId
+HAVING COUNT(*) > 1;
+```
+
+重複がある場合は、残すレビューを決めてから不要な行を削除してください（自動では削除しません）。
+
+既存の予約の `PaymentIntentId` は NULL のままです（一意インデックスは NULL の重複を許可します）。

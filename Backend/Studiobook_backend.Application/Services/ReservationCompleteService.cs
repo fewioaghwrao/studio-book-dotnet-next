@@ -1,74 +1,202 @@
 ﻿using System.Globalization;
 using Microsoft.EntityFrameworkCore;
+using Studiobook_backend.Application.Dtos.Reservations;
 using Studiobook_backend.Application.Interfaces;
 using Studiobook_backend.Domain.Entities;
 
 namespace Studiobook_backend.Application.Services;
 
+/// <summary>
+/// Stripe の決済完了（checkout.session.completed）から予約を登録する。
+///
+/// - 冪等：同じ PaymentIntent の予約は 1 件だけ（再送・同時受信は「処理済み」として成功扱い）
+/// - 同時予約：スタジオ単位のロック内で「重複確認 → 登録」を行う
+/// - 予約できない場合（時間帯が埋まった・料金が変わった等）は全額返金し、Webhook には成功を返して再送を止める
+/// - DB 障害やロック取得のタイムアウトなど一時的な失敗は例外のまま返し、Stripe の再送で再試行する
+/// </summary>
 public class ReservationCompleteService
 {
+    private const int AuditNoteMaxLength = 500;
+
     private readonly IAppDbContext _db;
     private readonly ReservationConfirmService _reservationConfirmService;
+    private readonly IRoomReservationLock _roomLock;
+    private readonly IPaymentRefundService _refundService;
+    private readonly AuditLogService _auditLogService;
+    private readonly ILogger<ReservationCompleteService> _logger;
 
     public ReservationCompleteService(
         IAppDbContext db,
-        ReservationConfirmService reservationConfirmService)
+        ReservationConfirmService reservationConfirmService,
+        IRoomReservationLock roomLock,
+        IPaymentRefundService refundService,
+        AuditLogService auditLogService,
+        ILogger<ReservationCompleteService> logger)
     {
         _db = db;
         _reservationConfirmService = reservationConfirmService;
+        _roomLock = roomLock;
+        _refundService = refundService;
+        _auditLogService = auditLogService;
+        _logger = logger;
     }
 
-    public async Task CompleteFromStripeAsync(
+    public async Task<ReservationCompleteResult> CompleteFromStripeAsync(
         IReadOnlyDictionary<string, string> metadata,
         string paymentIntentId,
         string? checkoutSessionId,
         long? paidAmount)
     {
-        var roomId = GetRequiredInt(metadata, "roomId");
-        var userId = GetRequiredInt(metadata, "userId");
-        var startAt = GetRequiredDateTime(metadata, "startAt");
-        var endAt = GetRequiredDateTime(metadata, "endAt");
-        var amount = GetRequiredInt(metadata, "amount");
-
-        if (paidAmount != null && paidAmount.Value != amount)
+        if (string.IsNullOrWhiteSpace(paymentIntentId))
         {
-            throw new InvalidOperationException(
-                $"Stripeの支払金額と予約金額が一致しません。paidAmount={paidAmount.Value}, amount={amount}");
+            throw new InvalidOperationException("PaymentIntent ID がありません。");
         }
 
-        // すでに同じ条件の paid/booked 予約がある場合は二重登録しない。
-        // 本来は PaymentIntentId を Reservations に持たせるのがベストだが、
-        // 現在の Reservation エンティティには無いため、room/user/time/amount で暫定的に冪等化する。
-        var alreadyExists = await _db.Reservations.AnyAsync(x =>
-            x.RoomId == roomId &&
-            x.UserId == userId &&
-            x.StartAt == startAt &&
-            x.EndAt == endAt &&
-            x.Amount == amount &&
-            x.Status != ReservationStatuses.Canceled);
+        // 1. 同じ決済の予約が登録済みなら何もしない（Webhook の再送）
+        var existingId = await FindReservationIdAsync(paymentIntentId);
 
-        if (alreadyExists)
+        if (existingId != null)
         {
-            return;
+            return new ReservationCompleteResult(ReservationCompleteStatus.AlreadyProcessed, existingId);
         }
 
-        // 決済完了時点で再計算・再検証する。
-        // これにより、フロントやStripe metadataだけを信用せずに済む。
-        var confirm = await _reservationConfirmService.BuildConfirmAsync(
-            userId,
-            new Studiobook_backend.Application.Dtos.Reservations.ReservationConfirmRequest
+        // 2. metadata を読む。読めない場合も決済は完了しているため返金する
+        int roomId;
+        int userId;
+        DateTime startAt;
+        DateTime endAt;
+        int amount;
+
+        try
+        {
+            roomId = GetRequiredInt(metadata, "roomId");
+            userId = GetRequiredInt(metadata, "userId");
+            startAt = GetRequiredDateTime(metadata, "startAt");
+            endAt = GetRequiredDateTime(metadata, "endAt");
+            amount = GetRequiredInt(metadata, "amount");
+
+            if (paidAmount != null && paidAmount.Value != amount)
             {
-                RoomId = roomId,
-                StartAt = startAt,
-                EndAt = endAt
-            });
-
-        if (confirm.Amount != amount)
+                throw new InvalidOperationException(
+                    $"Stripeの支払金額と予約金額が一致しません。paidAmount={paidAmount.Value}, amount={amount}");
+            }
+        }
+        catch (InvalidOperationException ex)
         {
-            throw new InvalidOperationException(
-                $"予約金額が再計算結果と一致しません。metadataAmount={amount}, recalculatedAmount={confirm.Amount}");
+            return await RefundAsync(paymentIntentId, actorId: null, ex.Message);
         }
 
+        // 3. 同じスタジオの登録を直列化し、その中で重複確認と登録を行う
+        await using var roomLock = await _roomLock.AcquireAsync(roomId);
+
+        // ロック待ちの間に、同じ決済の別の受信が登録している場合がある
+        existingId = await FindReservationIdAsync(paymentIntentId);
+
+        if (existingId != null)
+        {
+            return new ReservationCompleteResult(ReservationCompleteStatus.AlreadyProcessed, existingId);
+        }
+
+        // 決済完了時点で再計算・再検証する（フロントや metadata だけを信用しない）
+        ReservationConfirmResponse confirm;
+
+        try
+        {
+            confirm = await _reservationConfirmService.BuildConfirmAsync(
+                userId,
+                new ReservationConfirmRequest
+                {
+                    RoomId = roomId,
+                    StartAt = startAt,
+                    EndAt = endAt
+                },
+                allowPastStart: true);
+
+            if (confirm.Amount != amount)
+            {
+                throw new InvalidOperationException(
+                    $"予約金額が再計算結果と一致しません。metadataAmount={amount}, recalculatedAmount={confirm.Amount}");
+            }
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or KeyNotFoundException)
+        {
+            return await RefundAsync(paymentIntentId, userId, ex.Message);
+        }
+
+        var reservation = BuildReservation(roomId, userId, startAt, endAt, paymentIntentId, confirm);
+
+        _db.Reservations.Add(reservation);
+
+        try
+        {
+            await _db.SaveChangesAsync();
+        }
+        catch (DbUpdateException)
+        {
+            // PaymentIntentId の一意制約違反（別サーバーが同じ決済を先に登録）なら処理済みとして扱う
+            _db.ReservationChargeItems.RemoveRange(reservation.ChargeItems);
+            _db.Reservations.Remove(reservation);
+
+            existingId = await FindReservationIdAsync(paymentIntentId);
+
+            if (existingId != null)
+            {
+                return new ReservationCompleteResult(ReservationCompleteStatus.AlreadyProcessed, existingId);
+            }
+
+            throw;
+        }
+
+        await _auditLogService.WriteAsync(
+            userId,
+            "RESERVATION_PAID",
+            "Reservation",
+            reservation.Id,
+            Truncate($"Stripe決済で予約を登録しました。PaymentIntent={paymentIntentId}"));
+
+        return new ReservationCompleteResult(ReservationCompleteStatus.Created, reservation.Id);
+    }
+
+    private async Task<int?> FindReservationIdAsync(string paymentIntentId)
+    {
+        return await _db.Reservations
+            .AsNoTracking()
+            .Where(x => x.PaymentIntentId == paymentIntentId)
+            .Select(x => (int?)x.Id)
+            .FirstOrDefaultAsync();
+    }
+
+    private async Task<ReservationCompleteResult> RefundAsync(
+        string paymentIntentId,
+        int? actorId,
+        string reason)
+    {
+        _logger.LogWarning(
+            "Reservation could not be created from Stripe payment. Refunding. PaymentIntent={PaymentIntentId}, Reason={Reason}",
+            paymentIntentId,
+            reason);
+
+        // 返金に失敗した場合は例外のまま返し、Stripe の再送で再試行する（返金は二重に行われない）
+        await _refundService.RefundAsync(paymentIntentId, reason);
+
+        await _auditLogService.WriteAsync(
+            actorId,
+            "STRIPE_REFUND",
+            "Reservation",
+            null,
+            Truncate($"予約を登録できなかったため全額返金しました。PaymentIntent={paymentIntentId} 理由={reason}"));
+
+        return new ReservationCompleteResult(ReservationCompleteStatus.Refunded, RefundReason: reason);
+    }
+
+    private static Reservation BuildReservation(
+        int roomId,
+        int userId,
+        DateTime startAt,
+        DateTime endAt,
+        string paymentIntentId,
+        ReservationConfirmResponse confirm)
+    {
         var now = DateTime.UtcNow;
 
         var reservation = new Reservation
@@ -79,6 +207,7 @@ public class ReservationCompleteService
             EndAt = endAt,
             Amount = confirm.Amount,
             Status = ReservationStatuses.Paid,
+            PaymentIntentId = paymentIntentId,
             CreatedAtUtc = now,
             UpdatedAtUtc = now
         };
@@ -122,8 +251,12 @@ public class ReservationCompleteService
             });
         }
 
-        _db.Reservations.Add(reservation);
-        await _db.SaveChangesAsync();
+        return reservation;
+    }
+
+    private static string Truncate(string value)
+    {
+        return value.Length <= AuditNoteMaxLength ? value : value[..AuditNoteMaxLength];
     }
 
     private static string ToChargeItemKind(string label)

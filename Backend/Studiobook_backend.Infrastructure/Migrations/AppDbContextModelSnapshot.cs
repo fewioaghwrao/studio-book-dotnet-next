@@ -17,7 +17,7 @@ namespace Studiobook_backend.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.1")
+                .HasAnnotation("ProductVersion", "9.0.22")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
@@ -315,6 +315,10 @@ namespace Studiobook_backend.Infrastructure.Migrations
                     b.Property<DateTime>("EndAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<string>("PaymentIntentId")
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
+
                     b.Property<int>("RoomId")
                         .HasColumnType("int");
 
@@ -333,6 +337,9 @@ namespace Studiobook_backend.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("PaymentIntentId")
+                        .IsUnique();
 
                     b.HasIndex("RoomId");
 
@@ -437,6 +444,9 @@ namespace Studiobook_backend.Infrastructure.Migrations
                     b.HasIndex("RoomId");
 
                     b.HasIndex("Score");
+
+                    b.HasIndex("RoomId", "UserId")
+                        .IsUnique();
 
                     b.HasIndex("UserId");
 

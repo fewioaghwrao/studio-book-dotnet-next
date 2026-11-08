@@ -54,6 +54,10 @@ public static class DependencyInjection
 
         // Stripe
         services.AddScoped<IStripeCheckoutService, StripeCheckoutService>();
+        services.AddScoped<IPaymentRefundService, StripePaymentRefundService>();
+
+        // 予約登録の同時実行制御（スタジオ単位の DB ロック）
+        services.AddScoped<IRoomReservationLock, MySqlRoomReservationLock>();
 
         var stripeSecretKey = configuration["Stripe:SecretKey"];
 

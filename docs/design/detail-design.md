@@ -663,13 +663,15 @@ PaymentIntent metadata：
 
 ### 7.10 予約確定
 
-1. metadata必須値を取得。
-2. Stripe支払金額とmetadata amountを比較。
-3. 同一Room/User/時間/金額の非キャンセル予約が存在する場合は終了。
-4. 予約条件・料金を再計算。
+1. 同じPaymentIntentIdの予約が登録済みなら「処理済み」として終了（Webhookの再送）。
+2. metadata必須値を取得し、Stripe支払金額とmetadata amountを比較。
+3. 対象Roomの予約登録ロック（MySQLの`GET_LOCK`）を取得し、再度PaymentIntentIdを確認。
+4. 予約条件・料金を再計算（開始時刻の経過チェックは除く。Webhookの遅延・再送で決済済み予約を失わないため）。
 5. metadata金額と再計算金額を比較。
-6. Status=`paid`でReservation登録。
-7. 料金明細、税、手数料をReservationChargeItemsへ登録。
+6. Status=`paid`、PaymentIntentId付きでReservation登録。料金明細、税、手数料をReservationChargeItemsへ登録。
+7. ロックを解放。
+
+予約を登録できない場合（2・4・5で不整合、時間帯が他の決済で埋まった等）は、Stripeで全額返金し（冪等キー付き）、監査ログ`STRIPE_REFUND`に理由を記録して200を返す。DB障害・ロック取得のタイムアウト・返金APIの失敗は500を返し、Stripeの再送で再試行する。PaymentIntentIdの一意制約違反（同時受信）は処理済みとして扱う。
 
 ### 7.11 予約履歴
 
@@ -1359,21 +1361,21 @@ HostPriceRuleServiceでは`flat_fee`を登録できるが、ReservationConfirmSe
 
 Stripe決済完了時は直接`paid`で登録するため、利用前の予約も確定売上に入り、レビューも投稿できていた。`booked`＝予約済み（未決済）、`paid`＝決済済み、利用済み＝`paid`かつ終了日時が過去、と整理し、統計・レビュー・画面表示をこの定義に揃えた（基本設計書12.4参照）。
 
-### 17.5 Webhook冪等性
+### 17.5 Webhook冪等性（対応済み）
 
-PaymentIntentIdまたはStripe EventIdをDBへ保存していない。現在はRoom、User、日時、金額で重複判定しているため、専用IDの一意保存を推奨する。
+`Reservations.PaymentIntentId`を一意制約付きで保存し、同じ決済の再送・同時受信では予約を二重に作らないようにした（7.10参照）。
 
-### 17.6 AdminStatusの集計差異
+### 17.6 AdminStatusの集計差異（対応済み）
 
-Roomが存在する通常経路ではplatform_feeを集計するが、対象Roomなしの経路ではReservation.Amountを集計する。TotalPaidAmountの定義を統一する必要がある。
+対象Roomなしの経路もplatform_feeの集計に統一した。
 
-### 17.7 Reviewの一意性
+### 17.7 Reviewの一意性（対応済み）
 
-Serviceでは同一User・Roomにつき1レビューに制限するが、DB一意制約は存在しない。同時実行対策として複合一意制約を検討する。
+`Reviews`に`RoomId + UserId`の一意制約を追加した。同時投稿で2件目が一意制約違反になった場合は「投稿済み」として扱う。
 
-### 17.8 予約重複の同時実行
+### 17.8 予約重複の同時実行（対応済み）
 
-Serviceの事前検索のみで重複を防いでいる。高負荷・商用運用ではトランザクション、ロック、予約枠テーブル等を検討する。
+予約を登録するのはStripe Webhookのみのため、その処理をスタジオ単位のDBロック（MySQLの名前付きロック`GET_LOCK`）で直列化し、ロック内で重複確認と登録を行う。複数サーバーでも有効。後から届いた決済は返金する。高負荷の商用運用では予約枠テーブル等も検討する。
 
 ### 17.9 日時・タイムゾーン（対応済み）
 
