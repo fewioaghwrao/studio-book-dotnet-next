@@ -66,3 +66,37 @@ VALUES ('20261109000000_AddPaymentIntentIdAndReviewUnique', '9.0.22');
 ```
 
 最後の INSERT で適用済みとして記録するため、後で `ENABLE_DB_MIGRATION=true` にしても二重に実行されません。
+
+### 重複レビューがある場合の整理（デモデータ）
+
+以前のデモデータ投入処理は、1 スタジオ 4 件のレビューを一般ユーザー 2 人で作っていたため、同じユーザー・同じスタジオのレビューが重複しています（投入処理は修正済み。4 件を 4 人で 1 件ずつ作成します）。本番DBでは次の手順で、同じスタジオ・ユーザーの組み合わせごとに最も古いレビューを 1 件残して整理します。
+
+```sql
+-- 1. バックアップ
+CREATE TABLE `Reviews_backup_20261109` AS SELECT * FROM `Reviews`;
+
+-- 2. 削除対象の確認（各組み合わせで最も古い 1 件以外）
+SELECT DISTINCT r.`Id`, r.`RoomId`, r.`UserId`, r.`CreatedAtUtc`
+FROM `Reviews` r
+JOIN `Reviews` keep
+  ON keep.`RoomId` = r.`RoomId`
+ AND keep.`UserId` = r.`UserId`
+ AND (keep.`CreatedAtUtc` < r.`CreatedAtUtc`
+      OR (keep.`CreatedAtUtc` = r.`CreatedAtUtc` AND keep.`Id` < r.`Id`))
+ORDER BY r.`RoomId`, r.`UserId`, r.`Id`;
+
+-- 3. 削除
+DELETE r
+FROM `Reviews` r
+JOIN `Reviews` keep
+  ON keep.`RoomId` = r.`RoomId`
+ AND keep.`UserId` = r.`UserId`
+ AND (keep.`CreatedAtUtc` < r.`CreatedAtUtc`
+      OR (keep.`CreatedAtUtc` = r.`CreatedAtUtc` AND keep.`Id` < r.`Id`));
+
+-- 4. 重複が 0 件になったことを確認してから一意インデックスを作成
+SELECT `RoomId`, `UserId`, COUNT(*) FROM `Reviews` GROUP BY `RoomId`, `UserId` HAVING COUNT(*) > 1;
+CREATE UNIQUE INDEX `IX_Reviews_RoomId_UserId` ON `Reviews` (`RoomId`, `UserId`);
+```
+
+問題がなければ、バックアップのテーブルは後で `DROP TABLE Reviews_backup_20261109;` で削除できます。
