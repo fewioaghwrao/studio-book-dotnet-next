@@ -84,6 +84,22 @@ namespace Studiobook_backend.Infrastructure.Seeders
                     EmailVerifiedAtUtc = now
                 };
 
+                // レビューは「1 ユーザー 1 スタジオ 1 件」（Reviews の一意制約）のため、
+                // 1 スタジオ 4 件のレビューを書く一般ユーザーを 4 人用意する
+                var generalUser4 = new User
+                {
+                    Name = "一般ユーザー4",
+                    Kana = "イッパンユーザーヨン",
+                    Email = "user4@example.com",
+                    PasswordHash = generalPasswordHash,
+                    PostalCode = "150-0002",
+                    Address = "東京都渋谷区サンプル4-1-1",
+                    PhoneNumber = "09012345671",
+                    UsageType = "personal",
+                    Enabled = true,
+                    EmailVerifiedAtUtc = now
+                };
+
                 var hostUser = new User
                 {
                     Name = "ホストユーザー1",
@@ -158,6 +174,7 @@ namespace Studiobook_backend.Infrastructure.Seeders
                     generalUser,
                     generalUser2,
                     generalUser3,
+                    generalUser4,
                     hostUser,
                     hostUser2,
                     hostUser3,
@@ -181,6 +198,11 @@ namespace Studiobook_backend.Infrastructure.Seeders
                     new UserRole
                     {
                         UserId = generalUser3.Id,
+                        RoleId = generalUserRole.Id
+                    },
+                    new UserRole
+                    {
+                        UserId = generalUser4.Id,
                         RoleId = generalUserRole.Id
                     },
                     new UserRole
@@ -387,10 +409,13 @@ namespace Studiobook_backend.Infrastructure.Seeders
                 // レビューデータを生成
                 var reviews = new List<Review>();
 
+                // 1 スタジオの 4 件はすべて別のユーザーが書く（同じユーザーの重複レビューを作らない）
                 var reviewUsers = new[]
                 {
     generalUser,
-    generalUser2
+    generalUser2,
+    generalUser3,
+    generalUser4
 };
 
                 var reviewTemplates = new[]
@@ -458,7 +483,7 @@ namespace Studiobook_backend.Infrastructure.Seeders
                     for (var i = 0; i < 4; i++)
                     {
                         var template = reviewTemplates[i];
-                        var reviewer = reviewUsers[reviewIndex % reviewUsers.Length];
+                        var reviewer = reviewUsers[i % reviewUsers.Length];
 
                         var content = template.Contents[
                             reviewIndex % template.Contents.Length
