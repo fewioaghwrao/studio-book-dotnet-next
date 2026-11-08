@@ -672,7 +672,7 @@ public class ReviewServiceTests
                 userId: 20,
                 request: request));
 
-        Assert.Equal("決済済みの予約がある場合のみレビューを投稿できます。", ex.Message);
+        Assert.Equal("利用済みの予約がある場合のみレビューを投稿できます。", ex.Message);
     }
 
     [Fact]
@@ -716,7 +716,75 @@ public class ReviewServiceTests
                 userId: 20,
                 request: request));
 
-        Assert.Equal("決済済みの予約がある場合のみレビューを投稿できます。", ex.Message);
+        Assert.Equal("利用済みの予約がある場合のみレビューを投稿できます。", ex.Message);
+    }
+
+    [Fact]
+    public async Task 決済済みでも利用前_終了日時が未来_の予約ではレビューできない()
+    {
+        // Arrange
+        await using var context = TestDbContextFactory.Create();
+
+        await SeedHostUserAsync(context, 10, "ホストA");
+        await SeedGuestUserAsync(context, 20, "ログインユーザー");
+        await SeedRoomAsync(context, 1, 10, "新宿スタジオ");
+
+        // 予約 1 は 2026/5/2 10:00〜12:00（SeedReservationAsync の日時）
+        await SeedReservationAsync(context, reservationId: 1, roomId: 1, userId: 20, status: "paid");
+
+        // 現在：日本時間 2026/5/2 11:00（UTC 2:00）＝利用中でまだ終了していない
+        var service = new ReviewService(context, FixedTimeProvider.AtUtc(2026, 5, 2, 2, 0));
+
+        // Act
+        var page = await service.GetRoomReviewPageAsync(
+            roomId: 1,
+            userId: 20,
+            page: 1,
+            pageSize: 10,
+            reservationId: null);
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.CreateAsync(
+                roomId: 1,
+                userId: 20,
+                request: new CreateReviewRequest { Score = 5, Content = "レビュー本文" }));
+
+        // Assert
+        Assert.False(page.CanReview);
+        Assert.Equal("利用済みの予約がある場合のみレビューを投稿できます。", ex.Message);
+    }
+
+    [Fact]
+    public async Task 決済済みで終了日時を過ぎた予約ならレビューできる()
+    {
+        // Arrange
+        await using var context = TestDbContextFactory.Create();
+
+        await SeedHostUserAsync(context, 10, "ホストA");
+        await SeedGuestUserAsync(context, 20, "ログインユーザー");
+        await SeedRoomAsync(context, 1, 10, "新宿スタジオ");
+
+        await SeedReservationAsync(context, reservationId: 1, roomId: 1, userId: 20, status: "paid");
+
+        // 現在：日本時間 2026/5/2 12:00（UTC 3:00）＝ちょうど終了
+        var service = new ReviewService(context, FixedTimeProvider.AtUtc(2026, 5, 2, 3, 0));
+
+        // Act
+        var page = await service.GetRoomReviewPageAsync(
+            roomId: 1,
+            userId: 20,
+            page: 1,
+            pageSize: 10,
+            reservationId: null);
+
+        await service.CreateAsync(
+            roomId: 1,
+            userId: 20,
+            request: new CreateReviewRequest { Score = 4, Content = "良かったです" });
+
+        // Assert
+        Assert.True(page.CanReview);
+        Assert.Equal(1, await context.Reviews.CountAsync());
     }
 
     private static async Task SeedHostUserAsync(

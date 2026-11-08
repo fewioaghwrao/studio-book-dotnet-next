@@ -321,6 +321,10 @@ namespace Studiobook_backend.Infrastructure.Persistence
                       .HasMaxLength(50)
                       .IsRequired();
 
+                entity.Property(x => x.PaymentIntentId)
+                      .HasMaxLength(255)
+                      .IsRequired(false);
+
                 entity.Property(x => x.CreatedAtUtc)
                       .IsRequired();
 
@@ -341,6 +345,10 @@ namespace Studiobook_backend.Infrastructure.Persistence
                 entity.HasIndex(x => x.UserId);
                 entity.HasIndex(x => x.Status);
                 entity.HasIndex(x => x.StartAt);
+
+                // Webhook の再送・同時受信でも同じ決済から予約を二重に作らない（NULL は重複可）
+                entity.HasIndex(x => x.PaymentIntentId)
+                      .IsUnique();
             });
 
             modelBuilder.Entity<Review>(entity =>
@@ -391,6 +399,10 @@ namespace Studiobook_backend.Infrastructure.Persistence
                 entity.HasIndex(x => x.Score);
                 entity.HasIndex(x => x.PublicVisible);
                 entity.HasIndex(x => x.CreatedAtUtc);
+
+                // 同一ユーザーは同一スタジオへ 1 件だけレビューできる（同時投稿でも重複させない）
+                entity.HasIndex(x => new { x.RoomId, x.UserId })
+                      .IsUnique();
             });
 
             modelBuilder.Entity<ReservationChargeItem>(entity =>

@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Studiobook_backend.Application.Common;
 using Studiobook_backend.Application.Interfaces;
 using Studiobook_backend.Application.Dtos.Host;
 using Studiobook_backend.Domain.Entities;
@@ -8,10 +9,12 @@ namespace Studiobook_backend.Application.Services
     public class HostSalesService
     {
         private readonly IAppDbContext _context;
+        private readonly TimeProvider _timeProvider;
 
-        public HostSalesService(IAppDbContext context)
+        public HostSalesService(IAppDbContext context, TimeProvider? timeProvider = null)
         {
             _context = context;
+            _timeProvider = timeProvider ?? TimeProvider.System;
         }
 
         public async Task<HostSalesListResponseDto> GetListAsync(
@@ -43,6 +46,8 @@ namespace Studiobook_backend.Application.Services
 
             var totalCount = await query.CountAsync();
 
+            var nowJapan = JapanTime.Now(_timeProvider);
+
             var items = await query
                 .OrderByDescending(x => x.StartAt)
                 .Skip((page - 1) * pageSize)
@@ -57,6 +62,7 @@ namespace Studiobook_backend.Application.Services
                     EndAt = x.EndAt,
                     Amount = x.Amount,
                     Status = x.Status,
+                    IsUsed = x.Status == ReservationStatuses.Paid && x.EndAt <= nowJapan,
                     HasItems = x.Amount > 0
                 })
                 .ToListAsync();
@@ -127,6 +133,7 @@ namespace Studiobook_backend.Application.Services
                 EndAt = reservation.EndAt,
                 Amount = reservation.Amount,
                 Status = reservation.Status,
+                IsUsed = ReservationUsage.IsUsed(reservation.Status, reservation.EndAt, JapanTime.Now(_timeProvider)),
                 Items = items
             };
         }
@@ -155,6 +162,8 @@ namespace Studiobook_backend.Application.Services
                 query = query.Where(x => x.Amount > 0);
             }
 
+            var nowJapan = JapanTime.Now(_timeProvider);
+
             return await query
                 .OrderByDescending(x => x.StartAt)
                 .Select(x => new HostSalesCsvRowDto
@@ -165,7 +174,8 @@ namespace Studiobook_backend.Application.Services
                     StartAt = x.StartAt,
                     EndAt = x.EndAt,
                     Amount = x.Amount,
-                    Status = x.Status
+                    Status = x.Status,
+                    IsUsed = x.Status == ReservationStatuses.Paid && x.EndAt <= nowJapan
                 })
                 .ToListAsync();
         }
@@ -217,6 +227,7 @@ namespace Studiobook_backend.Application.Services
                 EndAt = reservation.EndAt,
                 Amount = reservation.Amount,
                 Status = reservation.Status,
+                IsUsed = ReservationUsage.IsUsed(reservation.Status, reservation.EndAt, JapanTime.Now(_timeProvider)),
                 Items = items
             };
         }

@@ -439,6 +439,7 @@ Reservations
 | EndAt | datetime(6) | 不可 | 利用終了日時 |
 | Amount | int | 不可 | 最終予約金額 |
 | Status | varchar(50) | 不可 | 予約状態 |
+| PaymentIntentId | varchar(255) | 可 | Stripe の PaymentIntent ID。決済で登録した予約のみ。一意 |
 | CreatedAtUtc | datetime(6) | 不可 | 作成日時 |
 | UpdatedAtUtc | datetime(6) | 不可 | 更新日時 |
 
@@ -448,6 +449,7 @@ Reservations
 - `INDEX (UserId)`
 - `INDEX (Status)`
 - `INDEX (StartAt)`
+- `UNIQUE (PaymentIntentId)`（NULL は重複可。Webhook の再送・同時受信で予約を二重に作らない）
 
 ### 削除ルール
 
@@ -456,9 +458,9 @@ Reservations
 
 ### 想定値
 
-- `booked`
-- `paid`
-- `canceled`
+- `booked`：予約済み（未決済）
+- `paid`：決済済み（終了日時が過去なら「利用済み」として扱う。利用済みは保存しない）
+- `canceled`：キャンセル済み
 
 ### 業務要件
 
@@ -537,6 +539,7 @@ Reservations
 - `INDEX (Score)`
 - `INDEX (PublicVisible)`
 - `INDEX (CreatedAtUtc)`
+- `UNIQUE (RoomId, UserId)`（同一ユーザー・同一スタジオのレビューは 1 件）
 
 ### 削除ルール
 
@@ -678,6 +681,8 @@ AIスタジオ検索の実行履歴を管理する。
 | PasswordResetTokens | Token |
 | Rooms | Name + Address |
 | BusinessHours | RoomId + DayOfWeek |
+| Reservations | PaymentIntentId（NULL を除く） |
+| Reviews | RoomId + UserId |
 | AppSettings | Key |
 
 ---
@@ -707,9 +712,9 @@ AIスタジオ検索の実行履歴を管理する。
 
 | テーブル | インデックス |
 |---|---|
-| Reservations | RoomId、UserId、Status、StartAt |
+| Reservations | RoomId、UserId、Status、StartAt、PaymentIntentId（Unique） |
 | ReservationChargeItems | ReservationId、SliceStart |
-| Reviews | RoomId、UserId、Score、PublicVisible、CreatedAtUtc |
+| Reviews | RoomId、UserId、Score、PublicVisible、CreatedAtUtc、RoomId＋UserId（Unique） |
 
 ## 9.4 管理・ログ
 
@@ -776,7 +781,7 @@ AIスタジオ検索の実行履歴を管理する。
 5. Stripe決済情報との整合確認
 6. 監査ログ記録
 
-同時予約による二重予約を防ぐため、予約重複確認から登録までの排他制御を考慮する。
+同時予約による二重予約を防ぐため、予約重複確認から登録までをスタジオ単位のDBロック（MySQLの`GET_LOCK`）で排他制御する。
 
 ## 12.2 管理設定更新
 
@@ -872,7 +877,7 @@ UNIQUE (ReservationId)
 
 時間範囲の重複をDB一意制約では防止していない。
 
-同一スタジオに対する予約の重複判定はサービス層で行い、必要に応じてトランザクション・ロックを使用する。
+同一スタジオに対する予約の重複判定はサービス層で行い、予約登録（Stripe Webhook）はスタジオ単位のDBロック内で重複確認と登録を行う。後から届いた決済は全額返金する。
 
 ## 16.4 ログの参照整合性
 

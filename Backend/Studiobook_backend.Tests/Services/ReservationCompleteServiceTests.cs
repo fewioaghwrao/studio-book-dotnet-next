@@ -1,4 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
+using Studiobook_backend.Application.Dtos.Reservations;
 using Studiobook_backend.Application.Common;
 using Studiobook_backend.Infrastructure.Persistence;
 using Studiobook_backend.Domain.Entities;
@@ -82,24 +84,29 @@ public class ReservationCompleteServiceTests
             startAt: FormatMetadataDateTime(startAt),
             endAt: FormatMetadataDateTime(endAt));
 
-        await service.CompleteFromStripeAsync(
+        var first = await service.CompleteFromStripeAsync(
             metadata,
             paymentIntentId: "pi_test_001",
             checkoutSessionId: "cs_test_001",
             paidAmount: 7200);
 
-        await service.CompleteFromStripeAsync(
+        var second = await service.CompleteFromStripeAsync(
             metadata,
             paymentIntentId: "pi_test_001",
             checkoutSessionId: "cs_test_001",
             paidAmount: 7200);
+
+        Assert.Equal(ReservationCompleteStatus.Created, first.Status);
+        Assert.Equal(ReservationCompleteStatus.AlreadyProcessed, second.Status);
+        Assert.Equal(first.ReservationId, second.ReservationId);
 
         Assert.Equal(1, await context.Reservations.CountAsync());
         Assert.Equal(3, await context.ReservationChargeItems.CountAsync());
+        Assert.Equal("pi_test_001", (await context.Reservations.SingleAsync()).PaymentIntentId);
     }
 
     [Fact]
-    public async Task CompleteFromStripeAsync_ThrowsInvalidOperationException_WhenPaidAmountDoesNotMatchMetadataAmount()
+    public async Task CompleteFromStripeAsync_RefundsPayment_WhenPaidAmountDoesNotMatchMetadataAmount()
     {
         await using var context = TestDbContextFactory.Create();
 
@@ -108,26 +115,28 @@ public class ReservationCompleteServiceTests
         var startAt = GetNextDayOfWeek(DayOfWeek.Monday, 10);
         var endAt = startAt.AddHours(2);
 
-        var service = CreateService(context);
+        var refunds = new FakePaymentRefundService();
+        var service = CreateService(context, refunds);
 
         var metadata = CreateValidMetadata(
             amount: "7200",
             startAt: FormatMetadataDateTime(startAt),
             endAt: FormatMetadataDateTime(endAt));
 
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            service.CompleteFromStripeAsync(
-                metadata,
-                paymentIntentId: "pi_test_001",
-                checkoutSessionId: "cs_test_001",
-                paidAmount: 9999));
+        var result = await service.CompleteFromStripeAsync(
+            metadata,
+            paymentIntentId: "pi_test_001",
+            checkoutSessionId: "cs_test_001",
+            paidAmount: 9999);
 
-        Assert.Contains("Stripeの支払金額と予約金額が一致しません。", ex.Message);
+        Assert.Contains("Stripeの支払金額と予約金額が一致しません。", result.RefundReason);
+        Assert.Equal(ReservationCompleteStatus.Refunded, result.Status);
+        Assert.Equal("pi_test_001", Assert.Single(refunds.Refunds).PaymentIntentId);
         Assert.Empty(context.Reservations);
     }
 
     [Fact]
-    public async Task CompleteFromStripeAsync_ThrowsInvalidOperationException_WhenMetadataRequiredKeyIsMissing()
+    public async Task CompleteFromStripeAsync_RefundsPayment_WhenMetadataRequiredKeyIsMissing()
     {
         await using var context = TestDbContextFactory.Create();
 
@@ -136,7 +145,8 @@ public class ReservationCompleteServiceTests
         var startAt = GetNextDayOfWeek(DayOfWeek.Monday, 10);
         var endAt = startAt.AddHours(2);
 
-        var service = CreateService(context);
+        var refunds = new FakePaymentRefundService();
+        var service = CreateService(context, refunds);
 
         var metadata = CreateValidMetadata(
             amount: "7200",
@@ -145,19 +155,20 @@ public class ReservationCompleteServiceTests
 
         metadata.Remove("roomId");
 
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            service.CompleteFromStripeAsync(
-                metadata,
-                paymentIntentId: "pi_test_001",
-                checkoutSessionId: "cs_test_001",
-                paidAmount: 7200));
+        var result = await service.CompleteFromStripeAsync(
+            metadata,
+            paymentIntentId: "pi_test_001",
+            checkoutSessionId: "cs_test_001",
+            paidAmount: 7200);
 
-        Assert.Equal("Stripe metadata に roomId がありません。", ex.Message);
+        Assert.Equal("Stripe metadata に roomId がありません。", result.RefundReason);
+        Assert.Equal(ReservationCompleteStatus.Refunded, result.Status);
+        Assert.Equal("pi_test_001", Assert.Single(refunds.Refunds).PaymentIntentId);
         Assert.Empty(context.Reservations);
     }
 
     [Fact]
-    public async Task CompleteFromStripeAsync_ThrowsInvalidOperationException_WhenMetadataIntValueIsInvalid()
+    public async Task CompleteFromStripeAsync_RefundsPayment_WhenMetadataIntValueIsInvalid()
     {
         await using var context = TestDbContextFactory.Create();
 
@@ -166,7 +177,8 @@ public class ReservationCompleteServiceTests
         var startAt = GetNextDayOfWeek(DayOfWeek.Monday, 10);
         var endAt = startAt.AddHours(2);
 
-        var service = CreateService(context);
+        var refunds = new FakePaymentRefundService();
+        var service = CreateService(context, refunds);
 
         var metadata = CreateValidMetadata(
             amount: "7200",
@@ -175,22 +187,23 @@ public class ReservationCompleteServiceTests
 
         metadata["roomId"] = "not-number";
 
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            service.CompleteFromStripeAsync(
-                metadata,
-                paymentIntentId: "pi_test_001",
-                checkoutSessionId: "cs_test_001",
-                paidAmount: 7200));
+        var result = await service.CompleteFromStripeAsync(
+            metadata,
+            paymentIntentId: "pi_test_001",
+            checkoutSessionId: "cs_test_001",
+            paidAmount: 7200);
 
         Assert.Equal(
             "Stripe metadata の roomId が数値ではありません。value=not-number",
-            ex.Message);
+            result.RefundReason);
 
+        Assert.Equal(ReservationCompleteStatus.Refunded, result.Status);
+        Assert.Equal("pi_test_001", Assert.Single(refunds.Refunds).PaymentIntentId);
         Assert.Empty(context.Reservations);
     }
 
     [Fact]
-    public async Task CompleteFromStripeAsync_ThrowsInvalidOperationException_WhenMetadataDateTimeValueIsInvalid()
+    public async Task CompleteFromStripeAsync_RefundsPayment_WhenMetadataDateTimeValueIsInvalid()
     {
         await using var context = TestDbContextFactory.Create();
 
@@ -198,29 +211,31 @@ public class ReservationCompleteServiceTests
 
         var validEndAt = GetNextDayOfWeek(DayOfWeek.Monday, 12);
 
-        var service = CreateService(context);
+        var refunds = new FakePaymentRefundService();
+        var service = CreateService(context, refunds);
 
         var metadata = CreateValidMetadata(
             amount: "7200",
             startAt: "invalid-date",
             endAt: FormatMetadataDateTime(validEndAt));
 
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            service.CompleteFromStripeAsync(
-                metadata,
-                paymentIntentId: "pi_test_001",
-                checkoutSessionId: "cs_test_001",
-                paidAmount: 7200));
+        var result = await service.CompleteFromStripeAsync(
+            metadata,
+            paymentIntentId: "pi_test_001",
+            checkoutSessionId: "cs_test_001",
+            paidAmount: 7200);
 
         Assert.Equal(
             "Stripe metadata の startAt が日時ではありません。value=invalid-date",
-            ex.Message);
+            result.RefundReason);
 
+        Assert.Equal(ReservationCompleteStatus.Refunded, result.Status);
+        Assert.Equal("pi_test_001", Assert.Single(refunds.Refunds).PaymentIntentId);
         Assert.Empty(context.Reservations);
     }
 
     [Fact]
-    public async Task CompleteFromStripeAsync_ThrowsInvalidOperationException_WhenRecalculatedAmountDoesNotMatchMetadataAmount()
+    public async Task CompleteFromStripeAsync_RefundsPayment_WhenRecalculatedAmountDoesNotMatchMetadataAmount()
     {
         await using var context = TestDbContextFactory.Create();
 
@@ -229,21 +244,23 @@ public class ReservationCompleteServiceTests
         var startAt = GetNextDayOfWeek(DayOfWeek.Monday, 10);
         var endAt = startAt.AddHours(2);
 
-        var service = CreateService(context);
+        var refunds = new FakePaymentRefundService();
+        var service = CreateService(context, refunds);
 
         var metadata = CreateValidMetadata(
             amount: "9999",
             startAt: FormatMetadataDateTime(startAt),
             endAt: FormatMetadataDateTime(endAt));
 
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            service.CompleteFromStripeAsync(
-                metadata,
-                paymentIntentId: "pi_test_001",
-                checkoutSessionId: "cs_test_001",
-                paidAmount: null));
+        var result = await service.CompleteFromStripeAsync(
+            metadata,
+            paymentIntentId: "pi_test_001",
+            checkoutSessionId: "cs_test_001",
+            paidAmount: null);
 
-        Assert.Contains("予約金額が再計算結果と一致しません。", ex.Message);
+        Assert.Contains("予約金額が再計算結果と一致しません。", result.RefundReason);
+        Assert.Equal(ReservationCompleteStatus.Refunded, result.Status);
+        Assert.Equal("pi_test_001", Assert.Single(refunds.Refunds).PaymentIntentId);
         Assert.Empty(context.Reservations);
     }
 
@@ -296,6 +313,179 @@ public class ReservationCompleteServiceTests
         Assert.Equal(endAt, reservations[1].EndAt);
     }
 
+    [Fact]
+    public async Task CompleteFromStripeAsync_同じ時間帯が別の決済で埋まっていたら全額返金し_予約を作らない()
+    {
+        await using var context = TestDbContextFactory.Create();
+
+        await SeedBaseDataAsync(context);
+
+        var startAt = GetNextDayOfWeek(DayOfWeek.Monday, 10);
+        var endAt = startAt.AddHours(2);
+
+        var refunds = new FakePaymentRefundService();
+        var service = CreateService(context, refunds);
+
+        var metadata = CreateValidMetadata(
+            amount: "7200",
+            startAt: FormatMetadataDateTime(startAt),
+            endAt: FormatMetadataDateTime(endAt));
+
+        // 先に届いた別の決済で同じ時間帯が予約された
+        var first = await service.CompleteFromStripeAsync(
+            metadata,
+            paymentIntentId: "pi_first",
+            checkoutSessionId: "cs_first",
+            paidAmount: 7200);
+
+        // Act：後から届いた決済
+        var second = await service.CompleteFromStripeAsync(
+            metadata,
+            paymentIntentId: "pi_second",
+            checkoutSessionId: "cs_second",
+            paidAmount: 7200);
+
+        // Assert
+        Assert.Equal(ReservationCompleteStatus.Created, first.Status);
+        Assert.Equal(ReservationCompleteStatus.Refunded, second.Status);
+        Assert.Equal("指定した時間帯は既に予約されています。", second.RefundReason);
+
+        var refund = Assert.Single(refunds.Refunds);
+        Assert.Equal("pi_second", refund.PaymentIntentId);
+
+        var reservation = await context.Reservations.SingleAsync();
+        Assert.Equal("pi_first", reservation.PaymentIntentId);
+
+        var audit = await context.AuditLogs.SingleAsync(x => x.Action == "STRIPE_REFUND");
+        Assert.Contains("pi_second", audit.Note);
+    }
+
+    [Fact]
+    public async Task CompleteFromStripeAsync_登録済みの決済はmetadataを読む前に処理済みとして返す()
+    {
+        await using var context = TestDbContextFactory.Create();
+
+        await SeedBaseDataAsync(context);
+
+        context.Reservations.Add(new Reservation
+        {
+            Id = 5,
+            RoomId = 1,
+            UserId = 20,
+            StartAt = GetNextDayOfWeek(DayOfWeek.Monday, 10),
+            EndAt = GetNextDayOfWeek(DayOfWeek.Monday, 12),
+            Amount = 7200,
+            Status = "paid",
+            PaymentIntentId = "pi_done",
+            CreatedAtUtc = DateTime.UtcNow,
+            UpdatedAtUtc = DateTime.UtcNow
+        });
+        await context.SaveChangesAsync();
+
+        var refunds = new FakePaymentRefundService();
+        var roomLock = new FakeRoomReservationLock();
+        var service = CreateService(context, refunds, roomLock);
+
+        // Act：metadata が空でも、同じ決済の予約があれば返金しない
+        var result = await service.CompleteFromStripeAsync(
+            new Dictionary<string, string>(),
+            paymentIntentId: "pi_done",
+            checkoutSessionId: "cs_done",
+            paidAmount: 7200);
+
+        // Assert
+        Assert.Equal(ReservationCompleteStatus.AlreadyProcessed, result.Status);
+        Assert.Equal(5, result.ReservationId);
+        Assert.Empty(refunds.Refunds);
+        Assert.Empty(roomLock.AcquiredRoomIds);
+    }
+
+    [Fact]
+    public async Task CompleteFromStripeAsync_スタジオ単位のロック内で登録し_最後に解放する()
+    {
+        await using var context = TestDbContextFactory.Create();
+
+        await SeedBaseDataAsync(context);
+
+        var startAt = GetNextDayOfWeek(DayOfWeek.Monday, 10);
+
+        var roomLock = new FakeRoomReservationLock();
+        var service = CreateService(context, roomLock: roomLock);
+
+        var result = await service.CompleteFromStripeAsync(
+            CreateValidMetadata(
+                amount: "7200",
+                startAt: FormatMetadataDateTime(startAt),
+                endAt: FormatMetadataDateTime(startAt.AddHours(2))),
+            paymentIntentId: "pi_test_001",
+            checkoutSessionId: "cs_test_001",
+            paidAmount: 7200);
+
+        Assert.Equal(ReservationCompleteStatus.Created, result.Status);
+        Assert.Equal(new[] { 1 }, roomLock.AcquiredRoomIds);
+        Assert.Equal(1, roomLock.ReleasedCount);
+    }
+
+    [Fact]
+    public async Task CompleteFromStripeAsync_Webhookが開始時刻を過ぎて届いても決済済みの予約を登録する()
+    {
+        await using var context = TestDbContextFactory.Create();
+
+        await SeedBaseDataAsync(context);
+
+        var startAt = GetNextDayOfWeek(DayOfWeek.Monday, 10);
+        var endAt = startAt.AddHours(2);
+
+        // 現在：開始 30 分後（日本時間）。Webhook の再送が遅れた想定
+        var clock = new FixedTimeProvider(
+            new DateTimeOffset(JapanTime.ToUtc(startAt.AddMinutes(30)), TimeSpan.Zero));
+
+        var refunds = new FakePaymentRefundService();
+        var service = CreateService(context, refunds, timeProvider: clock);
+
+        var result = await service.CompleteFromStripeAsync(
+            CreateValidMetadata(
+                amount: "7200",
+                startAt: FormatMetadataDateTime(startAt),
+                endAt: FormatMetadataDateTime(endAt)),
+            paymentIntentId: "pi_late",
+            checkoutSessionId: "cs_late",
+            paidAmount: 7200);
+
+        Assert.Equal(ReservationCompleteStatus.Created, result.Status);
+        Assert.Empty(refunds.Refunds);
+        Assert.Equal(1, await context.Reservations.CountAsync());
+    }
+
+    [Fact]
+    public async Task CompleteFromStripeAsync_返金APIが失敗したら例外を返してStripeの再送に任せる()
+    {
+        await using var context = TestDbContextFactory.Create();
+
+        await SeedBaseDataAsync(context);
+
+        var startAt = GetNextDayOfWeek(DayOfWeek.Monday, 10);
+
+        var refunds = new FakePaymentRefundService
+        {
+            ExceptionToThrow = new HttpRequestException("Stripe unavailable")
+        };
+        var service = CreateService(context, refunds);
+
+        await Assert.ThrowsAsync<HttpRequestException>(() =>
+            service.CompleteFromStripeAsync(
+                CreateValidMetadata(
+                    amount: "9999",
+                    startAt: FormatMetadataDateTime(startAt),
+                    endAt: FormatMetadataDateTime(startAt.AddHours(2))),
+                paymentIntentId: "pi_test_001",
+                checkoutSessionId: "cs_test_001",
+                paidAmount: null));
+
+        Assert.Empty(context.Reservations);
+        Assert.False(await context.AuditLogs.AnyAsync(x => x.Action == "STRIPE_REFUND"));
+    }
+
     private static DateTime GetNextDayOfWeek(
         DayOfWeek targetDay,
         int hour,
@@ -318,17 +508,26 @@ public class ReservationCompleteServiceTests
         return value.ToString("yyyy-MM-ddTHH:mm:ss");
     }
 
-    private static ReservationCompleteService CreateService(AppDbContext context)
+    private static ReservationCompleteService CreateService(
+        AppDbContext context,
+        FakePaymentRefundService? refunds = null,
+        FakeRoomReservationLock? roomLock = null,
+        TimeProvider? timeProvider = null)
     {
         var adminSettingsService = new AdminSettingsService(context);
 
         var reservationConfirmService = new ReservationConfirmService(
             context,
-            adminSettingsService);
+            adminSettingsService,
+            timeProvider);
 
         return new ReservationCompleteService(
             context,
-            reservationConfirmService);
+            reservationConfirmService,
+            roomLock ?? new FakeRoomReservationLock(),
+            refunds ?? new FakePaymentRefundService(),
+            new AuditLogService(context, NullLogger<AuditLogService>.Instance),
+            NullLogger<ReservationCompleteService>.Instance);
     }
 
     private static Dictionary<string, string> CreateValidMetadata(

@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Studiobook_backend.Application.Common;
 using Studiobook_backend.Application.Interfaces;
 using Studiobook_backend.Application.Dtos.Admin;
 using Studiobook_backend.Domain.Entities;
@@ -8,10 +9,12 @@ namespace Studiobook_backend.Application.Services
     public class AdminStatusService
     {
         private readonly IAppDbContext _context;
+        private readonly TimeProvider _timeProvider;
 
-        public AdminStatusService(IAppDbContext context)
+        public AdminStatusService(IAppDbContext context, TimeProvider? timeProvider = null)
         {
             _context = context;
+            _timeProvider = timeProvider ?? TimeProvider.System;
         }
 
         public async Task<AdminStatusResponseDto> GetAsync(
@@ -43,6 +46,9 @@ namespace Studiobook_backend.Application.Services
 
             var months = BuildRecentMonths(baseMonth);
 
+            // 見込み＝利用前（予約済み・決済済みで終了前）、確定＝利用済み（決済済みで終了日時が過去）
+            var nowJapan = JapanTime.Now(_timeProvider);
+
             if (targetRooms.Count == 0)
             {
                 return new AdminStatusResponseDto
@@ -56,9 +62,7 @@ namespace Studiobook_backend.Application.Services
                     TotalRoomCount = await _context.Rooms.CountAsync(),
                     TotalHostCount = await CountHostUsersAsync(),
                     TotalReservationCount = await _context.Reservations.CountAsync(),
-                    TotalPaidAmount = await _context.Reservations
-                        .Where(x => x.Status == "paid")
-                        .SumAsync(x => (int?)x.Amount) ?? 0,
+                    TotalPaidAmount = await SumUsedPlatformFeeAsync(nowJapan),
                     RoomOptions = allRoomOptions
                 };
             }
@@ -105,14 +109,14 @@ namespace Studiobook_backend.Application.Services
 
                 var bookedAmount = platformFeeItems
                     .Where(x =>
-                        x.Reservation.Status == "booked" &&
+                        ReservationUsage.IsUpcoming(x.Reservation.Status, x.Reservation.EndAt, nowJapan) &&
                         x.Reservation.StartAt >= monthStart &&
                         x.Reservation.StartAt < monthEnd)
                     .Sum(x => x.SliceAmount);
 
                 var paidAmount = platformFeeItems
                     .Where(x =>
-                        x.Reservation.Status == "paid" &&
+                        ReservationUsage.IsUsed(x.Reservation.Status, x.Reservation.EndAt, nowJapan) &&
                         x.Reservation.StartAt >= monthStart &&
                         x.Reservation.StartAt < monthEnd)
                     .Sum(x => x.SliceAmount);
@@ -128,7 +132,7 @@ namespace Studiobook_backend.Application.Services
                 );
 
                 var reservedHours = CalculateReservedHours(
-                    reservations.Where(x => x.Status is "booked" or "paid"),
+                    reservations.Where(x => x.Status is ReservationStatuses.Booked or ReservationStatuses.Paid),
                     monthStart,
                     monthEnd
                 );
@@ -169,12 +173,7 @@ namespace Studiobook_backend.Application.Services
             var totalHostCount = await CountHostUsersAsync();
             var totalReservationCount = await _context.Reservations.CountAsync();
 
-            var totalPaidAmount = await _context.ReservationChargeItems
-                .AsNoTracking()
-                .Where(x =>
-                    x.Kind == "platform_fee" &&
-                    x.Reservation.Status == "paid")
-                .SumAsync(x => (int?)x.SliceAmount) ?? 0;
+            var totalPaidAmount = await SumUsedPlatformFeeAsync(nowJapan);
 
             return new AdminStatusResponseDto
             {
@@ -190,6 +189,18 @@ namespace Studiobook_backend.Application.Services
                 TotalPaidAmount = totalPaidAmount,
                 RoomOptions = allRoomOptions
             };
+        }
+
+        /// <summary>確定手数料売上合計（利用済み予約の platform_fee 明細の合計）。</summary>
+        private async Task<int> SumUsedPlatformFeeAsync(DateTime nowJapan)
+        {
+            return await _context.ReservationChargeItems
+                .AsNoTracking()
+                .Where(x =>
+                    x.Kind == "platform_fee" &&
+                    x.Reservation.Status == ReservationStatuses.Paid &&
+                    x.Reservation.EndAt <= nowJapan)
+                .SumAsync(x => (int?)x.SliceAmount) ?? 0;
         }
 
         private async Task<int> CountHostUsersAsync()

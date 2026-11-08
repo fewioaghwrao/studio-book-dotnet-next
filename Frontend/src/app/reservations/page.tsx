@@ -5,6 +5,7 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { apiFetch } from "@/lib/apiFetch";
 import { getApiBaseUrl } from "@/lib/apiConfig";
+import { getReservationStatusClassName, getReservationStatusLabel } from "@/lib/reservationStatus";
 
 type CurrentUserResponse = {
   isAuthenticated: boolean;
@@ -26,6 +27,7 @@ type UserReservationListItem = {
   endAt: string;
   amount: number;
   status: string;
+  isUsed: boolean;
   createdAtUtc: string;
 };
 
@@ -61,31 +63,7 @@ function formatYen(value: number) {
   return `${new Intl.NumberFormat("ja-JP").format(value)} 円`;
 }
 
-function getStatusLabel(status: string) {
-  switch (status) {
-    case "booked":
-      return "予約済み";
-    case "paid":
-      return "決済済み";
-    case "canceled":
-      return "キャンセル";
-    default:
-      return status || "-";
-  }
-}
 
-function getStatusClassName(status: string) {
-  switch (status) {
-    case "booked":
-      return "bg-slate-100 text-slate-700";
-    case "paid":
-      return "bg-emerald-100 text-emerald-700";
-    case "canceled":
-      return "bg-rose-100 text-rose-700";
-    default:
-      return "bg-stone-100 text-slate-600";
-  }
-}
 
 function hasGeneralUserRole(roles: string[] | undefined) {
   if (!roles) return false;
@@ -228,7 +206,7 @@ function ReservationsContent() {
             </h1>
 
             <p className="mt-3 text-sm leading-6 text-slate-500">
-              予約済み・決済済み・キャンセル済みの予約を確認できます。
+              予約済み・決済済み・利用済み・キャンセル済みの予約を確認できます。
             </p>
           </div>
 
@@ -324,16 +302,14 @@ function ReservationsContent() {
 
                           <td className="px-4 py-3 text-center">
                             <span
-                              className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getStatusClassName(
-                                reservation.status
-                              )}`}
+                              className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ring-1 ${getReservationStatusClassName(reservation.status, reservation.isUsed)}`}
                             >
-                              {getStatusLabel(reservation.status)}
+                              {getReservationStatusLabel(reservation.status, reservation.isUsed)}
                             </span>
                           </td>
 
                           <td className="px-4 py-3 text-center">
-                            {reservation.status === "paid" ? (
+                            {reservation.isUsed ? (
                               <Link
                                 href={`/rooms/${reservation.roomId}/reviews/new?reservationId=${reservation.reservationId}`}
                                 className="inline-flex rounded-xl border border-sky-200 px-3 py-2 text-xs font-medium text-sky-700 transition hover:bg-sky-50"
@@ -377,11 +353,9 @@ function ReservationsContent() {
                           </div>
 
                           <span
-                            className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${getStatusClassName(
-                              reservation.status
-                            )}`}
+                            className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ring-1 ${getReservationStatusClassName(reservation.status, reservation.isUsed)}`}
                           >
-                            {getStatusLabel(reservation.status)}
+                            {getReservationStatusLabel(reservation.status, reservation.isUsed)}
                           </span>
                         </div>
 
@@ -403,7 +377,7 @@ function ReservationsContent() {
                           </span>
                         </div>
 
-                        {reservation.status === "paid" && (
+                        {reservation.isUsed && (
                           <Link
                             href={`/rooms/${reservation.roomId}/reviews/new?reservationId=${reservation.reservationId}`}
                             className="inline-flex justify-center rounded-xl border border-sky-200 px-4 py-3 text-sm font-medium text-sky-700 transition hover:bg-sky-50"

@@ -78,6 +78,7 @@ describe("AdminReservationsPage", () => {
             endAt: "2026-05-04T12:00:00Z",
             amount: 6000,
             status: "booked",
+            isUsed: false,
           },
           {
             reservationId: 2,
@@ -91,6 +92,7 @@ describe("AdminReservationsPage", () => {
             endAt: "2026-05-05T15:00:00Z",
             amount: 9000,
             status: "paid",
+            isUsed: true,
           },
         ],
         page: 1,
@@ -116,7 +118,7 @@ describe("AdminReservationsPage", () => {
     expect(screen.getAllByText("利用次郎").length).toBeGreaterThan(0);
     expect(screen.getAllByText("未設定").length).toBeGreaterThan(0);
     expect(screen.getAllByText("予約済み").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("承認済み").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("利用済み").length).toBeGreaterThan(0);
     expect(screen.getAllByText("￥6,000").length).toBeGreaterThan(0);
     expect(screen.getAllByText("￥9,000").length).toBeGreaterThan(0);
     expect(screen.getByText("全 2 件")).toBeInTheDocument();
@@ -255,6 +257,7 @@ describe("AdminReservationsPage", () => {
             endAt: "2026-05-04T12:00:00Z",
             amount: 6000,
             status: "canceled",
+            isUsed: false,
           },
         ],
         page: 2,

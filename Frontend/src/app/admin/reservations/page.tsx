@@ -5,6 +5,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { apiFetch } from "@/lib/apiFetch";
 import { getApiBaseUrl } from "@/lib/apiConfig";
+import { getReservationStatusClassName, getReservationStatusLabel, RESERVATION_STATUS_FILTER_OPTIONS } from "@/lib/reservationStatus";
 
 type AdminReservationRow = {
   reservationId: number;
@@ -18,6 +19,7 @@ type AdminReservationRow = {
   endAt: string;
   amount: number;
   status: string;
+  isUsed: boolean;
 };
 
 type RoomOption = {
@@ -60,24 +62,7 @@ function formatYen(value: number) {
   }).format(value);
 }
 
-function formatStatus(status: string) {
-  if (status === "booked") return "予約済み";
-  if (status === "paid") return "承認済み";
-  if (status === "canceled") return "キャンセル";
-  return status;
-}
 
-function statusClassName(status: string) {
-  if (status === "paid") {
-    return "bg-emerald-50 text-emerald-700 ring-emerald-200";
-  }
-
-  if (status === "canceled") {
-    return "bg-rose-50 text-rose-700 ring-rose-200";
-  }
-
-  return "bg-slate-50 text-slate-700 ring-slate-200";
-}
 
 export default function AdminReservationsPage() {
   const router = useRouter();
@@ -302,9 +287,11 @@ export default function AdminReservationsPage() {
                   className="w-full rounded-xl border border-stone-300 bg-white px-3 py-3 text-sm text-slate-700 outline-none transition focus:border-sky-500"
                 >
                   <option value="">すべて</option>
-                  <option value="booked">予約済み</option>
-                  <option value="paid">承認済み</option>
-                  <option value="canceled">キャンセル</option>
+                  {RESERVATION_STATUS_FILTER_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -410,11 +397,9 @@ export default function AdminReservationsPage() {
                       </div>
 
                       <span
-                        className={`rounded-full px-3 py-1 text-xs font-medium ring-1 ${statusClassName(
-                          row.status
-                        )}`}
+                        className={`rounded-full px-3 py-1 text-xs font-medium ring-1 ${getReservationStatusClassName(row.status, row.isUsed)}`}
                       >
-                        {formatStatus(row.status)}
+                        {getReservationStatusLabel(row.status, row.isUsed)}
                       </span>
                     </div>
 
@@ -469,11 +454,9 @@ export default function AdminReservationsPage() {
                         </td>
                         <td className="rounded-r-2xl px-4 py-4">
                           <span
-                            className={`rounded-full px-3 py-1 text-xs font-medium ring-1 ${statusClassName(
-                              row.status
-                            )}`}
+                            className={`rounded-full px-3 py-1 text-xs font-medium ring-1 ${getReservationStatusClassName(row.status, row.isUsed)}`}
                           >
-                            {formatStatus(row.status)}
+                            {getReservationStatusLabel(row.status, row.isUsed)}
                           </span>
                         </td>
                       </tr>

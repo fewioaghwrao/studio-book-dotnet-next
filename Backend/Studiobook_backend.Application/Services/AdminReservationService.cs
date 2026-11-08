@@ -1,4 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Studiobook_backend.Application.Common;
+using Studiobook_backend.Domain.Entities;
 using Studiobook_backend.Application.Interfaces;
 using Studiobook_backend.Application.Dtos.Admin;
 
@@ -7,10 +9,12 @@ namespace Studiobook_backend.Application.Services
     public class AdminReservationService
     {
         private readonly IAppDbContext _context;
+        private readonly TimeProvider _timeProvider;
 
-        public AdminReservationService(IAppDbContext context)
+        public AdminReservationService(IAppDbContext context, TimeProvider? timeProvider = null)
         {
             _context = context;
+            _timeProvider = timeProvider ?? TimeProvider.System;
         }
 
         public async Task<AdminReservationListResponseDto> GetListAsync(
@@ -72,6 +76,8 @@ namespace Studiobook_backend.Application.Services
 
             var totalCount = await query.CountAsync();
 
+            var nowJapan = JapanTime.Now(_timeProvider);
+
             var items = await query
                 .OrderByDescending(x => x.StartAt)
                 .ThenByDescending(x => x.Id)
@@ -89,7 +95,8 @@ namespace Studiobook_backend.Application.Services
                     StartAt = x.StartAt,
                     EndAt = x.EndAt,
                     Amount = x.Amount,
-                    Status = x.Status
+                    Status = x.Status,
+                    IsUsed = x.Status == ReservationStatuses.Paid && x.EndAt <= nowJapan
                 })
                 .ToListAsync();
 

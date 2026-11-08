@@ -117,7 +117,11 @@ public class StripeWebhookControllerTests
 
         var reservationCompleteService = new ReservationCompleteService(
             context,
-            reservationConfirmService);
+            reservationConfirmService,
+            new FakeRoomReservationLock(),
+            new FakePaymentRefundService(),
+            new AuditLogService(context, NullLogger<AuditLogService>.Instance),
+            NullLogger<ReservationCompleteService>.Instance);
 
         var controller = new StripeWebhookController(
             Options.Create(new StripeSettings

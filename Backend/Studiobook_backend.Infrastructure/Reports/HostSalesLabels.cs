@@ -5,12 +5,15 @@
     /// </summary>
     internal static class HostSalesLabels
     {
-        public static string ToStatusLabel(string? status)
+        /// <summary>
+        /// 予約ステータスの表示名。決済済み（paid）は利用済みかどうかで「決済済み」「利用済み」を分ける。
+        /// </summary>
+        public static string ToStatusLabel(string? status, bool isUsed)
         {
             return status switch
             {
                 "booked" => "予約済み",
-                "paid" => "利用済み",
+                "paid" => isUsed ? "利用済み" : "決済済み",
                 "canceled" => "キャンセル済み",
                 _ => status ?? ""
             };

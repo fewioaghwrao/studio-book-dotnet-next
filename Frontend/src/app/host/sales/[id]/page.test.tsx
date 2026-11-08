@@ -27,6 +27,7 @@ function mockSalesDetailResponse() {
     endAt: "2026-05-10T12:00:00",
     amount: 7200,
     status: "paid",
+    isUsed: true,
     items: [
       {
         kind: "base",
@@ -314,6 +315,24 @@ test("CSVとPDFダウンロード時、正しいURLでAPIを呼び出す", async
     );
   });
 
+  test("決済済みで利用前の予約は決済済みとして表示する", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        ...mockSalesDetailResponse(),
+        isUsed: false,
+      }),
+    });
+
+    render(<HostSalesDetailPage />);
+
+    await waitForLoaded();
+
+    expect(screen.getByText("決済済み")).toBeInTheDocument();
+    expect(screen.queryByText("利用済み")).not.toBeInTheDocument();
+  });
+
   test("予約ステータス booked を予約済みとして表示する", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
@@ -321,6 +340,7 @@ test("CSVとPDFダウンロード時、正しいURLでAPIを呼び出す", async
       json: async () => ({
         ...mockSalesDetailResponse(),
         status: "booked",
+        isUsed: false,
       }),
     });
 
@@ -338,6 +358,7 @@ test("CSVとPDFダウンロード時、正しいURLでAPIを呼び出す", async
       json: async () => ({
         ...mockSalesDetailResponse(),
         status: "canceled",
+        isUsed: false,
       }),
     });
 

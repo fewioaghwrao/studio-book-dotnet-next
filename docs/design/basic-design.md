@@ -654,17 +654,21 @@ AiSearchLogs記録
 Status != canceled
 ```
 
-DB一意制約ではなくService側で判定する。
+時間帯の重なりはDB一意制約で表現できないため、Service側で判定する。同時に届いた決済で二重予約にならないよう、予約登録（Stripe Webhook）はスタジオ単位のDBロック内で重複確認と登録を行い、後から届いた決済は全額返金する。
 
 ## 12.4 予約状態
 
-| 状態 | 意味 |
-|---|---|
-| booked | 予約受付・決済待ちまたは仮予約 |
-| paid | 決済完了 |
-| canceled | キャンセル済み |
+| 状態 | 表示 | 意味 |
+|---|---|---|
+| booked | 予約済み | 予約受付済み・未決済。デモデータやStripeを通さない予約で使い、ホストの承認で`paid`になる |
+| paid | 決済済み／利用済み | 決済完了（Stripe Webhookで登録）。終了日時が日本時間の現在以前なら「利用済み」と表示する |
+| canceled | キャンセル済み | キャンセル。未決済（`booked`）の予約のみホストがキャンセルできる |
 
-`booked`の正式な業務定義は要確認とする。
+「利用済み」はDBに保存せず、`paid`かつ`EndAt`が日本時間の現在以前かどうかで判定する（`Application/Common/ReservationUsage`）。APIの予約一覧・売上一覧は判定結果を`isUsed`として返す。
+
+- 統計の見込み売上：利用前（`booked`、または`paid`で終了前）
+- 統計の確定売上：利用済み（`paid`で終了日時が過去）
+- レビュー投稿：利用済みの予約がある場合のみ
 
 ---
 
@@ -1269,10 +1273,10 @@ API開始
 
 1. JWTの正式保存方式をBearerまたはHttpOnly Cookieへ統一する。（対応済み：Bearerに統一）
 2. `/login` と `/auth/login` を統一する。
-3. `booked`の業務上の意味を確定する。
-4. Stripe Webhookの冪等性実装を確認・強化する。
+3. `booked`の業務上の意味を確定する。（対応済み：12.4参照）
+4. Stripe Webhookの冪等性実装を確認・強化する。（対応済み：PaymentIntentIdの一意制約）
 5. ReviewsとReservationsの関連方法を確定する。
-6. 予約重複時のトランザクション・ロック方式を確定する。
+6. 予約重複時のトランザクション・ロック方式を確定する。（対応済み：スタジオ単位のDBロック）
 7. BusinessHoursとPriceRulesの曜日体系差を共通化する。
 8. DB付きHealthCheckを追加検討する。
 9. Program.csの文字化けを修正する。（対応済み：UTF-8へ変換）

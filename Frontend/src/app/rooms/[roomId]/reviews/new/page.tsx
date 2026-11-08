@@ -402,7 +402,7 @@ function ReviewNewContent() {
               <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm leading-6 text-amber-800">
                 {data.alreadyReviewed
                   ? "このスタジオへのレビューは投稿済みです。"
-                  : "レビュー投稿は、決済済みの予約があるユーザーのみ可能です。"}
+                  : "レビュー投稿は、利用済みの予約があるユーザーのみ可能です。"}
               </div>
             )}
 

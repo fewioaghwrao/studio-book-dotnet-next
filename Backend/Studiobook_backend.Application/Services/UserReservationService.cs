@@ -1,4 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Studiobook_backend.Application.Common;
+using Studiobook_backend.Domain.Entities;
 using Studiobook_backend.Application.Interfaces;
 using Studiobook_backend.Application.Dtos.Reservations;
 
@@ -7,10 +9,12 @@ namespace Studiobook_backend.Application.Services;
 public class UserReservationService
 {
     private readonly IAppDbContext _db;
+    private readonly TimeProvider _timeProvider;
 
-    public UserReservationService(IAppDbContext db)
+    public UserReservationService(IAppDbContext db, TimeProvider? timeProvider = null)
     {
         _db = db;
+        _timeProvider = timeProvider ?? TimeProvider.System;
     }
 
     public async Task<UserReservationListResponse> GetMyReservationsAsync(
@@ -41,6 +45,8 @@ public class UserReservationService
 
         var totalCount = await query.CountAsync();
 
+        var nowJapan = JapanTime.Now(_timeProvider);
+
         var items = await query
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -55,6 +61,7 @@ public class UserReservationService
                 EndAt = x.EndAt,
                 Amount = x.Amount,
                 Status = x.Status,
+                IsUsed = x.Status == ReservationStatuses.Paid && x.EndAt <= nowJapan,
                 CreatedAtUtc = x.CreatedAtUtc
             })
             .ToListAsync();

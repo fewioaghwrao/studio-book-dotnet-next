@@ -218,7 +218,7 @@ describe("ReviewNewPage", () => {
     await waitForLoaded();
 
     expect(
-      screen.getByText("レビュー投稿は、決済済みの予約があるユーザーのみ可能です。")
+      screen.getByText("レビュー投稿は、利用済みの予約があるユーザーのみ可能です。")
     ).toBeInTheDocument();
 
     expect(

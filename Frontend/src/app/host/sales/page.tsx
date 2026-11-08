@@ -5,6 +5,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { apiFetch } from "@/lib/apiFetch";
 import { getApiBaseUrl } from "@/lib/apiConfig";
+import { getReservationStatusLabel } from "@/lib/reservationStatus";
 
 type HostSalesRow = {
   reservationId: number;
@@ -15,6 +16,7 @@ type HostSalesRow = {
   endAt: string;
   amount: number;
   status: string;
+  isUsed: boolean;
   hasItems: boolean;
 };
 
@@ -48,12 +50,6 @@ function formatDateTime(value: string) {
   }).format(date);
 }
 
-function formatStatus(status: string) {
-  if (status === "booked") return "予約済み";
-  if (status === "paid") return "利用済み";
-  if (status === "canceled") return "キャンセル済み";
-  return status;
-}
 
 export default function HostSalesPage() {
   const router = useRouter();
@@ -335,7 +331,7 @@ export default function HostSalesPage() {
                       </div>
                       <div>
                         <dt className="text-xs font-medium text-slate-400">状態</dt>
-                        <dd className="mt-1 text-slate-700">{formatStatus(row.status)}</dd>
+                        <dd className="mt-1 text-slate-700">{getReservationStatusLabel(row.status, row.isUsed)}</dd>
                       </div>
                     </dl>
 
@@ -379,7 +375,7 @@ export default function HostSalesPage() {
                           {row.amount.toLocaleString()}円
                         </td>
                         <td className="px-4 py-4 text-sm text-slate-700">
-                          {formatStatus(row.status)}
+                          {getReservationStatusLabel(row.status, row.isUsed)}
                         </td>
                         <td className="rounded-r-2xl px-4 py-4 text-right">
                           <Link
