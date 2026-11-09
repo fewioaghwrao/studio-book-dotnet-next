@@ -1,9 +1,11 @@
 ﻿using System.Globalization;
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Studiobook_backend.Application.Common;
 using Studiobook_backend.Application.Dtos.Ai;
 using Studiobook_backend.Application.Dtos.Reservations;
 using Studiobook_backend.Application.Interfaces;
+using Studiobook_backend.Domain.Entities;
 
 namespace Studiobook_backend.Application.Services
 {
@@ -175,11 +177,7 @@ namespace Studiobook_backend.Application.Services
 
             if (keywords.Count > 0)
             {
-                dbQuery = dbQuery.Where(room =>
-                    keywords.Any(keyword =>
-                        room.Name.Contains(keyword) ||
-                        room.Description.Contains(keyword) ||
-                        room.Address.Contains(keyword)));
+                dbQuery = dbQuery.Where(BuildKeywordPredicate(keywords));
             }
 
             return await dbQuery
@@ -209,6 +207,37 @@ namespace Studiobook_backend.Application.Services
                 })
                 .ToListAsync();
         }
+
+        /// <summary>
+        /// 「いずれかのキーワードが名称・説明・住所に含まれる」条件。
+        /// keywords.Any(...) はプロバイダによって SQL に変換できないため、
+        /// room.Name.Contains(k1) || room.Description.Contains(k1) || ... の OR 条件として組み立てる。
+        /// </summary>
+        private static Expression<Func<Room, bool>> BuildKeywordPredicate(IReadOnlyList<string> keywords)
+        {
+            var room = Expression.Parameter(typeof(Room), "room");
+            var contains = typeof(string).GetMethod(nameof(string.Contains), new[] { typeof(string) })!;
+
+            Expression? body = null;
+
+            foreach (var keyword in keywords)
+            {
+                // 定数ではなくクロージャ経由の値にして、SQL のパラメータとして渡す
+                var value = Expression.Property(
+                    Expression.Constant(new KeywordHolder(keyword)),
+                    nameof(KeywordHolder.Value));
+
+                foreach (var propertyName in new[] { nameof(Room.Name), nameof(Room.Description), nameof(Room.Address) })
+                {
+                    var match = Expression.Call(Expression.Property(room, propertyName), contains, value);
+                    body = body == null ? match : Expression.OrElse(body, match);
+                }
+            }
+
+            return Expression.Lambda<Func<Room, bool>>(body ?? Expression.Constant(true), room);
+        }
+
+        private sealed record KeywordHolder(string Value);
 
         /// <summary>
         /// 名称・説明・住所と照合するキーワード。
