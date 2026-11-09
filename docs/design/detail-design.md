@@ -1348,6 +1348,19 @@ Role、UserまたはUserRoleが既に存在する場合はSeed全体をスキッ
 
 エラーDTOは一部で`ApiErrorResponseDto`を使用するが、匿名型`{ message }`を返すControllerもある。現状仕様として記録し、将来的な統一対象とする。
 
+### 16.3 処理されなかった例外（共通例外ハンドラー）
+
+Controllerで処理されなかった例外は、パイプラインの先頭（`UseCors`より外側）に置いた`GlobalExceptionHandler`（`ErrorHandling/`）でJSONの応答に変換する。
+
+| 例外 | HTTP | message |
+|---|---:|---|
+| UnauthorizedAccessException（ログインユーザーを特定できない） | 401 | ログイン情報を確認できませんでした。再度ログインしてください。 |
+| その他 | 500 | サーバーでエラーが発生しました。時間をおいて再度お試しください。 |
+
+- 本文は`application/problem+json`（`status`、`title`、`message`、`traceId`）。`traceId`でサーバーログと照合できる。例外の内容（`detail`）は開発環境でのみ返す。
+- 500はエラーログ（例外のスタックトレース付き）、401は警告ログに記録する。
+- 以前は例外ハンドラーがなく、Kestrelが本文なし・CORSヘッダーなしの500を返していた。ブラウザがCORS違反として応答を捨てるため、Frontendでは`fetch`自体が失敗し「通信エラー」と表示されていた。CORSミドルウェアは応答の送信直前にヘッダーを付けるため、ハンドラーが作った応答にはCORSヘッダーが付き、Frontendは画面ごとのエラーメッセージを表示できる。
+
 ---
 
 ## 17. 既知の課題・要確認事項
