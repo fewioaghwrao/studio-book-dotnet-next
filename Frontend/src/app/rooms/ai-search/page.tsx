@@ -3,6 +3,11 @@
 import Link from "next/link";
 import { FormEvent, useMemo, useState } from "react";
 import { getApiBaseUrl } from "@/lib/apiConfig";
+import {
+  type AiRequestedSlot,
+  buildReservationConfirmHref,
+  formatSlotLabel,
+} from "@/lib/aiSearchSlot";
 
 type CapacityCondition = "min" | "max" | "exact" | null;
 
@@ -15,7 +20,17 @@ type AiRoomSearchConditions = {
   purpose: string | null;
   atmosphere: string | null;
   timePreference: string | null;
+  date?: string | null;
+  startTime?: string | null;
+  endTime?: string | null;
+  durationMinutes?: number | null;
   keywords: string[];
+};
+
+type AiRoomAvailability = {
+  status: string;
+  label: string;
+  isAvailable: boolean;
 };
 
 type AiRoomSearchResult = {
@@ -30,12 +45,22 @@ type AiRoomSearchResult = {
   averageScore: number | null;
   reviewCount: number;
   reason: string;
+  /** 実際に当てはまった条件だけのおすすめ理由 */
+  reasons?: string[];
+  /** 指定日時の空き状況（日時の指定がない検索では null） */
+  availability?: AiRoomAvailability | null;
 };
 
 type AiRoomSearchResponse = {
   query: string;
   interpretedConditions: AiRoomSearchConditions;
   rooms: AiRoomSearchResult[];
+  /** 空き状況を判定した日時（日付と開始時刻が読み取れた場合のみ） */
+  requestedSlot?: AiRequestedSlot | null;
+  /** キーワード条件を外して探した場合 true */
+  relaxed?: boolean;
+  /** 条件を緩めた・利用時間を仮定した等の補足 */
+  notices?: string[];
 };
 
 const examples = [
@@ -342,6 +367,15 @@ if (response.status === 429) {
                   />
 
                   <ConditionRow
+                    label="利用日時"
+                    value={
+                      result.requestedSlot
+                        ? formatSlotLabel(result.requestedSlot)
+                        : "指定なし"
+                    }
+                  />
+
+                  <ConditionRow
                     label="時間帯"
                     value={displayValue(
                       result.interpretedConditions.timePreference
@@ -385,9 +419,22 @@ if (response.status === 429) {
                   AIおすすめ結果：{result.rooms.length}件
                 </p>
                 <p className="mt-1 text-sm text-slate-500">
-                  条件に近いスタジオを最大5件表示しています。
+                  {result.requestedSlot
+                    ? "条件に近いスタジオを最大5件、指定日時に空きのあるスタジオから順に表示しています。"
+                    : "条件に近いスタジオを最大5件表示しています。"}
                 </p>
               </div>
+
+              {(result.notices ?? []).length > 0 && (
+                <div
+                  role="status"
+                  className="mb-4 space-y-1 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+                >
+                  {(result.notices ?? []).map((notice) => (
+                    <p key={notice}>{notice}</p>
+                  ))}
+                </div>
+              )}
 
               {result.rooms.length === 0 ? (
                 <div className="rounded-3xl border border-dashed border-stone-300 bg-white px-4 py-12 text-center shadow-sm">
@@ -401,7 +448,11 @@ if (response.status === 429) {
               ) : (
                 <div className="space-y-4">
                   {result.rooms.map((room) => (
-                    <AiRoomCard key={room.id} room={room} />
+                    <AiRoomCard
+                      key={room.id}
+                      room={room}
+                      requestedSlot={result.requestedSlot ?? null}
+                    />
                   ))}
                 </div>
               )}
@@ -422,64 +473,116 @@ function ConditionRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-function AiRoomCard({ room }: { room: AiRoomSearchResult }) {
+function AiRoomCard({
+  room,
+  requestedSlot,
+}: {
+  room: AiRoomSearchResult;
+  requestedSlot: AiRequestedSlot | null;
+}) {
+  const reasons = room.reasons ?? [];
+  const availability = room.availability ?? null;
+  const reservationHref =
+    availability?.isAvailable && requestedSlot
+      ? buildReservationConfirmHref(room.id, requestedSlot)
+      : null;
+
   return (
-    <Link
-      href={`/rooms/${room.id}`}
-      className="block overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm transition hover:opacity-95"
-    >
-      <div className="grid md:grid-cols-[260px_1fr]">
-        <img
-          src={getRoomImageSrc(room.imageName)}
-          alt={room.name}
-          className="h-56 w-full object-cover md:h-full"
-        />
+    <article className="overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm">
+      <Link
+        href={`/rooms/${room.id}`}
+        className="block transition hover:opacity-95"
+      >
+        <div className="grid md:grid-cols-[260px_1fr]">
+          <img
+            src={getRoomImageSrc(room.imageName)}
+            alt={room.name}
+            className="h-56 w-full object-cover md:h-full"
+          />
 
-        <div className="p-5">
-          <div className="mb-3 inline-flex rounded-full bg-sky-50 px-3 py-1 text-xs font-medium text-sky-700">
-            AIおすすめ
-          </div>
+          <div className="p-5">
+            <div className="mb-3 inline-flex rounded-full bg-sky-50 px-3 py-1 text-xs font-medium text-sky-700">
+              AIおすすめ
+            </div>
 
-          <h2 className="text-xl font-semibold text-slate-800">
-            {room.name}
-          </h2>
+            <h2 className="text-xl font-semibold text-slate-800">
+              {room.name}
+            </h2>
 
-          <div className="mt-4 rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3">
-            <p className="text-xs font-semibold text-sky-700">おすすめ理由</p>
-            <p className="mt-2 text-sm leading-6 text-slate-700">
-              {room.reason ||
-                "入力された希望条件に関連するスタジオとして候補に入りました。"}
+            <div className="mt-4 rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3">
+              <p className="text-xs font-semibold text-sky-700">おすすめ理由</p>
+              {reasons.length > 0 ? (
+                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-6 text-slate-700">
+                  {reasons.map((reason) => (
+                    <li key={reason}>{reason}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-2 text-sm leading-6 text-slate-700">
+                  {room.reason ||
+                    "入力された希望条件に関連するスタジオとして候補に入りました。"}
+                </p>
+              )}
+            </div>
+
+            <hr className="my-4 border-stone-200" />
+
+            <p className="line-clamp-3 text-sm leading-6 text-slate-600">
+              {room.description || "説明はありません。"}
             </p>
-          </div>
 
-          <hr className="my-4 border-stone-200" />
-
-          <p className="line-clamp-3 text-sm leading-6 text-slate-600">
-            {room.description || "説明はありません。"}
-          </p>
-
-          <p className="mt-4 text-sm text-slate-500">
-            <span>〒{room.postalCode}</span>
-            <span className="ml-2">{room.address}</span>
-          </p>
-
-          <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
-            <p className="text-base font-semibold text-slate-800">
-              {formatYenPerHour(room.price)}
+            <p className="mt-4 text-sm text-slate-500">
+              <span>〒{room.postalCode}</span>
+              <span className="ml-2">{room.address}</span>
             </p>
-            <p className="text-sm text-slate-500">定員：{room.capacity}人</p>
-          </div>
 
-          <div className="mt-3">
-            <Stars score={room.averageScore} />
-            {room.averageScore != null && (
-              <span className="ml-1 text-xs text-slate-400">
-                （{room.reviewCount}件）
-              </span>
-            )}
+            <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
+              <p className="text-base font-semibold text-slate-800">
+                {formatYenPerHour(room.price)}
+              </p>
+              <p className="text-sm text-slate-500">定員：{room.capacity}人</p>
+            </div>
+
+            <div className="mt-3">
+              <Stars score={room.averageScore} />
+              {room.averageScore != null && (
+                <span className="ml-1 text-xs text-slate-400">
+                  （{room.reviewCount}件）
+                </span>
+              )}
+            </div>
           </div>
         </div>
-      </div>
-    </Link>
+      </Link>
+
+      {availability && requestedSlot && (
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-stone-100 bg-stone-50/70 px-5 py-3">
+          <p className="text-sm">
+            <span className="text-slate-500">
+              {formatSlotLabel(requestedSlot)}：
+            </span>
+            <span
+              className={[
+                "ml-1 inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1",
+                availability.isAvailable
+                  ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
+                  : "bg-stone-100 text-slate-600 ring-stone-200",
+              ].join(" ")}
+            >
+              {availability.label}
+            </span>
+          </p>
+
+          {reservationHref && (
+            <Link
+              href={reservationHref}
+              className="rounded-xl bg-sky-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-800"
+            >
+              この日時で予約へ進む
+            </Link>
+          )}
+        </div>
+      )}
+    </article>
   );
 }

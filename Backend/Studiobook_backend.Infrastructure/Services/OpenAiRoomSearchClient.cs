@@ -1,7 +1,9 @@
-﻿using System.Net.Http.Headers;
+﻿using System.Globalization;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
+using Studiobook_backend.Application.Common;
 using Studiobook_backend.Application.Dtos.Ai;
 using Studiobook_backend.Application.Interfaces;
 using Studiobook_backend.Application.Settings;
@@ -21,12 +23,15 @@ namespace Studiobook_backend.Infrastructure.Services
             _settings = options.Value;
         }
 
-        public async Task<AiRoomSearchConditionsDto> AnalyzeQueryAsync(string query)
+        public async Task<AiRoomSearchConditionsDto> AnalyzeQueryAsync(string query, DateTime? nowJapan = null)
         {
             if (string.IsNullOrWhiteSpace(_settings.ApiKey))
             {
                 throw new InvalidOperationException("OpenAI APIキーが設定されていません。");
             }
+
+            var now = nowJapan ?? JapanTime.Now(TimeProvider.System);
+            var today = now.ToString("yyyy-MM-dd（ddd） HH:mm", CultureInfo.GetCultureInfo("ja-JP"));
 
             var requestBody = new
             {
@@ -36,7 +41,7 @@ namespace Studiobook_backend.Infrastructure.Services
 new
 {
     role = "system",
-    content = """
+    content = $$"""
     あなたはスタジオ予約サービスの検索条件解析AIです。
     ユーザーの自然文から、スタジオ検索に使える条件をJSONで抽出してください。
     不明な項目は null にしてください。
@@ -52,6 +57,14 @@ new
     - 人数条件が不明な場合は null
 
     keywords には検索に使える短い日本語キーワードを最大5個入れてください。
+    日時・曜日・時間帯を表す語（「夜」「土曜」「来週」など）は keywords に入れないでください。
+
+    利用日時は次のルールで設定してください。現在の日本時間は {{today}} です。
+    - date は利用日を yyyy-MM-dd で設定してください。「明日」「今週末」「来週土曜」などは現在日時から解決してください。日付が分からない場合は null
+    - startTime は開始時刻を HH:mm（24時間表記）で設定してください。「18時から」「午後3時」のように明示された場合のみ。「夜」「午後」だけの場合は null
+    - endTime は終了時刻が明示された場合のみ HH:mm で設定してください
+    - durationMinutes は利用時間を分で設定してください（「2時間」なら 120）。不明な場合は null
+    - timePreference には「夜」「午前中」などの曖昧な時間帯の希望をそのまま入れてください
     """
 },
                     new
@@ -106,6 +119,22 @@ new
                                     type = new[] { "string", "null" },
                                     @enum = new object[] { "min", "max", "exact", null }
                                 },
+                                date = new
+                                {
+                                    type = new[] { "string", "null" }
+                                },
+                                startTime = new
+                                {
+                                    type = new[] { "string", "null" }
+                                },
+                                endTime = new
+                                {
+                                    type = new[] { "string", "null" }
+                                },
+                                durationMinutes = new
+                                {
+                                    type = new[] { "integer", "null" }
+                                },
                                 keywords = new
                                 {
                                     type = "array",
@@ -125,6 +154,10 @@ new
                                 "atmosphere",
                                 "timePreference",
                                 "capacityCondition",
+                                "date",
+                                "startTime",
+                                "endTime",
+                                "durationMinutes",
                                 "keywords"
                             }
                         }
