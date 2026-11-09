@@ -22,6 +22,13 @@
 
         public int ReviewCount { get; set; }
 
+        /// <summary>おすすめ理由（Reasons を「。」でつないだ文章）。</summary>
         public string Reason { get; set; } = string.Empty;
+
+        /// <summary>おすすめ理由（実際に当てはまった条件だけ）。</summary>
+        public List<string> Reasons { get; set; } = new();
+
+        /// <summary>指定日時の空き状況。日時の指定がない検索では null。</summary>
+        public AiRoomAvailabilityDto? Availability { get; set; }
     }
 }

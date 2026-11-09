@@ -265,6 +265,48 @@ public class OpenAiRoomSearchClientTests
         Assert.True(properties.TryGetProperty("keywords", out _));
     }
 
+    [Fact]
+    public async Task AnalyzeQueryAsync_日本時間の現在日時をプロンプトに含め_利用日時を読み取る()
+    {
+        // Arrange
+        var handler = new FakeHttpMessageHandler(_ =>
+            new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("""
+                {
+                  "output_text": "{\"keyword\":null,\"area\":\"渋谷区\",\"price\":null,\"capacity\":null,\"purpose\":\"撮影\",\"atmosphere\":null,\"timePreference\":null,\"capacityCondition\":null,\"date\":\"2026-11-14\",\"startTime\":\"18:00\",\"endTime\":null,\"durationMinutes\":120,\"keywords\":[\"撮影\"]}"
+                }
+                """)
+            });
+
+        var client = CreateClient(handler);
+
+        // Act
+        var result = await client.AnalyzeQueryAsync(
+            "来週土曜の18時から2時間、渋谷で撮影",
+            new DateTime(2026, 11, 10, 10, 0, 0));
+
+        // Assert
+        Assert.Equal("2026-11-14", result.Date);
+        Assert.Equal("18:00", result.StartTime);
+        Assert.Null(result.EndTime);
+        Assert.Equal(120, result.DurationMinutes);
+
+        var systemContent = GetInputContent(handler.LastRequestBody, "system");
+        Assert.Contains("現在の日本時間は 2026-11-10（火） 10:00 です", systemContent);
+
+        var properties = GetRoot(handler.LastRequestBody)
+            .GetProperty("text")
+            .GetProperty("format")
+            .GetProperty("schema")
+            .GetProperty("properties");
+
+        Assert.True(properties.TryGetProperty("date", out _));
+        Assert.True(properties.TryGetProperty("startTime", out _));
+        Assert.True(properties.TryGetProperty("endTime", out _));
+        Assert.True(properties.TryGetProperty("durationMinutes", out _));
+    }
+
     private static OpenAiRoomSearchClient CreateClient(FakeHttpMessageHandler handler)
     {
         var httpClient = new HttpClient(handler);

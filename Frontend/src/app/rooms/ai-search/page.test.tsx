@@ -326,6 +326,85 @@ expect(screen.getAllByText("夜").length).toBeGreaterThan(0);
     ).toHaveAttribute("href", "/rooms/2");
   });
 
+  test("日時の指定がある場合、利用日時・空き状況・補足・理由を表示し、空きがあれば予約へ進める", async () => {
+    const user = userEvent.setup();
+
+    const base = mockAiRoomSearchResponse();
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        ...base,
+        requestedSlot: {
+          startAt: "2026-11-14T18:00:00",
+          endAt: "2026-11-14T19:00:00",
+          durationAssumed: true,
+        },
+        relaxed: false,
+        notices: ["利用時間の指定がないため、1時間として空き状況を判定しています。"],
+        rooms: [
+          {
+            ...base.rooms[0],
+            reasons: ["11/14（土）18:00〜19:00に空きがあります", "新宿区にあります"],
+            availability: { status: "available", label: "空きあり", isAvailable: true },
+          },
+          {
+            ...base.rooms[1],
+            reasons: ["検索条件に近い候補です"],
+            availability: { status: "reserved", label: "その時間は予約済み", isAvailable: false },
+          },
+        ],
+      }),
+    });
+
+    render(<AiRoomSearchPage />);
+
+    await user.click(screen.getByRole("button", { name: "AIで探す" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("AIが解釈した条件")).toBeInTheDocument();
+    });
+
+    expect(screen.getByText("利用日時")).toBeInTheDocument();
+    expect(screen.getAllByText(/11\/14（土）18:00〜19:00/).length).toBeGreaterThan(0);
+
+    expect(screen.getByRole("status")).toHaveTextContent("1時間として空き状況を判定しています。");
+
+    // 理由は箇条書きで表示する
+    expect(screen.getByText("新宿区にあります")).toBeInTheDocument();
+    expect(screen.getByText("検索条件に近い候補です")).toBeInTheDocument();
+
+    expect(screen.getByText("空きあり")).toBeInTheDocument();
+    expect(screen.getByText("その時間は予約済み")).toBeInTheDocument();
+
+    // 予約へ進むリンクは空きのあるスタジオだけ
+    const links = screen.getAllByRole("link", { name: "この日時で予約へ進む" });
+    expect(links).toHaveLength(1);
+    expect(links[0]).toHaveAttribute(
+      "href",
+      "/rooms/1/reservations/confirm?startDate=2026-11-14&startTime=18%3A00&endDate=2026-11-14&endTime=19%3A00"
+    );
+  });
+
+  test("日時の指定がない場合、利用日時は指定なしで空き状況と予約リンクを表示しない", async () => {
+    const user = userEvent.setup();
+
+    setupSuccessResponse();
+
+    render(<AiRoomSearchPage />);
+
+    await user.click(screen.getByRole("button", { name: "AIで探す" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("AIが解釈した条件")).toBeInTheDocument();
+    });
+
+    expect(screen.getByText("利用日時")).toBeInTheDocument();
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "この日時で予約へ進む" })).not.toBeInTheDocument();
+  });
+
   test("検索結果0件の場合、空メッセージを表示する", async () => {
     const user = userEvent.setup();
 

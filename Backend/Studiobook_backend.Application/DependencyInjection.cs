@@ -27,6 +27,7 @@ public static class DependencyInjection
         services.AddScoped<HomeService>();
         services.AddScoped<RoomSearchService>();
         services.AddScoped<RoomDetailService>();
+        services.AddScoped<RoomAvailabilityService>();
         services.AddScoped<AiRoomSearchService>();
         services.AddScoped<AiReviewAssistService>();
 

@@ -54,9 +54,7 @@ public class ReservationConfirmService
             throw new KeyNotFoundException("スタジオが見つかりません。");
         }
 
-        ValidateSameDay(request.StartAt, request.EndAt);
-        ValidateBusinessHour(room, request.StartAt, request.EndAt);
-        ValidateClosure(room, request.StartAt, request.EndAt);
+        ValidateSchedule(room, request.StartAt, request.EndAt);
         await ValidateReservationOverlapAsync(room.Id, request.StartAt, request.EndAt);
 
         var items = BuildChargeItems(room, request.StartAt, request.EndAt);
@@ -101,50 +99,26 @@ public class ReservationConfirmService
         return (int)Math.Round(baseAmount * rate, MidpointRounding.AwayFromZero);
     }
 
-    private static void ValidateSameDay(DateTime startAt, DateTime endAt)
+    /// <summary>
+    /// 日またぎ・営業時間・休業期間の判定（AI 検索の空き判定と同じ規則 RoomScheduleRules を使う）。
+    /// </summary>
+    private static void ValidateSchedule(Room room, DateTime startAt, DateTime endAt)
     {
-        if (startAt.Date != endAt.Date)
+        var status = RoomScheduleRules.Evaluate(room, startAt, endAt);
+
+        var message = status switch
         {
-            throw new InvalidOperationException("日をまたぐ予約はできません。1日ごとに予約してください。");
-        }
-    }
+            RoomAvailabilityStatus.CrossDay => "日をまたぐ予約はできません。1日ごとに予約してください。",
+            RoomAvailabilityStatus.Holiday => "指定日は営業時間外です。",
+            RoomAvailabilityStatus.BusinessHoursNotSet => "指定日の営業時間が設定されていません。",
+            RoomAvailabilityStatus.OutsideBusinessHours => "営業時間外の時間が含まれています。",
+            RoomAvailabilityStatus.Closure => "指定した時間帯は休業期間と重複しています。",
+            _ => null
+        };
 
-    private static void ValidateBusinessHour(Room room, DateTime startAt, DateTime endAt)
-    {
-        var dayOfWeek = ToBusinessDayOfWeek(startAt.DayOfWeek);
-
-        var businessHour = room.BusinessHours
-            .FirstOrDefault(x => x.DayOfWeek == dayOfWeek);
-
-        if (businessHour == null || businessHour.IsHoliday)
+        if (message != null)
         {
-            throw new InvalidOperationException("指定日は営業時間外です。");
-        }
-
-        if (businessHour.StartTime == null || businessHour.EndTime == null)
-        {
-            throw new InvalidOperationException("指定日の営業時間が設定されていません。");
-        }
-
-        var startTime = TimeOnly.FromDateTime(startAt);
-        var endTime = TimeOnly.FromDateTime(endAt);
-
-        if (startTime < businessHour.StartTime.Value ||
-            endTime > businessHour.EndTime.Value)
-        {
-            throw new InvalidOperationException("営業時間外の時間が含まれています。");
-        }
-    }
-
-    private static void ValidateClosure(Room room, DateTime startAt, DateTime endAt)
-    {
-        var hasClosure = room.Closures.Any(x =>
-            x.StartAt < endAt &&
-            startAt < x.EndAt);
-
-        if (hasClosure)
-        {
-            throw new InvalidOperationException("指定した時間帯は休業期間と重複しています。");
+            throw new InvalidOperationException(message);
         }
     }
 
@@ -256,20 +230,5 @@ public class ReservationConfirmService
     private static decimal CalculateHours(DateTime startAt, DateTime endAt)
     {
         return (decimal)(endAt - startAt).TotalHours;
-    }
-
-    private static int ToBusinessDayOfWeek(DayOfWeek dayOfWeek)
-    {
-        return dayOfWeek switch
-        {
-            DayOfWeek.Monday => 1,
-            DayOfWeek.Tuesday => 2,
-            DayOfWeek.Wednesday => 3,
-            DayOfWeek.Thursday => 4,
-            DayOfWeek.Friday => 5,
-            DayOfWeek.Saturday => 6,
-            DayOfWeek.Sunday => 7,
-            _ => throw new ArgumentOutOfRangeException(nameof(dayOfWeek))
-        };
     }
 }

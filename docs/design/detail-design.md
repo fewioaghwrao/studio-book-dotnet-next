@@ -459,12 +459,16 @@ ASP.NET Core Identityの`PasswordHasher<User>`を使用する。
 
 処理：
 
-1. OpenAIへ自然文を送信。
+1. OpenAIへ自然文と現在の日本時間を送信（「来週土曜」等の相対日付を解決するため）。
 2. JSON Schema形式で検索条件を取得。
-3. Area、Price、Capacity、Keyword等をRoom検索へ反映。
-4. 公開レビュー平均の降順、料金昇順、ID降順で最大5件取得。
-5. 各Roomへ候補理由を付与。
-6. 成功または失敗をAiSearchLogsへ記録。
+3. Area、Price、Capacityで絞り込み、Keyword・Purpose・Atmosphere・Keywordsのいずれかが名称・説明・住所に含まれるRoomを、公開レビュー平均の降順、料金昇順、ID降順で最大20件取得。TimePreference（「夜」等）は文章の照合には使わない。
+4. 3が0件でキーワード条件がある場合は、キーワード条件を外して再取得し、`Relaxed=true`と補足（Notices）を返す。
+5. Date＋StartTimeが読み取れた場合は利用日時（RequestedSlot）を決める。終了はEndTime → DurationMinutes → 1時間（`DurationAssumed=true`、補足を返す）の順。各候補の空き状況を`RoomAvailabilityService`で判定する（過去日時 → 日またぎ・営業時間・休業期間 → 予約の重複。予約確認と同じ`RoomScheduleRules`を使用）。
+6. 空きありのRoomを上位にし（同じ空き状況の中は3の順）、最大5件を返す。
+7. おすすめ理由（Reasons）は、実際に当てはまった条件だけから作る：指定日時の空き、エリア（住所に含む）、名称・説明に一致した語、予算内、人数条件、公開レビュー平均。`Reason`は先頭3件を「。」でつないだ文章。
+8. 成功または失敗をAiSearchLogsへ記録。
+
+空き状況（Availability.Status）：`available`（空きあり）、`reserved`（予約済み）、`holiday`（定休日）、`business_hours_not_set`、`outside_business_hours`、`closure`（休業期間）、`cross_day`、`past`。フロントは空きありの場合のみ「この日時で予約へ進む」（予約確認画面へ日時付きで遷移）を表示する。
 
 抽出条件：
 
@@ -476,6 +480,9 @@ ASP.NET Core Identityの`PasswordHasher<User>`を使用する。
 - Purpose
 - Atmosphere
 - TimePreference
+- Date（yyyy-MM-dd）
+- StartTime / EndTime（HH:mm）
+- DurationMinutes
 - Keywords
 
 ### 6.2 レート制限
