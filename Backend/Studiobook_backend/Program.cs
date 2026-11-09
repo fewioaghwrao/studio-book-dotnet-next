@@ -4,6 +4,7 @@ using Microsoft.IdentityModel.Tokens;
 using Studiobook_backend.Application;
 using Studiobook_backend.Application.Services;
 using Studiobook_backend.Application.Settings;
+using Studiobook_backend.ErrorHandling;
 using Studiobook_backend.Infrastructure;
 using Studiobook_backend.Infrastructure.Persistence;
 using Studiobook_backend.Infrastructure.Seeders;
@@ -145,7 +146,13 @@ builder.Services.AddCors(options =>
     });
 });
 
+// 処理されなかった例外を JSON のエラー応答（CORS ヘッダー付き）にする
+builder.Services.AddApiExceptionHandling();
+
 var app = builder.Build();
+
+// 例外ハンドラーは先頭（UseCors より外側）に置く
+app.UseApiExceptionHandling();
 
 var enableSwagger = builder.Configuration.GetValue<bool>("ENABLE_SWAGGER");
 
