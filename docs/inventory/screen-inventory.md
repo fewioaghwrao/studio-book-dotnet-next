@@ -42,7 +42,7 @@
 |---|---|---|---|---|---|---|
 | CM-01 | トップ画面 | `/` | 全利用者 | 人気スタジオ、新着スタジオ、キーワード検索、会員登録導線を表示する | `GET /api/home` | 不要 |
 | CM-02 | スタジオ一覧画面 | `/rooms` | 全利用者 | キーワード、地域、上限料金、並び順による検索とページング | `GET /api/rooms` | 不要 |
-| CM-03 | AIスタジオ検索画面 | `/rooms/ai-search` ※要配置確認 | 全利用者 | 自然文で希望条件を入力し、AIが解釈した条件と候補スタジオを表示する | `POST /api/ai/room-search` | 不要 |
+| CM-03 | AIスタジオ検索画面 | `/rooms/ai-search` | 全利用者 | 自然文で希望条件を入力し、AIが解釈した条件と候補スタジオを表示する | `POST /api/ai/room-search` | 不要 |
 | CM-04 | スタジオ詳細画面 | `/rooms/{roomId}` | 全利用者 | 基本情報、営業時間、料金ルール、レビュー、空き状況カレンダーを表示する | `GET /api/rooms/{roomId}` | 不要 |
 | CM-05 | 利用規約画面 | `/terms` | 全利用者 | サービス利用規約を表示する | なし | 不要 |
 | CM-06 | プライバシーポリシー画面 | `/privacy` | 全利用者 | 個人情報の取扱方針を表示する | なし | 不要 |
@@ -58,8 +58,8 @@
 | AU-02 | 会員登録画面 | `/signup` | 未認証ユーザー | 氏名、住所、利用区分、メールアドレス、パスワードを登録する | `POST /api/auth/signup` | 不要 |
 | AU-03 | メール認証完了画面 | `/signup/verified` | 未認証ユーザー | メール認証完了を通知し、ログイン画面への導線を表示する | なし | 不要 |
 | AU-04 | メール認証エラー画面 | `/signup/verify-error` | 未認証ユーザー | 無効または期限切れの認証URLであることを通知する | なし | 不要 |
-| AU-05 | パスワード再設定申請画面 | `/auth/forgot-password` ※要配置確認 | 未認証ユーザー | メールアドレスを入力し、再設定メールを要求する | `POST /api/auth/forgot-password` | 不要 |
-| AU-06 | 新しいパスワード設定画面 | `/auth/reset-password?token={token}` ※要配置確認 | 未認証ユーザー | トークンを使用して新しいパスワードを登録する | `POST /api/auth/reset-password` | 不要 |
+| AU-05 | パスワード再設定申請画面 | `/forgot-password` | 未認証ユーザー | メールアドレスを入力し、再設定メールを要求する | `POST /api/auth/forgot-password` | 不要 |
+| AU-06 | 新しいパスワード設定画面 | `/reset-password?token={token}` | 未認証ユーザー | トークンを使用して新しいパスワードを登録する | `POST /api/auth/reset-password` | 不要 |
 
 ---
 
@@ -69,8 +69,8 @@
 |---|---|---|---|---|---|---|
 | GU-01 | 会員情報画面 | `/user` | 一般ユーザー | ログインユーザーの氏名、住所、電話番号、メールアドレスなどを表示する | `GET /api/auth/me` | 必要 |
 | GU-02 | 会員情報編集画面 | `/user/edit` | 一般ユーザー | ログインユーザーの基本情報を更新する | `GET /api/auth/me`、`PUT /api/auth/me` | 必要 |
-| GU-03 | 予約入力画面 | `/rooms/{roomId}/reserve` ※要配置確認 | 一般ユーザー | 利用開始・終了日時を入力し、予約確認画面へ遷移する | `GET /api/auth/me`、`GET /api/rooms/{roomId}` | GeneralUser |
-| GU-04 | 予約確認・決済画面 | `/rooms/{roomId}/reserve/confirm` ※要配置確認 | 一般ユーザー | 利用時間、料金内訳、税、手数料を確認しStripe決済へ進む | `GET /api/auth/me`、`POST /api/reservations/confirm` | GeneralUser |
+| GU-03 | 予約入力画面 | `/rooms/{roomId}/reservations/input` | 一般ユーザー | 利用開始・終了日時を入力し、予約確認画面へ遷移する | `GET /api/auth/me`、`GET /api/rooms/{roomId}` | GeneralUser |
+| GU-04 | 予約確認・決済画面 | `/rooms/{roomId}/reservations/confirm?startDate=...&startTime=...&endDate=...&endTime=...` | 一般ユーザー | 利用時間、料金内訳、税、手数料を確認しStripe決済へ進む | `GET /api/auth/me`、`POST /api/reservations/confirm` | GeneralUser |
 | GU-05 | 予約一覧・履歴画面 | `/reservations` | 一般ユーザー | 自分の予約一覧、予約状態、利用日時、金額を確認する | `GET /api/auth/me`、`GET /api/reservations` | GeneralUser |
 | GU-06 | レビュー投稿画面 | `/rooms/{roomId}/reviews/new` | 一般ユーザー | 評価とコメントを入力し、レビューを投稿する | `GET /api/rooms/{roomId}/reviews/new`、`POST /api/rooms/{roomId}/reviews` | 必要 |
 | GU-07 | AIレビュー補助 | GU-06画面内 | 一般ユーザー | 入力済みの下書きをAIで整形する | `POST /api/ai/review-assist` | 必要 |
@@ -102,14 +102,14 @@
 | 画面ID | 画面名 | URL | 利用者 | 主な機能 | 主なAPI | 認証 |
 |---|---|---|---|---|---|---|
 | AD-01 | 管理者情報画面 | `/admin` | 管理者 | 管理者自身の登録情報を表示する | `GET /api/auth/me` | Admin |
-| AD-02 | 管理者情報編集画面 | `/admin/edit` ※要配置確認 | 管理者 | 管理者自身の基本情報を編集する。公開デモでは更新無効 | `GET /api/auth/me`、`PUT /api/auth/me` | Admin |
+| AD-02 | 管理者情報編集画面 | `/admin/edit` | 管理者 | 管理者自身の基本情報を編集する。公開デモでは更新無効 | `GET /api/auth/me`、`PUT /api/auth/me` | Admin |
 | AD-03 | 管理データ一覧・統計画面 | `/admin/status` | 管理者 | スタジオ別・月別の予約数、売上、稼働率、レビュー平均などを表示する | `GET /api/admin/status` | Admin |
 | AD-04 | 会員一覧画面 | `/admin/users` | 管理者 | 会員検索、状態・ロール表示、ページング | `GET /api/admin/users` | Admin |
 | AD-05 | 会員詳細画面 | `/admin/users/{userId}` | 管理者 | 指定会員の氏名、住所、利用区分、ロール、状態を表示する | `GET /api/admin/users/{userId}` | Admin |
 | AD-06 | スタジオ一覧画面 | `/admin/rooms` | 管理者 | 全スタジオの検索、一覧表示、詳細・登録への遷移 | `GET /api/admin/rooms` | Admin |
 | AD-07 | スタジオ登録画面 | `/admin/rooms/register` | 管理者 | ホスト、画像、基本料金、定員、住所などを入力して登録する | `GET /api/admin/rooms/host-options`、`POST /api/admin/rooms` | Admin |
 | AD-08 | スタジオ詳細画面 | `/admin/rooms/{roomId}` | 管理者 | 指定スタジオの基本情報を表示する | `GET /api/admin/rooms/{roomId}` | Admin |
-| AD-09 | スタジオ編集画面 | `/admin/rooms/{roomId}/edit` ※要配置確認 | 管理者 | ホスト、画像、料金、定員、住所などを更新する | `GET /api/admin/rooms/{roomId}`、`GET /api/admin/rooms/host-options`、`PUT /api/admin/rooms/{roomId}` | Admin |
+| AD-09 | スタジオ編集画面 | `/admin/rooms/{roomId}/edit` | 管理者 | ホスト、画像、料金、定員、住所などを更新する | `GET /api/admin/rooms/{roomId}`、`GET /api/admin/rooms/host-options`、`PUT /api/admin/rooms/{roomId}` | Admin |
 | AD-10 | 予約一覧画面 | `/admin/reservations` | 管理者 | キーワード、予約ID、状態、スタジオ、期間で全予約を検索する | `GET /api/admin/reservations` | Admin |
 | AD-11 | 監査ログ一覧画面 | `/admin/logs` | 管理者 | 操作者、操作種別、対象、対象ID、期間などで監査ログを検索する | `GET /api/admin/logs` | Admin |
 | AD-12 | AI検索ログ一覧画面 | `/admin/ai-search-logs` | 管理者 | 検索文、利用者、IP、成功可否、モデル、期間でAI検索ログを検索する | `GET /api/admin/ai-search-logs` | Admin |
@@ -121,14 +121,14 @@
 
 | 画面ID | 画面名 | URL・発生条件 | 利用者 | 概要 | 主な操作 |
 |---|---|---|---|---|---|
-| ER-01 | 汎用エラー画面 | `/error?status=...` ※要配置確認 | 全利用者 | ステータス、エラー内容、メッセージ、パスを表示する | ホームへ戻る、前画面へ戻る |
-| ER-02 | 400 Bad Request画面 | `/error/400` ※要配置確認 | 全利用者 | 入力内容やURLが不正であることを表示する | ホームへ戻る、前画面へ戻る |
-| ER-03 | 401 Unauthorized画面 | `/error/401` ※要配置確認 | 全利用者 | ログインが必要であることを表示する | ログイン画面へ、ホームへ戻る |
-| ER-04 | 403 Forbidden画面 | `/error/403` ※要配置確認 | 全利用者 | アクセス権限がないことを表示する | ホームへ戻る、前画面へ戻る |
+| ER-01 | 汎用エラー画面 | `/error?status=...` | 全利用者 | ステータス、エラー内容、メッセージ、パスを表示する | ホームへ戻る、前画面へ戻る |
+| ER-02 | 400 Bad Request画面 | `/error/400` | 全利用者 | 入力内容やURLが不正であることを表示する | ホームへ戻る、前画面へ戻る |
+| ER-03 | 401 Unauthorized画面 | `/error/401` | 全利用者 | ログインが必要であることを表示する | ログイン画面へ、ホームへ戻る |
+| ER-04 | 403 Forbidden画面 | `/error/403` | 全利用者 | アクセス権限がないことを表示する | ホームへ戻る、前画面へ戻る |
 | ER-05 | 404 Not Found画面 | 存在しないURL | 全利用者 | 対象ページが移動または削除されたことを表示する | ホームへ戻る |
-| ER-06 | 500 Internal Server Error画面 | `/error/500` ※要配置確認 | 全利用者 | サーバー処理中のエラーを表示する | ホームへ戻る |
+| ER-06 | 500 Internal Server Error画面 | `/error/500` | 全利用者 | サーバー処理中のエラーを表示する | ホームへ戻る |
 | ER-07 | グローバルエラー画面 | Next.jsで未処理例外発生時 | 全利用者 | 予期しないエラーのメッセージを表示する | 再試行、ホームへ戻る |
-| ER-08 | 503 Service Unavailable画面 | `/error/503` ※要配置確認 | 全利用者 | メンテナンス中または一時的な混雑を表示する | ホームへ戻る、再読み込み |
+| ER-08 | 503 Service Unavailable画面 | `/error/503` | 全利用者 | メンテナンス中または一時的な混雑を表示する | ホームへ戻る、再読み込み |
 | ER-09 | 共通ローディング画面 | 画面遷移・データ取得中 | 全利用者 | オーバーレイ、スピナー、進捗風表示を表示する | なし |
 
 ---
@@ -295,16 +295,8 @@
 
 # 15. 要確認事項
 
-以下は、受領したファイルがすべて同名の `page.tsx` として提供され、元のディレクトリパスを直接確認できないため、リポジトリ上の配置パスとの突合が必要である。
+画面のURLは、リポジトリの `Frontend/src/app` 配下の構成と照合して確定済み（2026年11月時点）。
 
-- AIスタジオ検索画面のURL
-- パスワード再設定申請画面のURL
-- 新しいパスワード設定画面のURL
-- 一般ユーザーの予約入力画面・予約確認画面のURL
-- 管理者情報編集画面のURL
-- 管理者スタジオ編集画面のURL
-- 400、401、403、500、503、汎用エラー画面のURL
-- メール認証完了画面内のログインリンクが `/login`、共通ナビゲーションでは `/auth/login` となっている点
-- 401エラー画面のログイン遷移先が `/login` となっている点
+残っている確認事項：
 
-リポジトリ上の `Frontend/src/app` 配下の実際のフォルダ構成を確認後、上記の「要配置確認」を確定URLへ置き換える。
+- メール認証完了画面（`/signup/verified`）と401エラー画面（`/error/401`）のログインリンクが `/login` になっているが、`/login` の画面は存在しない（正しくは `/auth/login`）。リンク先の修正が必要。

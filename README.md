@@ -36,13 +36,13 @@ Studio Book は、**スタジオの時間貸しを具体例とした「施設・
 
 | 対象 | URL |
 |---|---|
-| フロントエンド（Azure） | https://gray-bush-08e107700.7.azurestaticapps.net |
-| フロントエンド（Vercel） | https://studio-book-dotnet-next.vercel.app |
+| フロントエンド（Vercel・メイン） | https://studio-book-dotnet-next.vercel.app |
+| フロントエンド（Azure・補助） | https://gray-bush-08e107700.7.azurestaticapps.net |
 | バックエンドAPI | https://studio-book-api-60c4e5850000.herokuapp.com |
 | ヘルスチェック | https://studio-book-api-60c4e5850000.herokuapp.com/health |
 | Swagger UI | https://studio-book-api-60c4e5850000.herokuapp.com/swagger |
 
-※ Vercel版は、同一のNext.jsフロントエンドを追加デプロイした公開デモです。バックエンドAPIとDBはAzure版と共通です。
+※ メインのデモ環境は Vercel 版です。Azure Static Web Apps 版は同じ Next.js フロントエンドを配置した補助のデモ環境で、バックエンドAPIとDBは共通です。メール認証・パスワード再設定メールのリンクや Stripe 決済後の戻り先は Vercel 版を基準にしています。
 
 ### デモアカウント
 
@@ -87,7 +87,7 @@ Swagger UIからBearerトークンを設定する場合は、Swaggerの認証設
 - Entity Framework Core Migration によるDBスキーマ管理
 - xUnit / Jest によるバックエンド・フロントエンドテスト
 - GitHub Actions によるCI
-- Azure Static Web Apps + Heroku を想定した分離デプロイ構成
+- Vercel（フロントエンド）+ Heroku（API）による分離デプロイ構成
 
 ---
 
@@ -409,7 +409,8 @@ AIが生成した文章はそのまま投稿されるのではなく、ユーザ
 | 技術 | 用途 |
 |---|---|
 | GitHub Actions | CI |
-| Azure Static Web Apps | フロントエンドデプロイ |
+| Vercel | フロントエンドデプロイ（メイン） |
+| Azure Static Web Apps | フロントエンドデプロイ（補助のデモ環境） |
 | Heroku | バックエンドデプロイ |
 | JawsDB MySQL | Heroku上のMySQL |
 | Docker Compose | .NET 10 API・MySQLのローカル実行環境 |
@@ -920,8 +921,22 @@ Webhook受信
 Stripeの支払金額とバックエンドの再計算金額が一致した場合のみ、
 予約と料金明細を登録します。
 
-現在はスタジオ、ユーザー、予約日時、金額の組み合わせで
-Webhook再送時の二重登録を抑止しています。
+**二重登録・二重予約の防止:**
+
+- 予約に Stripe の PaymentIntent ID を一意制約付きで保存し、Webhook の再送・同時受信でも同じ決済から予約を二重に作りません。
+- 予約の登録はスタジオ単位のDBロック（MySQL の `GET_LOCK`）内で「重複確認 → 登録」を行い、同じ時間帯の同時決済による二重予約を防ぎます。
+- 決済は完了したが予約を登録できない場合（同じ時間帯が先に埋まった、料金が変わった等）は、Stripe で全額返金し、監査ログに理由を記録します。
+- DB障害など一時的な失敗ではエラーを返し、Stripe の再送で再試行します（返金は同じ決済に対して1回だけ行います）。
+
+**予約状態:**
+
+| 状態 | 表示 | 意味 |
+|---|---|---|
+| booked | 予約済み | 未決済（デモデータ等）。ホストの承認で paid になる |
+| paid | 決済済み／利用済み | 決済完了。終了日時（日本時間）を過ぎたものを「利用済み」と表示 |
+| canceled | キャンセル済み | キャンセル |
+
+統計では利用前の予約を見込み売上、利用済みの予約を確定売上として集計し、レビューは利用済みの予約がある場合のみ投稿できます。
 
 ---
 
@@ -951,6 +966,14 @@ AI自然文検索の利用状況を `AiSearchLogs` に記録します。
 - 成功 / 失敗
 - 結果件数
 - エラー内容
+
+### エラー応答
+
+Controller で処理されなかった例外は、共通の例外ハンドラー（`ErrorHandling/GlobalExceptionHandler`）で JSON の応答（`application/problem+json`）に変換します。
+
+- 500 の場合は利用者向けの日本語メッセージと `traceId` を返し、例外の内容はサーバーログにだけ記録します（開発環境では `detail` に例外の内容を含めます）
+- エラー応答にも CORS ヘッダーが付くため、フロントエンドは「通信エラー」ではなく画面ごとのエラーメッセージを表示できます
+- ログインユーザーを特定できない場合は 401 を返します
 
 ---
 
@@ -1016,8 +1039,10 @@ GitHub Actions により、push / pull request 時にテストを実行します
 
 **主なワークフロー:**
 
-- `.github/workflows/ci-tests.yml`
-- `.github/workflows/azure-static-web-apps-*.yml`
+- `.github/workflows/ci-tests.yml`：Backend の build / test、Frontend の install / test
+- `.github/workflows/azure-static-web-apps-*.yml`：補助のデモ環境（Azure Static Web Apps）へのデプロイ
+
+メインのフロントエンド（Vercel）は、Vercel 側の GitHub 連携でデプロイします。
 
 **実行内容の例:**
 
@@ -1028,7 +1053,7 @@ GitHub Actions により、push / pull request 時にテストを実行します
 - .NET 10 SDK / ASP.NET Core 10 Runtime を使用したDockerビルド
 - Frontend install
 - Frontend test
-- Azure Static Web Apps deploy
+- Azure Static Web Apps deploy（補助のデモ環境）
 
 ---
 
@@ -1037,26 +1062,31 @@ GitHub Actions により、push / pull request 時にテストを実行します
 本アプリは、フロントエンドとバックエンドを分離してデプロイする構成です。
 
 ```
-[Azure Static Web Apps]
-        |
-        v
-[Heroku ASP.NET Core 10 API]
-        |
-        v
-[JawsDB MySQL]
+[Vercel（メイン）] [Azure Static Web Apps（補助）]
+        |                  |
+        +--------+---------+
+                 v
+   [Heroku ASP.NET Core 10 API]
+                 |
+                 v
+          [JawsDB MySQL]
 ```
 
 | 対象 | デプロイ先 |
 |---|---|
-| Frontend | Azure Static Web Apps |
+| Frontend | Vercel（メイン）／ Azure Static Web Apps（補助のデモ環境） |
 | Backend | Heroku |
 | Database | JawsDB MySQL |
+
+**Heroku へのデプロイ時の注意:**
+
+- 起動時のDBマイグレーションは、Config Vars で `ENABLE_DB_MIGRATION=true` を設定した場合のみ実行されます。未設定のままスキーマ変更を含むコードをデプロイすると、新しい列を参照するAPIがエラーになります。マイグレーションを含むリリースでは、`ENABLE_DB_MIGRATION=true` を設定するか、[MIGRATION-NOTES.md](MIGRATION-NOTES.md) のSQLを手動で適用してください。
+- CORS の許可オリジン（`Cors__AllowedOrigins__0`、`Cors__AllowedOrigins__1` …）には、Vercel 版と Azure 版の両方のURLを設定します。メールのリンク先（`Frontend__BaseUrl`）は Vercel 版の1つだけを設定します。
 
 ---
 
 ## 今後の改善予定
 
-- [ ] Stripe Webhook の冪等制御強化
 - [ ] OpenAI API利用量の可視化
 - [ ] 管理者向けログ検索機能の拡張
 - [ ] E2Eテストの追加
@@ -1070,7 +1100,9 @@ GitHub Actions により、push / pull request 時にテストを実行します
 - [x] 予約状態と状態遷移の整理
 - [x] Stripe PaymentIntent IDによるWebhook冪等制御
 - [x] UTC / JSTの日時処理方針統一
-- [ ] APIエラーレスポンス形式の統一
+- [ ] APIエラーレスポンス形式の統一（処理されなかった例外は共通ハンドラーで JSON 化済み。Controller ごとの業務エラー形式は未統一）
+- [x] AI検索の空き状況表示と、実際に当てはまった条件だけによるおすすめ理由
+- [ ] バッチ処理（ログの整理、期限切れトークンの削除など）
 - [x] レビューのユーザー・スタジオ複合一意制約追加
 - [x] 予約重複登録に対する同時実行制御
 

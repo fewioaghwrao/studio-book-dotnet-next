@@ -352,9 +352,18 @@ Webhook 受信
 |---|---|
 | ReservationConfirmService | 予約内容確認・営業時間・休館日・既存予約チェック・料金計算 |
 | StripeCheckoutService | Stripe Checkout Session 作成 |
-| ReservationCompleteService | Webhook 受信後の予約確定処理 |
+| ReservationCompleteService | Webhook 受信後の予約確定処理（PaymentIntent ID による冪等化、スタジオ単位のDBロック、登録できない場合の全額返金） |
+| RoomAvailabilityService | 指定日時の空き状況をまとめて判定（AI 検索で使用。判定規則は予約確認と共通の `RoomScheduleRules`） |
 | HostReservationService | ホスト向け予約管理 |
 | UserReservationService | 一般ユーザー向け予約一覧 |
+
+### 共通の判定（`Application/Common`）
+
+| クラス | 概要 |
+|---|---|
+| JapanTime | 「現在」「今日」「今月」を日本時間で判定（サーバーが UTC でもずれない） |
+| ReservationUsage | 利用済み（`paid` かつ終了日時が過去）・利用前の判定 |
+| RoomScheduleRules | 営業時間・休業期間・日またぎによる予約可否の判定 |
 
 ### 料金明細
 
@@ -475,6 +484,8 @@ APIコンテナの起動時に、設定に応じてEF Core Migrationとデモデ
 * `ENABLE_DB_MIGRATION=true`：Migrationを適用
 * `ENABLE_DB_SEED=true`：デモデータを投入
 
+どちらも未設定の場合は実行されません（Heroku などの本番環境も同じです）。
+
 そのため、通常のDocker起動では手動の `dotnet ef database update` は不要です。
 
 ### Backendをローカルで直接起動する場合
@@ -571,9 +582,13 @@ dotnet test ../Studiobook_backend.Tests/Studiobook_backend.Tests.csproj
 
 AuthControllerTests / HomeControllerTests / RoomsControllerTests / ReservationsControllerTests / ReviewsControllerTests / StripeWebhookControllerTests / AiRoomSearchControllerTests / AiReviewAssistControllerTests / HostRoomsControllerTests / HostBusinessHoursControllerTests / HostClosuresControllerTests / HostPriceRulesControllerTests / HostReservationsControllerTests / HostSalesControllerTests / HostSalesCsvControllerTests / HostSalesExportControllerTests / HostStatusControllerTests / HostReviewsControllerTests / AdminUsersControllerTests / AdminRoomsControllerTests / AdminReservationsControllerTests / AdminSettingsControllerTests / AdminStatusControllerTests / AdminAuditLogsControllerTests / AdminAiSearchLogsControllerTests
 
+**エラー処理・永続化・共通処理**
+
+GlobalExceptionHandlerTests（例外時の JSON 応答と CORS ヘッダー）/ MigrationSnapshotTests（モデルとマイグレーションの差分なし）/ AppDbContextUtcKindTests / JapanTimeTests / ReservationUsageTests
+
 **Service Tests**
 
-AuthServiceTests / JwtTokenServiceTests / PasswordHasherServiceTests / VerificationTokenServiceTests / PasswordResetServiceTests / EmailServiceTests / HomeServiceTests / RoomSearchServiceTests / RoomDetailServiceTests / ReservationConfirmServiceTests / ReservationCompleteServiceTests / UserReservationServiceTests / ReviewServiceTests / StripeCheckoutServiceTests / AiRoomSearchServiceTests / AiReviewAssistServiceTests / AiSearchLogServiceTests / AuditLogServiceTests / HostBusinessHourServiceTests / HostClosureServiceTests / HostPriceRuleServiceTests / HostReservationServiceTests / HostSalesServiceTests / HostStatusServiceTests / HostReviewServiceTests / AdminUserServiceTests / AdminRoomServiceTests / AdminReservationServiceTests / AdminSettingsServiceTests / AdminStatusServiceTests / AdminAuditLogServiceTests / AdminAiSearchLogServiceTests
+AuthServiceTests / JwtTokenServiceTests / PasswordHasherServiceTests / VerificationTokenServiceTests / PasswordResetServiceTests / EmailServiceTests / HomeServiceTests / RoomSearchServiceTests / RoomDetailServiceTests / ReservationConfirmServiceTests / ReservationCompleteServiceTests / UserReservationServiceTests / ReviewServiceTests / StripeCheckoutServiceTests / AiRoomSearchServiceTests / RoomAvailabilityServiceTests / AiReviewAssistServiceTests / AiSearchLogServiceTests / AuditLogServiceTests / HostBusinessHourServiceTests / HostClosureServiceTests / HostPriceRuleServiceTests / HostReservationServiceTests / HostSalesServiceTests / HostStatusServiceTests / HostReviewServiceTests / AdminUserServiceTests / AdminRoomServiceTests / AdminReservationServiceTests / AdminSettingsServiceTests / AdminStatusServiceTests / AdminAuditLogServiceTests / AdminAiSearchLogServiceTests
 
 ### テスト方針
 
@@ -629,8 +644,12 @@ ASP.NET Core 10 Web API
 未設定の場合、API は起動時にエラーで停止します（メール認証やパスワード再設定のリンクが localhost を指す状態での稼働を防ぐため）。
 
 ```bash
-heroku config:set Frontend__BaseUrl=https://<フロントエンドのドメイン> -a studio-book-api
+heroku config:set Frontend__BaseUrl=https://studio-book-dotnet-next.vercel.app -a studio-book-api
 ```
+
+`Frontend__BaseUrl` には URL を1つだけ設定します（メイン：Vercel 版）。補助の Azure 版からも API を呼べるよう、CORS の許可オリジン（`Cors__AllowedOrigins__0`、`Cors__AllowedOrigins__1` …）には両方の URL を設定します。
+
+**DBマイグレーション:** 起動時のマイグレーションは `ENABLE_DB_MIGRATION=true` のときだけ実行されます。スキーマ変更を含むリリースでは、デプロイ前に設定するか、`../MIGRATION-NOTES.md` の SQL を手動で適用してください。未適用のままデプロイすると、新しい列を参照する API がエラーになります。
 
 Herokuのデプロイ方式がBuildpackの場合は、`Studiobook_backend.slnx` と
 `net10.0` のプロジェクトを基にビルドします。Docker Registry方式の場合は、

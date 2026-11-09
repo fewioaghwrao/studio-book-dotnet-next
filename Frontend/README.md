@@ -44,7 +44,8 @@ Next.js App Router・React・TypeScript を使用し、一般ユーザー、ス�
 | Jest | テスト |
 | React Testing Library | ページ / コンポーネントテスト |
 | user-event | ユーザー操作テスト |
-| Azure Static Web Apps | フロントエンドデプロイ |
+| Vercel | フロントエンドデプロイ（メイン） |
+| Azure Static Web Apps | フロントエンドデプロイ（補助のデモ環境） |
 | GitHub Actions | CI / デプロイ |
 
 ---
@@ -508,24 +509,24 @@ npm install
     ↓
 npm test
     ↓
-Azure Static Web Apps Deploy
+Azure Static Web Apps Deploy（補助のデモ環境）
 ```
+
+メインのデプロイ先（Vercel）は、Vercel 側の GitHub 連携でデプロイします。
 
 ---
 
 ## デプロイ
 
-Frontend は Azure Static Web Apps へのデプロイを想定しています。
+Frontend のメインのデプロイ先は Vercel です。Azure Static Web Apps は同じフロントエンドを配置した補助のデモ環境です。
 
 ```
 GitHub Repository
-        ↓
-GitHub Actions
-        ↓
-Azure Static Web Apps
-        ↓
-Next.js Frontend
+   ├─ Vercel（GitHub 連携）              … メイン
+   └─ GitHub Actions → Azure Static Web Apps … 補助のデモ環境
 ```
+
+どちらの環境でも、ビルド時に `NEXT_PUBLIC_API_BASE_URL`（Heroku の API URL）の設定が必要です。
 
 バックエンドAPIは Heroku 上の ASP.NET Core Web API を参照します。
 

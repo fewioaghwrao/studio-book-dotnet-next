@@ -31,7 +31,7 @@
 - OpenAI API連携
 - メール送信連携
 - PDF・CSV出力
-- Azure Static Web Apps
+- Vercel（フロントエンド。Azure Static Web Appsは補助のデモ環境）
 - Heroku
 - JawsDB MySQL
 
@@ -55,7 +55,7 @@
         | HTTPS
         v
 [Next.js Frontend]
-Azure Static Web Apps
+Vercel（補助：Azure Static Web Apps）
         |
         | HTTPS / JSON
         v
@@ -104,7 +104,7 @@ Docker Compose
 | Mail | Mailtrap等 | 認証・再設定メール |
 | PDF | QuestPDF | 売上・帳票PDF |
 | CI | GitHub Actions | ビルド、テスト、デプロイ |
-| Frontend Hosting | Azure Static Web Apps | Next.js静的配信 |
+| Frontend Hosting | Vercel（メイン）／Azure Static Web Apps（補助のデモ環境） | Next.js配信 |
 | Backend Hosting | Heroku | ASP.NET Core API |
 | DB Hosting | JawsDB MySQL | 本番MySQL |
 
@@ -808,7 +808,7 @@ OpenAI API
 
 ## 15.5 要確認
 
-ReviewsにReservationIdがないため、1予約1レビューをDBで保証できない。Service側判定を確認する。
+ReviewsにReservationIdがないため、1予約1レビューはDBで保証しない。現行の仕様は「1ユーザー1スタジオ1レビュー」で、`Reviews`の`RoomId + UserId`一意制約で保証する（同時投稿の2件目は「投稿済み」として扱う）。投稿できるのは、そのスタジオの利用済み予約（`paid`かつ終了日時が過去）がある場合のみ。
 
 ---
 
@@ -1181,7 +1181,7 @@ AI検索の成功・失敗を記録する。
 ## 24.1 本番
 
 ```text
-Azure Static Web Apps
+Vercel（メイン）／Azure Static Web Apps（補助のデモ環境）
         ↓
 Heroku API
         ↓
@@ -1281,7 +1281,7 @@ API開始
 8. DB付きHealthCheckを追加検討する。
 9. Program.csの文字化けを修正する。（対応済み：UTF-8へ変換）
 10. SwaggerのBearer認証設定を追加検討する。
-11. EF Core 9.0.1と.NET 10の正式な組合せを確認する。（確認済み：MySQL ProviderのPomeloがEF Core 10未対応のため、.NET 10上でEF Core 9.0.x（9.0.22）を使用。Pomelo 10リリース後にEF Core 10へ移行する）
+11. EF Core 9.0.1と.NET 10の正式な組合せを確認する。（確認済み：MySQL ProviderのPomeloがEF Core 10未対応のため、.NET 10上でEF Core 9.0.x（9.0.22）を使用。EF Core 9は2026年11月10日にサポートが終了したため、Pomelo 10リリース後にEF Core 10へ移行する）
 12. 本番ログ保存先と保持期間を確定する。
 13. 本番バックアップ方法を確定する。
 14. OpenAI、Stripe、メールのタイムアウト値を確定する。
