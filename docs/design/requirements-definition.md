@@ -61,7 +61,7 @@ Studio Bookは、施設の利用可能時間と予約枠を管理する「施設
 - MySQL・Entity Framework Coreによる永続化
 - 管理ログ、AI検索ログ、PDF・CSV出力
 - GitHub ActionsによるCI
-- Azure Static Web AppsとHerokuによる分離デプロイ
+- Vercel（フロントエンド。Azure Static Web Appsは補助のデモ環境）とHerokuによる分離デプロイ
 
 ---
 
@@ -749,7 +749,7 @@ ASP.NET Core Web API
 
 | 対象 | 配置先 |
 |---|---|
-| Frontend | Azure Static Web Apps |
+| Frontend | Vercel（メイン）／Azure Static Web Apps（補助のデモ環境） |
 | Backend | Heroku |
 | Database | JawsDB MySQL |
 
@@ -788,7 +788,7 @@ GitHub Actionsにより、pushおよびpull request時に以下を実行する�
 - Frontend install
 - Frontend test
 - 必要に応じFrontend build
-- Azure Static Web Apps deploy
+- Azure Static Web Apps deploy（補助のデモ環境。メインのVercelはVercel側のGitHub連携でデプロイ）
 
 ## 17.3 品質目標
 
@@ -807,7 +807,7 @@ GitHub Actionsにより、pushおよびpull request時に以下を実行する�
 3. 実在する個人情報を登録しない前提とする。
 4. Stripeはテストモードを使用する。
 5. OpenAI APIの利用には利用料金・レート制限・外部障害の影響を受ける。
-6. Azure Static Web Apps、Heroku、JawsDBの契約プラン・制限に依存する。
+6. Vercel、Azure Static Web Apps、Heroku、JawsDBの契約プラン・制限に依存する。
 7. 外部サービス障害時に一部機能が利用できない場合がある。
 8. 本番商用利用にはセキュリティ、個人情報保護、監視、バックアップ、決済・返金、法務対応の追加検討が必要である。
 
@@ -854,7 +854,7 @@ READMEではASP.NET Core 10と記載され、ModelSnapshotではEntity Framework
 
 ターゲットフレームワーク、EF Core、MySQL Providerの正式な組合せを確認する。
 
-**対応状況：** ターゲットフレームワークは .NET 10、ASP.NET Core 関連パッケージは 10.0.x に統一した。MySQL Provider の Pomelo.EntityFrameworkCore.MySql は EF Core 10 対応版が未リリースのため、EF Core は 9.0.x の最新パッチ（9.0.22）を使用する。EF Core 9 は .NET 9 と同じく 2026年11月10日にサポート終了となるため、Pomelo の EF Core 10 対応版がリリースされ次第、EF Core 10 へ移行する。
+**対応状況：** ターゲットフレームワークは .NET 10、ASP.NET Core 関連パッケージは 10.0.x に統一した。MySQL Provider の Pomelo.EntityFrameworkCore.MySql は EF Core 10 対応版が未リリースのため、EF Core は 9.0.x の最新パッチ（9.0.22）を使用する。EF Core 9 は .NET 9 と同じく 2026年11月10日にサポートが終了したため、Pomelo の EF Core 10 対応版がリリースされ次第、EF Core 10 へ移行する（それまではセキュリティ修正が提供されない状態で 9.0.22 を使用する）。
 
 ## 20.4 予約状態
 
@@ -874,13 +874,13 @@ READMEではASP.NET Core 10と記載され、ModelSnapshotではEntity Framework
 
 ReviewsテーブルにReservationIdがないため、DB上で1予約1レビューを直接保証できない。
 
-現行のService側判定を確認し、必要に応じReservationId追加を検討する。
+**対応状況：** 現行の仕様を「1ユーザー1スタジオ1レビュー」とし、`Reviews`の`RoomId + UserId`一意制約で保証した。投稿できるのは利用済みの予約がある場合のみ。1予約1レビューとする場合はReservationIdの追加を検討する。
 
 ## 20.6 予約重複制御
 
 DB制約では予約時間帯の重複を防げない。
 
-Service側のトランザクション・排他制御の実装状況を確認する。
+**対応状況：** 予約を登録するStripe Webhookの処理を、スタジオ単位のDBロック（MySQLの`GET_LOCK`）内で「重複確認 → 登録」とし、同時決済による二重予約を防ぐ。後から届いた決済は全額返金する。Webhookの再送はPaymentIntentIdの一意制約で二重登録しない。
 
 ## 20.7 曜日番号
 

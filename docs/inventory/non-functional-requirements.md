@@ -626,7 +626,7 @@
 8. OpenAI・Stripe・メールのタイムアウト値
 9. DB接続を含むヘルスチェックの追加
 10. Forwarded Headersの設定
-11. Stripe Webhookの冪等性実装状況
+11. Stripe Webhookの冪等性実装状況（対応済み：PaymentIntentIdの一意制約）
 12. メール送信失敗時の再送方針
 13. 本番ホスティング環境の監視・通知方法
 14. 対応ブラウザ・端末の正式範囲

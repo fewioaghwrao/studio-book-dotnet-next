@@ -71,14 +71,14 @@ Studio Book は、以下のような分離構成です。
 
 ## システム構成図
 
-フロントエンドは Azure Static Web Apps、バックエンドは Heroku、DB は JawsDB MySQL を想定した構成です。
+フロントエンドは Vercel（メイン。Azure Static Web Apps は補助のデモ環境）、バックエンドは Heroku、DB は JawsDB MySQL の構成です。
 
 ![システム構成図](diagrams/system-architecture.drawio.png)
 
 | 項目 | 内容 |
 |---|---|
 | Frontend | Next.js / React / TypeScript |
-| Frontend Hosting | Azure Static Web Apps |
+| Frontend Hosting | Vercel（メイン）／ Azure Static Web Apps（補助のデモ環境） |
 | Backend | ASP.NET Core Web API / C# / .NET 10 |
 | Backend Hosting | Heroku |
 | Database | JawsDB MySQL |
@@ -543,14 +543,12 @@ Frontend Install / Test
 
 ### Frontend Deploy
 
-フロントエンドは、GitHub Actions から Azure Static Web Apps へデプロイします。
+フロントエンドのメインは Vercel で、Vercel 側の GitHub 連携でデプロイします。補助のデモ環境として、GitHub Actions から Azure Static Web Apps にも同じフロントエンドをデプロイします。
 
 ```
-GitHub Actions
-  ↓
-Azure Static Web Apps
-  ↓
-Next.js Frontend
+GitHub Repository
+  ├─ Vercel（GitHub 連携）                 … メイン
+  └─ GitHub Actions → Azure Static Web Apps … 補助のデモ環境
 ```
 
 ### Backend Deploy
@@ -597,8 +595,8 @@ Next.js と ASP.NET Core Web API を分離することで、画面実装とAPI�
 
 ### 4. Webhook前提の決済確定
 
-Stripe決済では、画面遷移だけで予約確定せず、Webhook受信を前提に予約ステータスを更新します。  
-決済処理の整合性を保つための設計です。
+Stripe決済では、画面遷移だけで予約確定せず、Webhook受信時に予約を登録します。  
+PaymentIntent ID の一意制約で同じ決済から予約を二重に作らず、スタジオ単位のDBロックで同時決済による二重予約を防ぎます。予約を登録できない場合は全額返金します。
 
 ### 5. AI利用ログの保存
 
