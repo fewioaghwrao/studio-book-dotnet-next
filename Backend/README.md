@@ -357,6 +357,17 @@ Webhook 受信
 | HostReservationService | ホスト向け予約管理 |
 | UserReservationService | 一般ユーザー向け予約一覧 |
 
+### バッチ（`Application/Batch`）
+
+1日1回のジョブ（`log_cleanup`：ログ整理、`token_cleanup`：期限切れトークン削除）を、Web アプリ内の `BatchHostedService` が日本時間 4:00 以降に実行します（Heroku で追加料金なし）。手動・cron からは次のコマンドで実行できます（Web サーバーは起動しません）。
+
+```bash
+dotnet Studiobook_backend.dll batch run all          # すべて
+dotnet Studiobook_backend.dll batch run log_cleanup  # 指定したジョブ
+```
+
+保持期間などは `Batch:*`（環境変数 `Batch__AiSearchLogRetentionDays` など）で変更できます。定期実行を止める場合は `Batch__Enabled=false` を設定します。実行状況は `AppSettings` の `batch:{ジョブ名}:last_succeeded_at_utc` / `last_result` に記録します（マイグレーション不要）。
+
 ### 共通の判定（`Application/Common`）
 
 | クラス | 概要 |
@@ -581,6 +592,10 @@ dotnet test ../Studiobook_backend.Tests/Studiobook_backend.Tests.csproj
 **Controller Tests**
 
 AuthControllerTests / HomeControllerTests / RoomsControllerTests / ReservationsControllerTests / ReviewsControllerTests / StripeWebhookControllerTests / AiRoomSearchControllerTests / AiReviewAssistControllerTests / HostRoomsControllerTests / HostBusinessHoursControllerTests / HostClosuresControllerTests / HostPriceRulesControllerTests / HostReservationsControllerTests / HostSalesControllerTests / HostSalesCsvControllerTests / HostSalesExportControllerTests / HostStatusControllerTests / HostReviewsControllerTests / AdminUsersControllerTests / AdminRoomsControllerTests / AdminReservationsControllerTests / AdminSettingsControllerTests / AdminStatusControllerTests / AdminAuditLogsControllerTests / AdminAiSearchLogsControllerTests
+
+**バッチ**
+
+BatchScheduleTests / BatchJobSchedulerTests（実行判定・ロック・失敗時の記録・コマンド）/ LogCleanupJobTests / ExpiredTokenCleanupJobTests
 
 **エラー処理・永続化・共通処理**
 

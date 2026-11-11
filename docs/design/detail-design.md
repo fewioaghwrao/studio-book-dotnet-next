@@ -1298,6 +1298,7 @@ Query、IP、UserId、Model、成功可否、結果件数、エラーを保存�
 ### 15.1 Middleware順序
 
 ```text
+Exception Handler（共通例外ハンドラー。16.3参照）
 HTTPS Redirection
 CORS
 Authentication
@@ -1324,6 +1325,41 @@ Development環境または`ENABLE_SWAGGER = true`で有効化する。
 SeederはRole、User、Room、BusinessHour、PriceRule、Reservation、ChargeItem、Review、AuditLogを投入する。
 
 Role、UserまたはUserRoleが既に存在する場合はSeed全体をスキップする。
+
+### 15.5 バッチ（1日1回のジョブ）
+
+要件定義13.4のログ保持期間などを守るため、1日1回のジョブを実行する。
+
+| ジョブ名 | 内容 | 既定値 |
+|---|---|---|
+| `log_cleanup` | 保持期間を過ぎたログを削除 | AI検索ログ90日、監査ログ365日 |
+| `token_cleanup` | 期限切れ・使用済みのメール認証トークン、パスワード再設定トークンを削除 | 期限切れ・使用から7日経過後 |
+
+**実行方法**
+
+- Heroku（追加料金なし）：Web アプリ内の`BatchHostedService`が一定間隔（既定15分）で確認し、日本時間の実行時刻（既定4:00）を過ぎて未実行のジョブを実行する。dynoの再起動などで実行時刻を逃しても、次の確認で取り戻す。
+- コマンド：`dotnet Studiobook_backend.dll batch run <all|ジョブ名>`。Webサーバーは起動せず、終了コードは0（成功・実行中のためスキップ）、1（失敗）、2（引数の誤り）。VPS移行後は`Batch__Enabled=false`にしてcron等から呼ぶ。
+
+**作り**
+
+- ジョブは`IBatchJob`を実装し（`Application/Batch`）、定期実行とコマンドの両方から同じ処理を呼ぶ。何度実行しても結果が同じになる（冪等）。
+- ジョブ単位のDBロック（MySQLの`GET_LOCK`、待たずに取得）で、複数台でも同時に実行しない。
+- 削除は既定500件ずつ`SaveChanges`し、1回のトランザクションを短くする。
+- 実行状況は`AppSettings`に保存する（専用テーブルなし。マイグレーション不要）。キーは`batch:{ジョブ名}:last_succeeded_at_utc`、`last_failed_at_utc`、`last_result`（例：`ok:ai_search_logs=3,audit_logs=0`、`failed:InvalidOperationException`）。値は100文字以内のため、エラーの詳細はサーバーログに出す。
+- ジョブが失敗しても例外を外に出さず（Webアプリを止めない）、成功日時を更新しないため次の確認で再実行される。
+
+**設定（`Batch:*`、環境変数では`Batch__Enabled`など）**
+
+| 設定 | 既定値 |
+|---|---|
+| Enabled | true |
+| RunAtJapanTime | 04:00 |
+| CheckIntervalMinutes | 15 |
+| InitialDelaySeconds | 60 |
+| AiSearchLogRetentionDays | 90 |
+| AuditLogRetentionDays | 365 |
+| TokenRetentionDays | 7 |
+| DeleteChunkSize | 500 |
 
 ---
 

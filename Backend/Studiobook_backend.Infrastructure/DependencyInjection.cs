@@ -59,6 +59,10 @@ public static class DependencyInjection
         // 予約登録の同時実行制御（スタジオ単位の DB ロック）
         services.AddScoped<IRoomReservationLock, MySqlRoomReservationLock>();
 
+        // バッチジョブの同時実行制御（ジョブ単位の DB ロック）
+        services.AddScoped<IBatchJobLock, MySqlBatchJobLock>();
+        services.Configure<BatchSettings>(configuration.GetSection(BatchSettings.SectionName));
+
         var stripeSecretKey = configuration["Stripe:SecretKey"];
 
         if (!string.IsNullOrWhiteSpace(stripeSecretKey))
