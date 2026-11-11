@@ -4,6 +4,7 @@ using Microsoft.IdentityModel.Tokens;
 using Studiobook_backend.Application;
 using Studiobook_backend.Application.Services;
 using Studiobook_backend.Application.Settings;
+using Studiobook_backend.Batch;
 using Studiobook_backend.ErrorHandling;
 using Studiobook_backend.Infrastructure;
 using Studiobook_backend.Infrastructure.Persistence;
@@ -149,6 +150,9 @@ builder.Services.AddCors(options =>
 // 処理されなかった例外を JSON のエラー応答（CORS ヘッダー付き）にする
 builder.Services.AddApiExceptionHandling();
 
+// 1 日 1 回のバッチ（ログ整理・期限切れトークン削除）を Web アプリ内で定期実行する（Batch:Enabled で無効化可）
+builder.Services.AddHostedService<BatchHostedService>();
+
 var app = builder.Build();
 
 // 例外ハンドラーは先頭（UseCors より外側）に置く
@@ -214,6 +218,13 @@ if (enableMigration || enableSeed)
         logger.LogError(ex, "Database initialization failed during startup.");
         throw;
     }
+}
+
+// 「batch run ...」で起動した場合は、Web サーバーを起動せずにバッチだけ実行して終了する
+if (BatchCommand.IsBatchCommand(args))
+{
+    Environment.ExitCode = await BatchCommand.RunAsync(app.Services, args);
+    return;
 }
 
 app.Run();

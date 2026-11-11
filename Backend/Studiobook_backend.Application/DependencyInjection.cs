@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Studiobook_backend.Application.Batch;
 using Studiobook_backend.Application.Interfaces;
 using Studiobook_backend.Application.Services;
 
@@ -13,6 +14,13 @@ public static class DependencyInjection
     {
         // 現在時刻（テストでは差し替え可能）。日本時間への変換は Common/JapanTime を使う
         services.TryAddSingleton(TimeProvider.System);
+
+        // バッチ（1 日 1 回のジョブ。定期実行は API の BatchHostedService、手動はコマンド batch run）
+        services.AddScoped<IBatchJob, LogCleanupJob>();
+        services.AddScoped<IBatchJob, ExpiredTokenCleanupJob>();
+        services.AddScoped<BatchJobStateStore>();
+        services.AddScoped<BatchJobRunner>();
+        services.AddScoped<BatchJobScheduler>();
 
         // 認証・会員
         services.AddScoped<IAuthService, AuthService>();

@@ -13,7 +13,7 @@ export default function SignupVerifiedPage() {
 
         <div className="flex gap-3">
           <a
-            href="/login"
+            href="/auth/login"
             className="rounded-xl bg-sky-700 px-5 py-3 text-sm font-medium text-white hover:opacity-90"
           >
             ログイン画面へ
