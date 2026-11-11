@@ -23,7 +23,7 @@ describe("SignupVerifiedPage", () => {
 
     expect(
       screen.getByRole("link", { name: "ログイン画面へ" })
-    ).toHaveAttribute("href", "/login");
+    ).toHaveAttribute("href", "/auth/login");
   });
 
   test("トップへ戻るリンクを表示する", () => {

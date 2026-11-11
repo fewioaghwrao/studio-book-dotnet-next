@@ -13,7 +13,7 @@ export default function UnauthorizedPage() {
       description="このページを表示するにはログインが必要です。"
       path={searchParams.get("path") ?? undefined}
       message={searchParams.get("message") ?? undefined}
-      primaryAction={{ href: "/login", label: "ログインへ" }}
+      primaryAction={{ href: "/auth/login", label: "ログインへ" }}
       secondaryAction={{ href: "/", label: "ホームに戻る" }}
     />
   );
