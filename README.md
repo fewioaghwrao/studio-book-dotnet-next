@@ -12,6 +12,8 @@ Studio Book は、**スタジオの時間貸しを具体例とした「施設・
 既存の Java / Spring Boot 版 Studio Book を参考にしつつ、  
 **ASP.NET Core Web API + Next.js App Router** 構成として再設計・再実装したアプリです。
 
+> **モバイル版について**：同じ ASP.NET Core Web API を利用する一般会員向けのモバイルクライアントを、別リポジトリ [studio-book-mobile](https://github.com/fewioaghwrao/studio-book-mobile)（React Native / Expo）で開発しています（試作段階）。
+
 ## 業務上の位置付け：施設・時間枠予約管理
 
 本アプリの中心となる業務は、**予約対象となる施設（リソース）と利用者を、利用日時・空き状況・料金・予約状態に紐づけて管理すること**です。現在の実装では予約対象をスタジオとして扱い、以下の業務データを管理します。
@@ -70,6 +72,17 @@ https://studio-book-api-60c4e5850000.herokuapp.com/swagger
 
 全APIエンドポイントの仕様確認・動作テストが可能です。認証が必要なエンドポイントでは、ログインAPIでJWTアクセストークンを取得します。
 Swagger UIからBearerトークンを設定する場合は、Swaggerの認証設定が必要です。
+
+## モバイル版（別リポジトリ）
+
+| 項目 | 内容 |
+|---|---|
+| リポジトリ | [fewioaghwrao/studio-book-mobile](https://github.com/fewioaghwrao/studio-book-mobile) |
+| 技術 | React Native / Expo / Expo Router / TypeScript |
+| 対象 | 一般会員（`GeneralUser`）のみ。ホスト・管理者機能、会員登録、パスワード再設定は Web 版で利用 |
+| 主な機能 | スタジオ検索、AIスタジオ検索、空き状況カレンダー、予約確認、Stripe Checkout（外部ブラウザ）、予約履歴、レビュー投稿、AIレビュー文補助 |
+| API | 本リポジトリの ASP.NET Core Web API を共通で利用（予約可否・料金・決済確定はサーバー側で判定） |
+| 状況 | 試作段階。iOS（Expo Go）で動作確認済み。Android 実機での検証、ストア公開は未対応 |
 
 ---
 
@@ -1141,6 +1154,7 @@ GitHub Actions により、push / pull request 時にテストを実行します
 | アーキテクチャ資料 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
 | Backend README | [Backend/README.md](Backend/README.md) |
 | Frontend README | [Frontend/README.md](Frontend/README.md) |
+| モバイル版（別リポジトリ） | [studio-book-mobile](https://github.com/fewioaghwrao/studio-book-mobile) |
 
 ---
 
